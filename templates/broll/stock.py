@@ -7,11 +7,19 @@ Key đọc từ env: PEXELS_API_KEY, PIXABAY_API_KEY (Boss cắm sau — 2 phút
 import os, json, subprocess, urllib.request, urllib.parse
 
 FFMPEG = os.environ.get("FFMPEG", "ffmpeg")
+UA = "Mozilla/5.0 (ANTOA b-roll fetcher)"   # Pexels/Pixabay CHẶN request thiếu User-Agent (403)
+
+
+def _hdr(h=None):
+    o = {"User-Agent": UA}
+    if h:
+        o.update(h)
+    return o
 
 
 def _dl(url, out, headers=None):
     try:
-        req = urllib.request.Request(url, headers=headers or {})
+        req = urllib.request.Request(url, headers=_hdr(headers))
         with urllib.request.urlopen(req, timeout=60) as r, open(out, "wb") as f:
             f.write(r.read())
         return os.path.getsize(out) > 20000
@@ -21,7 +29,7 @@ def _dl(url, out, headers=None):
 
 def _get_json(url, headers=None):
     try:
-        req = urllib.request.Request(url, headers=headers or {})
+        req = urllib.request.Request(url, headers=_hdr(headers))
         with urllib.request.urlopen(req, timeout=30) as r:
             return json.load(r)
     except Exception:
