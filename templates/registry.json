@@ -20,20 +20,13 @@
       "entry": "build.py"
     },
     {
-      "id": "netchi",
-      "package": "netchi",
-      "name": "Nét Chì Của Mẹ",
-      "kind": "storytelling",
-      "status": "soon",
-      "note": "build_video.py riêng — port sau"
-    },
-    {
       "id": "phunu",
       "package": "phunu",
       "name": "Phụ Nữ Kinh Doanh Online",
       "kind": "talking-editorial",
-      "status": "soon",
-      "note": "build_video.py riêng — port sau"
+      "status": "ready",
+      "builder": "python",
+      "entry": "build.py"
     }
   ]
 }

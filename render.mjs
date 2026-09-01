@@ -56,7 +56,7 @@ else { spec.tts = 'edge'; if (isNews) spec.voice = CODE; }                     /
 // ---- 4) chạy gói mẫu → HyperFrames render ----
 rmSync(WORK, { recursive: true, force: true }); mkdirSync(WORK, { recursive: true });
 writeFileSync(join(WORK, 'spec.json'), JSON.stringify(spec, null, 2));
-const sceneInfo = isNews ? `${spec.scenes.length} cảnh · palette=${spec.palette}` : `${(spec.script || []).length || '?'} câu`;
+const sceneInfo = isNews ? `${spec.scenes.length} cảnh · palette=${spec.palette}` : (spec.scenes ? `${spec.scenes.length} cảnh` : `${(spec.script || []).length || '?'} câu`);
 console.log(`[render] mẫu=${tpl.name} · ${sceneInfo} · giọng=${VOICE}`);
 run('python3', [entry, WORK, join(WORK, 'spec.json'), '--render'], { cwd: pkgDir });
 

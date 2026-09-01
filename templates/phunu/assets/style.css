@@ -1,0 +1,40 @@
+
+      :root{ --paper:#EFE9DC; --ink:#22233F; --ink2:#5C5F79; --ember:#E2552F; --gold:#E0A43B; }
+      *{margin:0;padding:0;box-sizing:border-box}
+      html,body{width:1080px;height:1920px;overflow:hidden;background:var(--paper);font-family:"Be Vietnam Pro",sans-serif;color:var(--ink)}
+      #root{position:relative;width:1080px;height:1920px}
+      .layer{position:absolute;inset:0}
+      .paper{background:radial-gradient(120% 90% at 20% 8%, #F5F0E6 0%, #EFE9DC 42%, #E7DECB 100%)}
+      .grain{opacity:.07;mix-blend-mode:multiply}.grain svg{width:1080px;height:1920px;display:block}
+      .orn{position:absolute;font-family:"Playfair Display",serif;color:var(--ember);opacity:.12;font-size:400px;line-height:1;font-style:italic;right:30px;top:1070px}
+
+      /* Khung editorial trùng biên SAFE ZONE (x:96–906, y:255–1555) */
+      .frame .rt{position:absolute;left:96px;right:174px;top:315px;height:2px;background:var(--ink);opacity:.85}
+      .frame .rb{position:absolute;left:96px;right:174px;top:1555px;height:2px;background:var(--ink);opacity:.85}
+      .frame .mast{position:absolute;top:255px;left:96px;font-weight:800;font-size:30px}.frame .mast b{color:var(--ember)}
+      .frame .mr{position:absolute;top:261px;right:174px;font-family:"JetBrains Mono",monospace;font-size:22px;letter-spacing:.06em;color:var(--ink2)}
+      .frame .ft{position:absolute;top:1512px;left:96px;font-family:"JetBrains Mono",monospace;font-size:22px;letter-spacing:.14em;color:var(--ink2);text-transform:uppercase}
+
+      .scene{position:absolute;inset:0}
+      .grp{position:absolute}
+      .grp .kick{margin-bottom:22px}.grp .rule{margin:0 0 24px}.grp .disp + .disp{margin-top:4px}.grp .lede{margin-top:32px}
+      .kick{font-weight:700;letter-spacing:.24em;text-transform:uppercase;font-size:29px;color:var(--ember)}
+      .kick.ink{color:var(--ink2)}
+      .rule{height:5px;width:92px;background:var(--ember);border-radius:3px}
+      .disp{font-family:"Playfair Display",serif;font-weight:900;color:var(--ink);line-height:1.12;letter-spacing:-.01em}
+      .d-lg{font-size:150px}.d-md{font-size:110px}.d-sm{font-size:84px}
+      .em{color:var(--ember)}.it{font-style:italic;font-weight:600}
+      .lede{font-size:39px;line-height:1.45;color:var(--ink2);font-weight:500}.lede b{color:var(--ink);font-weight:700}
+      .stat{font-family:"Playfair Display",serif;font-weight:900;color:var(--ember);line-height:.9;letter-spacing:-.02em}.s-xl{font-size:400px}
+      .quote{font-family:"Playfair Display",serif;font-style:italic;font-weight:600;color:var(--ink);font-size:104px;line-height:1.16}
+      .qmark{font-family:"Playfair Display",serif;color:var(--ember);font-size:180px;line-height:.5;font-weight:900}
+      .band{position:absolute;left:96px;right:174px;background:var(--ink);color:var(--paper);padding:48px 64px;border-radius:6px}
+      .band .bt{font-family:"Playfair Display",serif;font-weight:700;font-size:66px;line-height:1.18}.band .bt .em{color:var(--gold)}
+      .listrow{display:flex;align-items:baseline;gap:24px;font-family:"Playfair Display",serif;font-weight:700;font-size:70px;color:var(--ink);margin-bottom:16px;line-height:1.1}
+      .listrow .n{font-family:"JetBrains Mono",monospace;font-size:32px;color:var(--ember);font-weight:500}
+      .brandmark{font-family:"Playfair Display",serif;font-weight:900;font-size:140px;color:var(--ink);line-height:1.1}.brandmark .st{color:var(--ember)}
+      /* CARD ẢNH (chèn ảnh của Boss) */
+      .mcard{position:absolute;padding:13px;background:#FBF8F1;border:1px solid rgba(34,35,63,.16);border-radius:15px;box-shadow:0 22px 54px rgba(34,35,63,.20)}
+      .mcard img{display:block;border-radius:9px;object-fit:cover}
+      .mcap{font-family:"JetBrains Mono",monospace;font-size:19px;color:var(--ink2);padding:11px 3px 1px;letter-spacing:.02em}
+    

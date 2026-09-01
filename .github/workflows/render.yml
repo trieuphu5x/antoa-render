@@ -71,6 +71,7 @@ jobs:
           case "$TEMPLATE" in
             slides)   node soan_slides.mjs ;;
             newsroom) node soan_canh.mjs ;;
+            phunu)    node soan_phunu.mjs ;;
             *)        echo "Mẫu '$TEMPLATE' chưa có soạn-cảnh test tay — cần Tower cấp spec" ;;
           esac
 
