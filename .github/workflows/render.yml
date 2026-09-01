@@ -39,11 +39,23 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Cài ffmpeg + font + edge-tts + Chromium (cho HyperFrames)
+      # Cache để lần sau KHÔNG tải lại (ephemeral runner làm mới máy mỗi lần).
+      - name: Cache npm + pip + Chrome (puppeteer)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            ~/.cache/pip
+            ~/.cache/puppeteer
+          key: antoa-deps-${{ runner.os }}-node22-hf0764
+          restore-keys: antoa-deps-${{ runner.os }}-
+
+      - name: Cài ffmpeg + font + edge-tts + thư viện Chromium
         run: |
           sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core fonts-noto-core
           pip install edge-tts
-          npx --yes playwright@latest install --with-deps chromium || npx --yes playwright install-deps chromium || true
+          # CHỈ cài thư viện hệ thống cho Chrome (KHÔNG tải browser Playwright — HyperFrames dùng Chrome của puppeteer, tự tải + đã cache).
+          npx --yes playwright@latest install-deps chromium || true
 
       - name: Soạn cảnh bằng Claude (chỉ khi test tay & mẫu newsroom)
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.template == 'newsroom' }}
