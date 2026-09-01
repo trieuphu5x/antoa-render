@@ -6,16 +6,19 @@ const MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001';
 const TITLE = process.env.TITLE || '';
 const ARTICLE = process.env.ARTICLE || '';
 const BRANDKW = process.env.BRANDKW || 'bán hàng online, khởi nghiệp, phụ nữ kinh doanh';
+const NONCE = process.env.GITHUB_RUN_ID || String(Math.floor(Math.random() * 1e9));
 
 const PROMPT = `Bạn là biên tập viên video editorial "Phụ Nữ & Kinh Doanh Online" (9:16, phong cách sổ tay kem–cam, ấm áp truyền cảm hứng). Soạn KỊCH BẢN cho chủ đề, trả về DUY NHẤT một JSON hợp lệ (không markdown).
 
 CHỦ ĐỀ: "${TITLE}"
 BỐI CẢNH: """${ARTICLE.slice(0, 2000)}"""
 TỪ KHOÁ BÁM SÁT: ${BRANDKW}
+Hạt giống đa dạng (để video này khác các video khác): ${NONCE}
 
-JSON: { "num":"01", "scenes":[ {…}, … ] }  — 9-13 cảnh.
+JSON: { "num":"01", "scenes":[ {…}, … ] }  — 16-20 cảnh.
 
 CẢNH 1 luôn type "intro"; CẢNH cuối luôn type "outro"; áp chót nên là type "cta". Ở giữa TRỘN các kiểu cho nhịp điệu.
+TRIẾT LÝ ĐA DẠNG (đừng để video nào cũng giống nhau): dùng NHIỀU kiểu khác nhau (ít nhất 6 kiểu ngoài intro/outro); KHÔNG lặp 1 kiểu quá 3 lần; xen kẽ media (đổi side trái/phải), text (đổi align trái/giữa/phải), stat, quote, band (đổi pos trên/dưới), list, countup. Dùng hạt giống để đa dạng lựa chọn.
 Mỗi cảnh có "vo" = lời đọc tự nhiên 1-2 câu (tiếng Việt, ấm, KHÔNG chứa markup/kí tự < >).
 
 KIỂU cảnh + trường:
@@ -37,7 +40,7 @@ Chỉ in JSON.`;
 const r = await fetch('https://api.anthropic.com/v1/messages', {
   method: 'POST',
   headers: { 'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-  body: JSON.stringify({ model: MODEL, max_tokens: 3200, messages: [{ role: 'user', content: PROMPT }] }),
+  body: JSON.stringify({ model: MODEL, max_tokens: 4200, messages: [{ role: 'user', content: PROMPT }] }),
 });
 const j = await r.json();
 const raw = (j?.content || []).map((b) => b.text || '').join('');
