@@ -1,0 +1,14 @@
+{
+  "id": "slides",
+  "name": "Agent Thực Chiến",
+  "channelOrigin": "Agent Thực Chiến",
+  "kind": "slide-infographic",
+  "status": "ready",
+  "builder": "python",
+  "entry": "build.py",
+  "engine": "hyperframes@0.7.64",
+  "aspect": "9:16",
+  "specFormat": "slides",
+  "tts": ["vbee"],
+  "desc": "Video slide infographic dạy nghề. Kịch bản N câu → mỗi câu 1 slide (30 kiểu ở slidelib). Giọng Vbee Minh Quân, nền giấy + grid, brand Agent Thực Chiến. Bê chuẩn 100% build_video.py."
+}

@@ -31,31 +31,33 @@ if (tpl.status !== 'ready') { console.error(`[render] Mẫu "${TEMPLATE}" (${tpl
 const pkgDir = join(TEMPLATES, tpl.package);
 const entry = join(pkgDir, tpl.entry || 'build.py');
 
-// ---- 2) spec: Tower gửi (client_payload.spec). Thiếu → fallback tối giản từ TITLE ----
+// ---- 2) spec: Tower gửi (client_payload.spec) hoặc soạn tay ghi spec.json. Định dạng KHÁC nhau theo mẫu:
+//        newsroom → {palette, scenes:[{inner,vo}]}; slides → {script, slides}. Orchestrator không giả định shape.
+const isNews = TEMPLATE === 'newsroom';
 let spec = null;
 try { if (process.env.SPEC && process.env.SPEC !== 'null') spec = JSON.parse(process.env.SPEC); } catch (e) { console.error('[render] SPEC JSON lỗi:', e.message); }
-// test tay: soan_canh.mjs ghi spec.json cạnh script → đọc nếu env SPEC trống
-if ((!spec || !spec.scenes) && existsSync(join(HERE, 'spec.json'))) {
+if (!spec && existsSync(join(HERE, 'spec.json'))) {
   try { spec = JSON.parse(readFileSync(join(HERE, 'spec.json'), 'utf8')); console.log('[render] Dùng spec.json (soạn tay)'); } catch (e) {}
 }
-if (!spec || !spec.scenes || !spec.scenes.length) {
-  console.log('[render] Không có SPEC hợp lệ → dựng spec tối giản từ TITLE (nên để Tower soạn cảnh).');
+if (isNews && (!spec || !spec.scenes || !spec.scenes.length)) {
+  console.log('[render] newsroom không có SPEC hợp lệ → dựng spec tối giản từ TITLE.');
   const t = (SCRIPT || TITLE).replace(/[<>]/g, '').slice(0, 90);
   spec = { palette: 'launch', caption: { title: TITLE, desc: '' }, scenes: [
     { id: 's1', inner: `<div class="mid"><div class="kick anim">Tin mới</div><div class="head h-md anim">${t}</div></div>`, vo: t },
     { id: 'sO', inner: '<div class="mid"><div class="brand anim">ANTOA</div><div class="lede anim">Theo dõi để cập nhật mỗi ngày.</div></div>' },
   ] };
 }
+if (!spec) { console.error(`[render] Thiếu SPEC cho mẫu "${TEMPLATE}" — Tower/soạn-cảnh chưa cấp.`); process.exit(1); }
 
 // ---- 3) giọng đọc → nạp vào spec + env cho builder ----
-spec.tts = ENGINE === 'vbee' ? 'vbee' : 'edge';
-if (ENGINE === 'vbee') { process.env.VBEE_VOICE = CODE; }   // vbee_tts.py đọc từ env (secret CI)
-else { spec.voice = CODE; }                                  // edge-tts dùng voice trong spec
+if (ENGINE === 'vbee') { process.env.VBEE_VOICE = CODE; spec.tts = 'vbee'; }   // vbee_tts.py đọc creds từ env
+else { spec.tts = 'edge'; if (isNews) spec.voice = CODE; }                     // edge chỉ dùng cho newsroom
 
 // ---- 4) chạy gói mẫu → HyperFrames render ----
 rmSync(WORK, { recursive: true, force: true }); mkdirSync(WORK, { recursive: true });
 writeFileSync(join(WORK, 'spec.json'), JSON.stringify(spec, null, 2));
-console.log(`[render] mẫu=${tpl.name} · ${spec.scenes.length} cảnh · palette=${spec.palette} · giọng=${VOICE}`);
+const sceneInfo = isNews ? `${spec.scenes.length} cảnh · palette=${spec.palette}` : `${(spec.script || []).length || '?'} câu`;
+console.log(`[render] mẫu=${tpl.name} · ${sceneInfo} · giọng=${VOICE}`);
 run('python3', [entry, WORK, join(WORK, 'spec.json'), '--render'], { cwd: pkgDir });
 
 // ---- 5) tìm MP4 render mới nhất trong work → out.mp4 ----

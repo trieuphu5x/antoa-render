@@ -57,16 +57,22 @@ jobs:
           # CHỈ cài thư viện hệ thống cho Chrome (KHÔNG tải browser Playwright — HyperFrames dùng Chrome của puppeteer, tự tải + đã cache).
           npx --yes playwright@latest install-deps chromium || true
 
-      - name: Soạn cảnh bằng Claude (chỉ khi test tay & mẫu newsroom)
-        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.template == 'newsroom' }}
+      - name: Soạn cảnh bằng Claude (test tay — theo mẫu)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         env:
           CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
           CLAUDE_MODEL: ${{ secrets.CLAUDE_MODEL }}
           TITLE: ${{ github.event.inputs.title }}
           ARTICLE: ${{ github.event.inputs.article }}
+          TEMPLATE: ${{ github.event.inputs.template }}
           BRANDKW: "AI Agent, tự động hoá kinh doanh, AI thực chiến"
         run: |
-          if [ -n "$CLAUDE_API_KEY" ]; then node soan_canh.mjs; else echo "Chưa có CLAUDE_API_KEY → render.mjs sẽ dùng spec tối giản"; fi
+          if [ -z "$CLAUDE_API_KEY" ]; then echo "Chưa có CLAUDE_API_KEY → render.mjs dùng spec tối giản"; exit 0; fi
+          case "$TEMPLATE" in
+            slides)   node soan_slides.mjs ;;
+            newsroom) node soan_canh.mjs ;;
+            *)        echo "Mẫu '$TEMPLATE' chưa có soạn-cảnh test tay — cần Tower cấp spec" ;;
+          esac
 
       - name: Render MP4 (chạy đúng gói mẫu)
         env:

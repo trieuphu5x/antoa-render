@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      :root{--bg:#080A12;--cyan:#3DE7DA;--cyan2:#28C6FF;--violet:#9B7CFF;--violet2:#C77DFF;
+        --white:#EAF0FF;--muted:#828CB4;--panel:rgba(22,28,50,.55);--red:#FF6B6B;--green:#4ED6A0}
+      *{margin:0;padding:0;box-sizing:border-box}
+      html,body{width:1080px;height:1920px;overflow:hidden;background:var(--bg);font-family:"Be Vietnam Pro",sans-serif;color:var(--white)}
+      #root{position:relative;width:1080px;height:1920px}
+      .layer{position:absolute;inset:0}
+      .paper{background:radial-gradient(90% 60% at 88% 4%,rgba(40,198,255,.18),rgba(40,198,255,0) 55%),radial-gradient(80% 60% at 6% 96%,rgba(155,124,255,.18),rgba(155,124,255,0) 55%),radial-gradient(120% 120% at 50% 30%,#0C1122,#080A12 55%,#05060C 100%)}
+      .grid{background-image:linear-gradient(rgba(61,231,218,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(61,231,218,.05) 1px,transparent 1px);background-size:60px 60px;opacity:.5;mask-image:radial-gradient(80% 80% at 50% 45%,#000 30%,transparent 100%)}
+      .grain{opacity:.06;mix-blend-mode:overlay}.grain svg{width:1080px;height:1920px;display:block}
+      .frame .rt{position:absolute;left:96px;right:174px;top:316px;height:1.5px;background:linear-gradient(90deg,var(--cyan),rgba(61,231,218,0))}
+      .frame .rb{position:absolute;left:96px;right:174px;top:1555px;height:1.5px;background:linear-gradient(90deg,rgba(155,124,255,0),var(--violet))}
+      .frame .mast{position:absolute;top:252px;left:96px;font-family:"Space Grotesk";font-weight:700;font-size:30px}
+      .frame .mast .dot{color:var(--cyan)}.frame .mast b{background:linear-gradient(100deg,var(--cyan),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+      .frame .mr{position:absolute;top:259px;right:174px;font-family:"JetBrains Mono";font-size:20px;letter-spacing:.12em;color:var(--muted)}
+      .frame .ft{position:absolute;top:1512px;left:96px;font-family:"JetBrains Mono";font-size:20px;letter-spacing:.18em;color:var(--cyan);text-transform:uppercase;opacity:.9}
+      .frame .cn{position:absolute;width:26px;height:26px;border:2px solid var(--cyan);opacity:.8}
+      .frame .c1{left:96px;top:316px;border-right:0;border-bottom:0}.frame .c2{right:174px;top:316px;border-left:0;border-bottom:0}
+      .slide{position:absolute;inset:0}
+      /* shared */
+      .pill{position:absolute;left:96px;top:392px;display:inline-flex;align-items:center;gap:14px;padding:15px 30px;border:1px solid rgba(61,231,218,.4);border-radius:999px;background:rgba(61,231,218,.06);font-family:"Space Grotesk";font-weight:600;font-size:28px;letter-spacing:.04em}
+      .pill::before{content:"";width:13px;height:13px;border-radius:50%;background:var(--cyan);box-shadow:0 0 14px var(--cyan)}
+      .head{position:absolute;left:96px;right:174px;font-family:"Space Grotesk";font-weight:700;line-height:1.05;letter-spacing:-.015em}
+      .em{background:linear-gradient(100deg,var(--cyan),var(--cyan2) 45%,var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+      .sub{color:var(--muted);font-size:38px;line-height:1.4}.sub b{color:var(--white)}
+      .glow{text-shadow:0 0 40px rgba(61,231,218,.5)}
+      .panel{background:var(--panel);border:1px solid rgba(61,231,218,.24);border-radius:26px}
+      .bx{position:absolute;left:96px;right:174px}
+      /* stat */
+      .num{font-family:"Space Grotesk";font-weight:700;letter-spacing:-.03em;background:linear-gradient(120deg,var(--cyan),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+      .old{font-family:"Space Grotesk";font-weight:700;color:var(--muted);text-decoration:line-through;text-decoration-color:rgba(130,140,180,.5)}
+      /* compare/proscons/grid */
+      .cols{display:flex;gap:30px}
+      .col{flex:1;padding:40px 34px;border-radius:24px;background:var(--panel);border:1px solid rgba(130,140,180,.3)}
+      .col.hot{border-color:var(--cyan);box-shadow:0 0 44px rgba(61,231,218,.26)}
+      .col.bad{border-color:rgba(255,107,107,.5)}
+      .tagm{font-family:"JetBrains Mono";font-size:22px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+      .col.hot .tagm{color:var(--cyan)}.col.bad .tagm{color:var(--red)}
+      .cname{font-family:"Space Grotesk";font-weight:700;font-size:56px;margin:8px 0 18px}
+      .cdesc{font-size:34px;line-height:1.34;color:var(--muted)}.col.hot .cdesc{color:var(--white)}
+      /* list rows */
+      .rowit{display:flex;align-items:center;gap:24px;padding:24px 28px;margin-bottom:20px;border-radius:20px;background:var(--panel);border:1px solid rgba(61,231,218,.22)}
+      .rico{flex:0 0 auto;width:56px;height:56px;border-radius:14px;background:rgba(61,231,218,.14);border:1px solid var(--cyan);display:flex;align-items:center;justify-content:center;color:var(--cyan);font-weight:700;font-size:32px;font-family:"Space Grotesk"}
+      .rico.g{background:rgba(78,214,160,.14);border-color:var(--green);color:var(--green)}
+      .rico.r{background:rgba(255,107,107,.14);border-color:var(--red);color:var(--red)}
+      .rtx{font-family:"Space Grotesk";font-weight:600;font-size:44px;line-height:1.18}
+      .rtx small{display:block;font-family:"Be Vietnam Pro";font-weight:400;font-size:30px;color:var(--muted)}
+      /* progress */
+      .bar{height:44px;border-radius:22px;background:rgba(130,140,180,.18);overflow:hidden;position:relative}
+      .bar .fill{position:absolute;left:0;top:0;bottom:0;border-radius:22px;background:linear-gradient(90deg,var(--cyan),var(--violet))}
+      /* bars chart */
+      .chart{display:flex;align-items:flex-end;gap:60px;height:520px;justify-content:center}
+      .barcol{width:200px;border-radius:18px 18px 0 0;background:linear-gradient(180deg,var(--cyan),rgba(61,231,218,.15));position:relative;display:flex;align-items:flex-start;justify-content:center}
+      .barcol.v{background:linear-gradient(180deg,var(--violet),rgba(155,124,255,.15))}
+      .barcol .cap{position:absolute;top:-64px;font-family:"Space Grotesk";font-weight:700;font-size:52px;color:var(--white)}
+      .barcol .lb{position:absolute;bottom:-56px;font-size:32px;color:var(--muted)}
+      /* donut */
+      .donut{width:420px;height:420px;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;position:relative}
+      .donut .hole{width:300px;height:300px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column}
+      .donut .pct{font-family:"Space Grotesk";font-weight:700;font-size:110px;color:var(--white)}
+      /* loop */
+      .ring{position:absolute;left:50%;top:50%;width:540px;height:540px;transform:translate(-50%,-50%);border-radius:50%;border:2px dashed rgba(61,231,218,.35)}
+      .ctr{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;font-family:"Space Grotesk";font-weight:600;font-size:32px;color:var(--muted)}
+      .ctr b{display:block;font-size:24px;color:var(--cyan);font-family:"JetBrains Mono"}
+      .nd{position:absolute;width:270px;padding:20px;border-radius:20px;background:var(--panel);border:1px solid rgba(61,231,218,.34);text-align:center;box-shadow:0 0 30px rgba(40,198,255,.12)}
+      .nd .n{font-family:"JetBrains Mono";font-size:22px;color:var(--cyan)}.nd .t{font-family:"Space Grotesk";font-weight:600;font-size:32px;margin-top:4px}
+      /* flow */
+      .flow{display:flex;align-items:center;gap:20px;justify-content:center}
+      .fnode{flex:1;padding:34px 20px;border-radius:22px;background:var(--panel);border:1px solid rgba(61,231,218,.3);text-align:center;font-family:"Space Grotesk";font-weight:600;font-size:38px}
+      .fnode .fi{font-size:60px;display:block;margin-bottom:10px}
+      .farr{color:var(--cyan);font-size:52px;font-weight:700}
+      /* timeline */
+      .tlrow{position:relative;padding:0 0 50px 92px}
+      .tlrow::before{content:"";position:absolute;left:15px;top:44px;bottom:-8px;width:2px;background:rgba(61,231,218,.3)}
+      .tlrow:last-child::before{display:none}
+      .tldot{position:absolute;left:0;top:6px;width:32px;height:32px;border-radius:50%;background:var(--bg);border:3px solid var(--cyan);box-shadow:0 0 16px var(--cyan)}
+      .tlrow.hot .tldot{border-color:var(--violet);box-shadow:0 0 16px var(--violet)}
+      .tlyr{font-family:"JetBrains Mono";font-weight:700;font-size:38px;color:var(--cyan)}.tlrow.hot .tlyr{color:var(--violet)}
+      .tlti{font-family:"Space Grotesk";font-weight:700;font-size:50px;margin:2px 0 4px}.tlde{font-size:34px;color:var(--muted)}
+      /* hub */
+      .hub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:220px;height:220px;border-radius:50%;background:rgba(61,231,218,.1);border:2px solid var(--cyan);display:flex;align-items:center;justify-content:center;text-align:center;font-family:"Space Grotesk";font-weight:700;font-size:40px;box-shadow:0 0 50px rgba(61,231,218,.3);z-index:2}
+      .spoke{position:absolute;width:240px;padding:18px;border-radius:16px;background:var(--panel);border:1px solid rgba(155,124,255,.4);text-align:center;font-family:"Space Grotesk";font-weight:600;font-size:34px}
+      .lnk{position:absolute;height:2px;background:linear-gradient(90deg,var(--cyan),var(--violet));transform-origin:left center;opacity:.6;z-index:1}
+      /* formula */
+      .fbox{width:220px;height:220px;border-radius:24px;background:var(--panel);border:1px solid rgba(61,231,218,.3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;box-shadow:0 0 30px rgba(40,198,255,.1)}
+      .fbox .ico{font-size:74px}.fbox .lb{font-family:"Space Grotesk";font-weight:600;font-size:30px}
+      .plus{font-family:"Space Grotesk";font-weight:700;font-size:60px;color:var(--cyan)}
+      .res{margin:26px auto 0;width:760px;padding:38px;border-radius:24px;text-align:center;background:linear-gradient(100deg,rgba(61,231,218,.16),rgba(155,124,255,.16));border:1px solid var(--cyan);box-shadow:0 0 46px rgba(61,231,218,.24);font-family:"Space Grotesk";font-weight:700;font-size:56px}
+      /* terminal */
+      .term{border-radius:22px;background:#0A0E1A;border:1px solid rgba(61,231,218,.3);overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.5)}
+      .term .bar2{display:flex;gap:12px;padding:22px 26px;background:rgba(61,231,218,.06);border-bottom:1px solid rgba(61,231,218,.15)}
+      .term .dt{width:20px;height:20px;border-radius:50%}
+      .term .body{padding:38px 34px;font-family:"JetBrains Mono";font-size:40px;line-height:1.5}
+      .term .pr{color:var(--cyan)}.term .cm{color:var(--white)}.term .cur{color:var(--cyan)}
+      /* orbit */
+      .orbit .core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:200px;height:200px;border-radius:44px;background:linear-gradient(135deg,var(--cyan),var(--violet));display:flex;align-items:center;justify-content:center;font-size:96px;box-shadow:0 0 60px rgba(61,231,218,.4)}
+      .orbit .r1,.orbit .r2{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;border:1px solid rgba(61,231,218,.25)}
+      .orbit .r1{width:440px;height:440px}.orbit .r2{width:640px;height:640px}
+      .otag{position:absolute;padding:14px 26px;border-radius:999px;background:var(--panel);border:1px solid rgba(61,231,218,.34);font-family:"Space Grotesk";font-weight:600;font-size:32px}
+      /* chat */
+      .msg{max-width:640px;padding:28px 34px;border-radius:26px;font-size:40px;line-height:1.3;margin-bottom:26px}
+      .msg.u{margin-left:auto;background:rgba(155,124,255,.16);border:1px solid rgba(155,124,255,.4);border-bottom-right-radius:8px}
+      .msg.a{background:rgba(61,231,218,.12);border:1px solid rgba(61,231,218,.4);border-bottom-left-radius:8px}
+      .msg .who{font-family:"JetBrains Mono";font-size:22px;color:var(--muted);margin-bottom:8px}
+      /* callout */
+      .callout{padding:48px 44px;border-radius:26px;background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.45);box-shadow:0 0 46px rgba(255,107,107,.14)}
+      .callout .ci{font-size:80px}.callout .ct{font-family:"Space Grotesk";font-weight:700;font-size:58px;margin:14px 0 12px}
+      .callout .cd{font-size:38px;color:var(--muted);line-height:1.4}
+      /* ranking */
+      .rk{display:flex;align-items:center;gap:24px;padding:22px 28px;margin-bottom:20px;border-radius:18px;background:var(--panel);border:1px solid rgba(61,231,218,.2)}
+      .rk .pos{font-family:"Space Grotesk";font-weight:700;font-size:46px;color:var(--cyan);width:60px}
+      .rk .nm{font-family:"Space Grotesk";font-weight:600;font-size:42px;flex:1}
+      .rk .b3{height:22px;border-radius:11px;background:linear-gradient(90deg,var(--cyan),var(--violet))}
+      /* feature grid */
+      .fg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px}
+      .fg .cell{padding:36px 18px;border-radius:22px;background:var(--panel);border:1px solid rgba(61,231,218,.22);text-align:center}
+      .fg .cell .fi{font-size:64px}.fg .cell .fl{font-family:"Space Grotesk";font-weight:600;font-size:36px;margin-top:12px}
+      /* quote */
+      .qmark{font-family:"Space Grotesk";font-weight:700;font-size:200px;line-height:.4;color:var(--cyan);opacity:.4}
+      .qt{font-family:"Space Grotesk";font-weight:700;font-size:76px;line-height:1.14;margin-top:20px}
+      .qby{font-family:"JetBrains Mono";font-size:36px;color:var(--muted);margin-top:34px}
+      /* funnel */
+      .funnel{display:flex;flex-direction:column;align-items:center;gap:22px}
+      .funnel .st{padding:28px;border-radius:16px;background:linear-gradient(90deg,rgba(61,231,218,.22),rgba(155,124,255,.22));border:1px solid rgba(61,231,218,.34);text-align:center;font-family:"Space Grotesk";font-weight:600;font-size:42px}
+      /* matrix */
+      .mx{position:relative;width:640px;height:640px;margin:0 auto}
+      .mx .q{position:absolute;width:300px;height:300px;border-radius:18px;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;font-family:"Space Grotesk";font-weight:600;font-size:36px;border:1px solid rgba(130,140,180,.3);background:var(--panel);color:var(--muted)}
+      .mx .q1{left:0;top:0}.mx .q2{right:0;top:0}.mx .q3{left:0;bottom:0}.mx .q4{right:0;bottom:0;border-color:var(--cyan);color:var(--white);box-shadow:0 0 40px rgba(61,231,218,.26)}
+      .mx .ax{position:absolute;font-family:"JetBrains Mono";font-size:26px;color:var(--muted)}
+      /* tags */
+      .tags{display:flex;flex-wrap:wrap;gap:22px;justify-content:center}
+      .tags .tg{padding:22px 36px;border-radius:999px;background:var(--panel);border:1px solid rgba(61,231,218,.34);font-family:"Space Grotesk";font-weight:600;font-size:42px}
+      .tags .tg.v{border-color:rgba(155,124,255,.5)}
+      /* takeaway */
+      .take{padding:50px 44px;border-radius:26px;background:rgba(78,214,160,.08);border:1px solid rgba(78,214,160,.45);box-shadow:0 0 46px rgba(78,214,160,.14)}
+      .take .ki{font-size:74px}.take .kt{font-family:"Space Grotesk";font-weight:700;font-size:60px;margin:16px 0 10px}.take .kd{font-size:38px;color:var(--muted);line-height:1.4}
+      /* countdown big list */
+      .cd3 .item{display:flex;align-items:center;gap:34px;padding:28px 0;border-bottom:1px solid rgba(61,231,218,.18)}
+      .cd3 .item:last-child{border:0}
+      .cd3 .bn{font-family:"Space Grotesk";font-weight:700;font-size:92px;color:var(--cyan);opacity:.55;width:130px;text-align:right}
+      .cd3 .bt{font-family:"Space Grotesk";font-weight:700;font-size:52px;line-height:1.1}
+      .cd3 .bt small{display:block;font-family:"Be Vietnam Pro";font-weight:400;font-size:32px;color:var(--muted);margin-top:6px}
+      /* definition */
+      .def{padding:52px 46px;border-radius:26px;background:var(--panel);border:1px solid rgba(61,231,218,.3)}
+      .def .term{font-family:"Space Grotesk";font-weight:700;font-size:76px;color:var(--cyan)}
+      .def .ph{font-family:"JetBrains Mono";font-size:30px;color:var(--cyan);margin:10px 0 26px}
+      .def .mean{font-size:44px;line-height:1.4}
+      /* split before/after */
+      .split2{display:flex;border-radius:26px;overflow:hidden;border:1px solid rgba(61,231,218,.24)}
+      .split2 .h{flex:1;padding:50px 38px}
+      .split2 .l{background:rgba(255,107,107,.08)}
+      .split2 .r{background:rgba(78,214,160,.08);border-left:1px solid rgba(61,231,218,.24)}
+      .split2 .hl{font-family:"JetBrains Mono";font-size:26px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:18px}
+      .split2 .l .hl{color:var(--red)}.split2 .r .hl{color:var(--green)}
+      .split2 .ht{font-family:"Space Grotesk";font-weight:700;font-size:50px;line-height:1.16}
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="122" data-width="1080" data-height="1920">
+      <div class="layer paper clip" data-start="0" data-duration="122" data-track-index="0"></div>
+      <div class="layer grid clip" data-start="0" data-duration="122" data-track-index="1"></div>
+      <div class="layer grain clip" data-start="0" data-duration="122" data-track-index="2"><svg><filter id="gr"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="1080" height="1920" filter="url(#gr)"/></svg></div>
+      <div class="layer frame clip" data-start="0" data-duration="122" data-track-index="3"><div class="rt"></div><div class="rb"></div><div class="cn c1"></div><div class="cn c2"></div><div class="mast"><span class="dot">◇</span> AGENT THỰC <b>CHIẾN</b></div><div class="mr" id="mr">30 kiểu</div><div class="ft">Thư viện Slide</div></div>
+
+      <!-- 1 STAT single -->
+      <div class="slide clip" id="s1" data-start="0" data-duration="4" data-track-index="4">
+        <div class="pill anim">Con số biết nói</div>
+        <div class="num anim glow" style="position:absolute;left:96px;top:600px;font-size:340px;line-height:.9">300</div>
+        <div class="head anim" style="top:960px;font-size:70px">nhân viên AI <span class="em">chạy 24/7</span></div>
+        <div class="bx anim" style="top:1090px"><div class="sub">Không lương, không nghỉ, không quên.</div></div>
+      </div>
+      <!-- 2 TRANSFORM -->
+      <div class="slide clip" id="s2" data-start="4" data-duration="4" data-track-index="5">
+        <div class="pill anim">Kết quả thật</div>
+        <div class="anim old" style="position:absolute;left:96px;top:580px;font-size:120px">3 giờ làm tay</div>
+        <div class="anim" style="position:absolute;left:96px;top:720px;font-size:64px;color:var(--cyan)">↓</div>
+        <div class="num anim glow" style="position:absolute;left:96px;top:800px;font-size:230px;line-height:.9">4 phút</div>
+        <div class="bx anim" style="top:1080px"><div class="sub">Cùng khối lượng việc — <b>rút 45 lần</b>.</div></div>
+      </div>
+      <!-- 3 TRIO KPI -->
+      <div class="slide clip" id="s3" data-start="8" data-duration="4" data-track-index="6">
+        <div class="pill anim">Sức mạnh thật</div>
+        <div class="head anim" style="top:472px;font-size:66px">Một tool, <span class="em">ba con số</span></div>
+        <div class="bx" style="top:660px"><div class="cols">
+          <div class="col hot anim" style="text-align:center"><div class="num" style="font-size:96px">200K</div><div class="cdesc" style="margin-top:8px">token ngữ cảnh</div></div>
+          <div class="col hot anim" style="text-align:center"><div class="num" style="font-size:96px">50</div><div class="cdesc" style="margin-top:8px">file song song</div></div>
+          <div class="col hot anim" style="text-align:center"><div class="num" style="font-size:96px">300</div><div class="cdesc" style="margin-top:8px">agent cùng lúc</div></div>
+        </div></div>
+      </div>
+      <!-- 4 COMPARE -->
+      <div class="slide clip" id="s4" data-start="12" data-duration="4" data-track-index="7">
+        <div class="pill anim">Khác biệt cốt lõi</div>
+        <div class="head anim" style="top:470px;font-size:78px">Chatbot <span class="em">≠</span> Agent</div>
+        <div class="bx" style="top:660px"><div class="cols">
+          <div class="col anim"><div class="tagm">Chatbot</div><div class="cname">Trả lời</div><div class="cdesc">Đáp 1 câu rồi <b>dừng</b>.</div></div>
+          <div class="col hot anim"><div class="tagm">AI Agent</div><div class="cname em">Tự làm</div><div class="cdesc">Nhận mục tiêu → <b>lặp tới khi xong</b>.</div></div>
+        </div></div>
+      </div>
+      <!-- 5 PROS/CONS -->
+      <div class="slide clip" id="s5" data-start="16" data-duration="4" data-track-index="8">
+        <div class="pill anim">Nên &amp; không</div>
+        <div class="bx" style="top:560px"><div class="cols">
+          <div class="col bad anim"><div class="tagm">Làm tay</div>
+            <div class="rowit anim" style="background:none;border:0;padding:8px 0;margin-bottom:12px"><div class="rico r">✕</div><div class="rtx" style="font-size:36px">Mất cả buổi</div></div>
+            <div class="rowit" style="background:none;border:0;padding:8px 0;margin:0"><div class="rico r">✕</div><div class="rtx" style="font-size:36px">Dễ sai sót</div></div></div>
+          <div class="col hot anim"><div class="tagm">Giao Agent</div>
+            <div class="rowit" style="background:none;border:0;padding:8px 0;margin-bottom:12px"><div class="rico g">✓</div><div class="rtx" style="font-size:36px">Vài phút xong</div></div>
+            <div class="rowit" style="background:none;border:0;padding:8px 0;margin:0"><div class="rico g">✓</div><div class="rtx" style="font-size:36px">Chạy 24/7</div></div></div>
+        </div></div>
+      </div>
+      <!-- 6 GRID 2x2 -->
+      <div class="slide clip" id="s6" data-start="20" data-duration="4" data-track-index="9">
+        <div class="pill anim">4 việc giao ngay</div>
+        <div class="bx" style="top:560px"><div class="cols" style="flex-wrap:wrap"><div style="display:grid;grid-template-columns:1fr 1fr;gap:26px;width:100%">
+          <div class="panel anim" style="padding:38px"><div style="font-size:60px">💬</div><div class="rtx" style="margin-top:12px">Trả lời khách</div></div>
+          <div class="panel anim" style="padding:38px"><div style="font-size:60px">✍️</div><div class="rtx" style="margin-top:12px">Soạn nội dung</div></div>
+          <div class="panel anim" style="padding:38px"><div style="font-size:60px">📥</div><div class="rtx" style="margin-top:12px">Lọc &amp; chốt lead</div></div>
+          <div class="panel anim" style="padding:38px"><div style="font-size:60px">📊</div><div class="rtx" style="margin-top:12px">Báo cáo mỗi sáng</div></div>
+        </div></div></div>
+      </div>
+      <!-- 7 CALLOUT -->
+      <div class="slide clip" id="s7" data-start="24" data-duration="4" data-track-index="10">
+        <div class="pill anim" style="border-color:rgba(255,107,107,.5);background:rgba(255,107,107,.06)">Cảnh báo</div>
+        <div class="bx anim" style="top:620px"><div class="callout"><div class="ci">⚠️</div><div class="ct">Đối thủ đã bắt đầu.</div><div class="cd">Mỗi ngày bạn làm tay là một ngày họ đi trước — mà bạn không hay.</div></div></div>
+      </div>
+      <!-- 8 LOOP -->
+      <div class="slide clip" id="s8" data-start="28" data-duration="4" data-track-index="11">
+        <div class="pill anim">Vòng lặp Agent</div>
+        <div class="bx" style="top:560px;height:800px"><div style="position:relative;height:800px">
+          <div class="ring"></div><div class="ctr anim">while<b>(chưa xong)</b></div>
+          <div class="nd anim" style="left:50%;top:0;transform:translateX(-50%)"><div class="n">01</div><div class="t">Đọc bối cảnh</div></div>
+          <div class="nd anim" style="right:0;top:50%;transform:translateY(-50%)"><div class="n">02</div><div class="t">Nghĩ &amp; hành động</div></div>
+          <div class="nd anim" style="left:50%;bottom:0;transform:translateX(-50%)"><div class="n">03</div><div class="t">Nhìn kết quả</div></div>
+          <div class="nd anim" style="left:0;top:50%;transform:translateY(-50%)"><div class="n">04</div><div class="t">Lặp lại</div></div>
+        </div></div>
+      </div>
+      <!-- 9 FLOW -->
+      <div class="slide clip" id="s9" data-start="32" data-duration="4" data-track-index="12">
+        <div class="pill anim">Chuỗi tự động</div>
+        <div class="head anim" style="top:472px;font-size:64px">Chạy <span class="em">một mạch</span></div>
+        <div class="bx" style="top:760px"><div class="flow">
+          <div class="fnode anim"><span class="fi">📄</span>Đọc brief</div><div class="farr anim">→</div>
+          <div class="fnode anim"><span class="fi">⚙️</span>Xử lý</div><div class="farr anim">→</div>
+          <div class="fnode anim"><span class="fi">✅</span>Trả kết quả</div>
+        </div></div>
+      </div>
+      <!-- 10 STEPS -->
+      <div class="slide clip" id="s10" data-start="36" data-duration="4" data-track-index="13">
+        <div class="pill anim">Bắt đầu 3 bước</div>
+        <div class="bx" style="top:600px">
+          <div class="rowit anim"><div class="rico">1</div><div class="rtx">Chọn một việc bạn ghét làm<small>việc lặp đi lặp lại mỗi ngày</small></div></div>
+          <div class="rowit anim"><div class="rico">2</div><div class="rtx">Giao cho Agent trong 1 tuần<small>mô tả rõ, đặt giới hạn</small></div></div>
+          <div class="rowit anim"><div class="rico">3</div><div class="rtx">Đo thời gian lấy lại được<small>rồi nhân bản cái thắng</small></div></div>
+        </div>
+      </div>
+      <!-- 11 TIMELINE -->
+      <div class="slide clip" id="s11" data-start="40" data-duration="4" data-track-index="14">
+        <div class="pill anim">Không phải mới</div>
+        <div class="bx" style="top:560px;left:110px">
+          <div class="tlrow anim"><div class="tldot"></div><div class="tlyr">2022</div><div class="tlti">ReAct</div><div class="tlde">Vừa suy luận, vừa hành động.</div></div>
+          <div class="tlrow anim"><div class="tldot"></div><div class="tlyr">2023</div><div class="tlti">Reflexion</div><div class="tlde">Tự chấm lỗi → nhớ lần sau.</div></div>
+          <div class="tlrow hot anim"><div class="tldot"></div><div class="tlyr">2026</div><div class="tlti em">AI Agent</div><div class="tlde">Cùng ý tưởng — nay đủ mạnh để dùng thật.</div></div>
+        </div>
+      </div>
+      <!-- 12 HUB -->
+      <div class="slide clip" id="s12" data-start="44" data-duration="4" data-track-index="15">
+        <div class="pill anim">Một Agent, nhiều tay</div>
+        <div class="bx" style="top:600px;height:760px"><div style="position:relative;height:760px">
+          <div class="hub anim">AGENT</div>
+          <div class="spoke anim" style="left:0;top:60px">📋 Nghiên cứu</div>
+          <div class="spoke anim" style="right:0;top:60px">✍️ Viết content</div>
+          <div class="spoke anim" style="left:0;bottom:60px">📧 Gửi email</div>
+          <div class="spoke anim" style="right:0;bottom:60px">📊 Báo cáo</div>
+        </div></div>
+      </div>
+      <!-- 13 FORMULA -->
+      <div class="slide clip" id="s13" data-start="48" data-duration="4" data-track-index="16">
+        <div class="pill anim">Công thức</div>
+        <div class="bx" style="top:620px"><div class="flow" style="gap:22px">
+          <div class="fbox anim"><div class="ico">🖥️</div><div class="lb">Công cụ</div></div><div class="plus anim">+</div>
+          <div class="fbox anim"><div class="ico">🎯</div><div class="lb">Mục tiêu</div></div><div class="plus anim">+</div>
+          <div class="fbox anim"><div class="ico">🔁</div><div class="lb">Vòng lặp</div></div>
+        </div>
+        <div class="anim" style="text-align:center;font-size:60px;color:var(--cyan);margin:22px 0">↓</div>
+        <div class="res anim">Một <span class="em">nhân viên AI</span> 24/7</div></div>
+      </div>
+      <!-- 14 TERMINAL -->
+      <div class="slide clip" id="s14" data-start="52" data-duration="4" data-track-index="17">
+        <div class="pill anim">Chỉ một lệnh</div>
+        <div class="bx anim" style="top:640px"><div class="term">
+          <div class="bar2"><span class="dt" style="background:#FF5F57"></span><span class="dt" style="background:#FEBC2E"></span><span class="dt" style="background:#28C840"></span></div>
+          <div class="body"><span class="pr">&gt; </span><span class="cm">"Tạo outline khoá học + 5 email + 1 ebook"</span><span class="cur">▋</span></div>
+        </div>
+        <div class="sub anim" style="margin-top:30px">Bốn phút sau — có đủ cả ba, đã format.</div></div>
+      </div>
+      <!-- 15 PROGRESS -->
+      <div class="slide clip" id="s15" data-start="56" data-duration="4" data-track-index="18">
+        <div class="pill anim">Sau 3 tuần</div>
+        <div class="head anim" style="top:472px;font-size:66px">Hệ thống <span class="em">chạy ổn</span></div>
+        <div class="bx" style="top:720px">
+          <div class="anim" style="display:flex;justify-content:space-between;font-family:'Space Grotesk';font-weight:700;font-size:44px;margin-bottom:20px"><span>Tự động hoá</span><span class="em">90%</span></div>
+          <div class="bar anim"><div class="fill" style="width:90%"></div></div>
+          <div class="sub anim" style="margin-top:30px">15–20 lead/ngày lọc sẵn — chỉ cần bạn chốt.</div>
+        </div>
+      </div>
+      <!-- 16 BARS chart -->
+      <div class="slide clip" id="s16" data-start="60" data-duration="4" data-track-index="19">
+        <div class="pill anim">Trước &amp; sau</div>
+        <div class="head anim" style="top:472px;font-size:64px">Thời gian mỗi ngày</div>
+        <div class="bx" style="top:720px"><div class="chart">
+          <div class="barcol anim" style="height:420px"><div class="cap">6 giờ</div><div class="lb">Làm tay</div></div>
+          <div class="barcol v anim" style="height:70px"><div class="cap">40 phút</div><div class="lb">Có Agent</div></div>
+        </div></div>
+      </div>
+      <!-- 17 DONUT -->
+      <div class="slide clip" id="s17" data-start="64" data-duration="4" data-track-index="20">
+        <div class="pill anim">Sự thật</div>
+        <div class="bx" style="top:560px"><div class="donut anim" style="background:conic-gradient(var(--cyan) 0% 80%, rgba(130,140,180,.18) 80% 100%)">
+          <div class="hole"><div class="pct em">80%</div><div class="sub" style="font-size:30px">thời gian</div></div>
+        </div>
+        <div class="head anim" style="position:static;margin-top:40px;text-align:center;font-size:56px">…dành cho việc <span class="em">Agent làm thay được</span></div></div>
+      </div>
+      <!-- 18 ORBIT -->
+      <div class="slide clip" id="s18" data-start="68" data-duration="4" data-track-index="21">
+        <div class="pill anim">Trong khi bạn ngủ</div>
+        <div class="bx" style="top:600px;height:720px"><div class="orbit" style="position:relative;height:720px">
+          <div class="r1 anim"></div><div class="r2 anim"></div>
+          <div class="core anim">🤖</div>
+          <div class="otag anim" style="left:60px;top:120px">🌙 2:00 sáng</div>
+          <div class="otag anim" style="right:40px;top:220px">📧 Gửi email</div>
+          <div class="otag anim" style="left:120px;bottom:140px">📊 Báo cáo</div>
+        </div></div>
+      </div>
+      <!-- 19 CHAT -->
+      <div class="slide clip" id="s19" data-start="72" data-duration="4" data-track-index="22">
+        <div class="pill anim">Giao việc như giao người</div>
+        <div class="bx" style="top:600px">
+          <div class="msg u anim"><div class="who">BẠN</div>Chăm sóc toàn bộ khách mới hôm nay.</div>
+          <div class="msg a anim"><div class="who">AGENT</div>Đã nhắn chào, gửi hướng dẫn, đặt lịch và ghi chú lại ✅</div>
+        </div>
+      </div>
+      <!-- 20 BIG STATEMENT -->
+      <div class="slide clip" id="s20" data-start="76" data-duration="6" data-track-index="23">
+        <div class="pill anim">Nhớ một điều</div>
+        <div class="head anim glow" style="top:640px;font-size:104px;text-align:left">Cuộc chơi <span class="em">đã đổi</span> rồi.</div>
+        <div class="bx anim" style="top:920px"><div class="sub">Câu hỏi không phải “có nên dùng AI” — mà là <b>bạn bắt đầu từ bao giờ.</b></div></div>
+      </div>
+      <!-- 21 RANKING -->
+      <div class="slide clip" id="s21" data-start="82" data-duration="4" data-track-index="24">
+        <div class="pill anim">Nên giao trước</div>
+        <div class="head anim" style="top:472px;font-size:62px">Top việc <span class="em">tự động hoá</span></div>
+        <div class="bx" style="top:680px">
+          <div class="rk anim"><div class="pos">01</div><div class="nm">Trả lời khách</div><div class="b3" style="width:280px"></div></div>
+          <div class="rk anim"><div class="pos">02</div><div class="nm">Viết content</div><div class="b3" style="width:210px"></div></div>
+          <div class="rk anim"><div class="pos">03</div><div class="nm">Lọc &amp; chăm lead</div><div class="b3" style="width:150px"></div></div>
+        </div>
+      </div>
+      <!-- 22 FEATURE GRID 6 -->
+      <div class="slide clip" id="s22" data-start="86" data-duration="4" data-track-index="25">
+        <div class="pill anim">Một Agent lo hết</div>
+        <div class="bx" style="top:640px"><div class="fg">
+          <div class="cell anim"><div class="fi">💬</div><div class="fl">Chat</div></div>
+          <div class="cell anim"><div class="fi">✍️</div><div class="fl">Content</div></div>
+          <div class="cell anim"><div class="fi">📧</div><div class="fl">Email</div></div>
+          <div class="cell anim"><div class="fi">📊</div><div class="fl">Báo cáo</div></div>
+          <div class="cell anim"><div class="fi">🔍</div><div class="fl">Nghiên cứu</div></div>
+          <div class="cell anim"><div class="fi">🗓️</div><div class="fl">Lịch đăng</div></div>
+        </div></div>
+      </div>
+      <!-- 23 QUOTE -->
+      <div class="slide clip" id="s23" data-start="90" data-duration="4" data-track-index="26">
+        <div class="pill anim">Chính họ thừa nhận</div>
+        <div class="bx" style="top:560px">
+          <div class="qmark anim">“</div>
+          <div class="qt anim">Một tool AI xử lý 100 công ty <span class="em">trong 20 phút.</span></div>
+          <div class="qby anim">— Elon Musk</div>
+        </div>
+      </div>
+      <!-- 24 FUNNEL -->
+      <div class="slide clip" id="s24" data-start="94" data-duration="4" data-track-index="27">
+        <div class="pill anim">Phễu tự động</div>
+        <div class="bx" style="top:660px"><div class="funnel">
+          <div class="st anim" style="width:760px">Thu lead từ mạng xã hội</div>
+          <div class="st anim" style="width:580px">Lọc đúng tệp khách</div>
+          <div class="st anim" style="width:420px">Email cá nhân hoá</div>
+          <div class="st anim" style="width:260px">Chốt đơn</div>
+        </div></div>
+      </div>
+      <!-- 25 MATRIX 2x2 -->
+      <div class="slide clip" id="s25" data-start="98" data-duration="4" data-track-index="28">
+        <div class="pill anim">Chọn việc để giao</div>
+        <div class="bx" style="top:600px"><div class="mx">
+          <div class="q q1 anim">Ít lặp · giá trị thấp</div>
+          <div class="q q2 anim">Lặp nhiều · giá trị thấp<br>→ giao Agent</div>
+          <div class="q q3 anim">Ít lặp · giá trị cao<br>→ giữ cho mình</div>
+          <div class="q q4 anim">Lặp nhiều · giá trị cao<br>→ GIAO AGENT NGAY</div>
+          <div class="ax" style="left:-70px;top:50%;transform:rotate(-90deg)">Giá trị →</div>
+          <div class="ax" style="left:50%;bottom:-46px;transform:translateX(-50%)">Tần suất →</div>
+        </div></div>
+      </div>
+      <!-- 26 TAGS -->
+      <div class="slide clip" id="s26" data-start="102" data-duration="4" data-track-index="29">
+        <div class="pill anim">Giao hết cho Agent</div>
+        <div class="head anim" style="top:472px;font-size:62px">Việc gì <span class="em">cũng được</span></div>
+        <div class="bx anim" style="top:700px"><div class="tags">
+          <div class="tg">Mô tả sản phẩm</div><div class="tg v">Trả lời inbox</div><div class="tg">Caption</div>
+          <div class="tg v">Kịch bản video</div><div class="tg">Email</div><div class="tg v">Báo cáo</div><div class="tg">Nghiên cứu</div>
+        </div></div>
+      </div>
+      <!-- 27 KEY TAKEAWAY -->
+      <div class="slide clip" id="s27" data-start="106" data-duration="4" data-track-index="30">
+        <div class="pill anim" style="border-color:rgba(78,214,160,.5);background:rgba(78,214,160,.06)">Ghi nhớ</div>
+        <div class="bx anim" style="top:620px"><div class="take"><div class="ki">💡</div><div class="kt">Không cần biết code.</div><div class="kd">Bạn chỉ cần biết mô tả công việc thật rõ ràng — rồi giao đúng việc, đặt đúng giới hạn.</div></div></div>
+      </div>
+      <!-- 28 COUNTDOWN 3 -->
+      <div class="slide clip" id="s28" data-start="110" data-duration="4" data-track-index="31">
+        <div class="pill anim">3 thứ đáng làm ngay</div>
+        <div class="bx" style="top:640px"><div class="cd3">
+          <div class="item anim"><div class="bn">01</div><div class="bt">Tìm hiểu AI Agent<small>hiểu nó khác chatbot chỗ nào</small></div></div>
+          <div class="item anim"><div class="bn">02</div><div class="bt">Xây thứ gì đó nhỏ<small>tự động 1 việc bạn ghét làm</small></div></div>
+          <div class="item anim"><div class="bn">03</div><div class="bt">Bán thứ gì đó thật<small>đóng gói thành sản phẩm số</small></div></div>
+        </div></div>
+      </div>
+      <!-- 29 DEFINITION -->
+      <div class="slide clip" id="s29" data-start="114" data-duration="4" data-track-index="32">
+        <div class="pill anim">AI Agent là gì?</div>
+        <div class="bx anim" style="top:620px"><div class="def">
+          <div class="term">AI Agent</div>
+          <div class="ph">/ danh từ · hệ thống tự vận hành /</div>
+          <div class="mean">AI tự suy nghĩ theo từng bước, tự kết nối công cụ, tự thực thi tới khi hoàn thành — không cần người ngồi canh.</div>
+        </div></div>
+      </div>
+      <!-- 30 SPLIT before/after -->
+      <div class="slide clip" id="s30" data-start="118" data-duration="4" data-track-index="33">
+        <div class="pill anim">Cùng một người</div>
+        <div class="bx anim" style="top:640px"><div class="split2">
+          <div class="h l"><div class="hl">Trước</div><div class="ht">Bận từ sáng tới tối mà không bứt phá.</div></div>
+          <div class="h r"><div class="hl">Sau</div><div class="ht">Giao Agent việc lặp — lấy lại thời gian.</div></div>
+        </div></div>
+      </div>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+      function enter(sel, at, st){ tl.from(sel+" .anim", {opacity:0,y:30,duration:0.5,ease:"power3.out",stagger:st||0.1}, at); }
+      var starts=[0,4,8,12,16,20,24,28,32,36,40,44,48,52,56,60,64,68,72,76,82,86,90,94,98,102,106,110,114,118];
+      for(var i=0;i<30;i++){ enter("#s"+(i+1), starts[i]+0.2, 0.1); }
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

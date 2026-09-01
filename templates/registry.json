@@ -15,8 +15,9 @@
       "package": "slides",
       "name": "Agent Thực Chiến",
       "kind": "slide-infographic",
-      "status": "soon",
-      "note": "slidelib.py 30 kiểu slide — port sau"
+      "status": "ready",
+      "builder": "python",
+      "entry": "build.py"
     },
     {
       "id": "netchi",
