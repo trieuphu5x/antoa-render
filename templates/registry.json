@@ -27,6 +27,15 @@
       "status": "ready",
       "builder": "python",
       "entry": "build.py"
+    },
+    {
+      "id": "broll",
+      "package": "broll",
+      "name": "B-roll chữ chạy",
+      "kind": "video-background-kinetic",
+      "status": "ready",
+      "builder": "python",
+      "entry": "build.py"
     }
   ]
 }

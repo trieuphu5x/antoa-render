@@ -72,6 +72,7 @@ jobs:
             slides)   node soan_slides.mjs ;;
             newsroom) node soan_canh.mjs ;;
             phunu)    node soan_phunu.mjs ;;
+            broll)    node soan_broll.mjs ;;
             *)        echo "Mẫu '$TEMPLATE' chưa có soạn-cảnh test tay — cần Tower cấp spec" ;;
           esac
 
@@ -84,6 +85,8 @@ jobs:
           VOICE: ${{ github.event.client_payload.voice || github.event.inputs.voice }}
           VBEE_APP_ID: ${{ secrets.VBEE_APP_ID }}
           VBEE_TOKEN: ${{ secrets.VBEE_TOKEN }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
         run: node render.mjs
 
       - name: Xuất MP4 ra artifact (luôn — tải về xem)
