@@ -14,7 +14,7 @@ BỐI CẢNH: """${(article || '').slice(0, 2000)}"""
 LĨNH VỰC/TỪ KHOÁ: ${kw}
 Hạt giống đa dạng (để video khác video): ${nonce}
 
-JSON: { "num":"01", "scenes":[ {"query","kick","head","sub","vo"}, ... ] } — 8-12 cảnh (cảnh cuối là chốt + gợi theo dõi mềm).
+JSON: { "num":"01", "scenes":[ {"query","kick","head","sub","vo"}, ... ] } — 6-8 cảnh (cảnh cuối là chốt + gợi theo dõi mềm).
 Mỗi cảnh:
 - "query": 2-4 TỪ KHOÁ TIẾNG ANH để tìm clip nền hợp cảnh (vd "morning running park", "stock market chart", "healthy salad bowl"). ĐA DẠNG query giữa các cảnh để nền không trùng.
 - "kick": nhãn ngắn (1-2 từ).
