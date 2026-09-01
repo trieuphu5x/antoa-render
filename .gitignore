@@ -1,0 +1,15 @@
+node_modules/
+work/
+out.mp4
+duration.txt
+spec.json
+*.env
+.vbee.env
+templates/*/_selftest/
+_test_hf/
+body.mp4
+list.txt
+t.txt
+s*.mp3
+s*.mp4
+/assets/

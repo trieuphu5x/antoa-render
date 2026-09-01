@@ -1,0 +1,16 @@
+{
+  "id": "newsroom",
+  "name": "AI Có Gì Mới",
+  "channelOrigin": "AI Có Gì Mới",
+  "kind": "news",
+  "status": "ready",
+  "builder": "python",
+  "entry": "build.py",
+  "engine": "hyperframes@0.7.64",
+  "aspect": "9:16",
+  "specFormat": "dung",
+  "moods": ["hot", "launch", "creative", "biz", "research"],
+  "moodBy": "loại tin (Claude tự chọn khi soạn cảnh)",
+  "tts": ["edge", "vbee"],
+  "desc": "Video tin ngắn 9:16 editorial. Màu (mood) tự chọn theo loại tin: hot=drama/an ninh, launch=ra mắt, creative=phim-ảnh AI, biz=thị trường, research=nghiên cứu."
+}

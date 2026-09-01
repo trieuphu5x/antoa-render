@@ -1,0 +1,107 @@
+name: ANTOA Render
+
+# 2 cách kích hoạt:
+#  1) repository_dispatch (event "render") — Tower gọi tự động, kèm client_payload (spec + callback).
+#  2) workflow_dispatch — Boss bấm tay trên GitHub để TEST (nhập tiêu đề, tự soạn cảnh bằng Claude).
+# Chưa có R2/Cloudflare vẫn chạy: MP4 xuất ra ARTIFACT tải về xem. Có R2 thì up thêm + callback.
+on:
+  repository_dispatch:
+    types: [render]
+  workflow_dispatch:
+    inputs:
+      title:
+        description: "Tiêu đề tin (test)"
+        required: true
+        default: "OpenAI ra Agent Builder — tự dựng AI Agent chỉ bằng kéo thả"
+      article:
+        description: "Nội dung gốc (dán vài đoạn, để trống cũng được)"
+        required: false
+        default: ""
+      template:
+        description: "Mẫu video"
+        required: true
+        default: "newsroom"
+      voice:
+        description: 'Giọng: "vbee:<code>" hoặc "edge:<code>"'
+        required: true
+        default: "vbee:hn_male_manhdung_news_48k-fhg"
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cài ffmpeg + font + edge-tts + Chromium (cho HyperFrames)
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core fonts-noto-core
+          pip install edge-tts
+          npx --yes playwright@latest install --with-deps chromium || npx --yes playwright install-deps chromium || true
+
+      - name: Soạn cảnh bằng Claude (chỉ khi test tay & mẫu newsroom)
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.template == 'newsroom' }}
+        env:
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          CLAUDE_MODEL: ${{ secrets.CLAUDE_MODEL }}
+          TITLE: ${{ github.event.inputs.title }}
+          ARTICLE: ${{ github.event.inputs.article }}
+          BRANDKW: "AI Agent, tự động hoá kinh doanh, AI thực chiến"
+        run: |
+          if [ -n "$CLAUDE_API_KEY" ]; then node soan_canh.mjs; else echo "Chưa có CLAUDE_API_KEY → render.mjs sẽ dùng spec tối giản"; fi
+
+      - name: Render MP4 (chạy đúng gói mẫu)
+        env:
+          TEMPLATE: ${{ github.event.client_payload.template || github.event.inputs.template }}
+          SPEC: ${{ toJSON(github.event.client_payload.spec) }}
+          TITLE: ${{ github.event.client_payload.title || github.event.inputs.title }}
+          SCRIPT: ${{ github.event.client_payload.script || github.event.inputs.article }}
+          VOICE: ${{ github.event.client_payload.voice || github.event.inputs.voice }}
+          VBEE_APP_ID: ${{ secrets.VBEE_APP_ID }}
+          VBEE_TOKEN: ${{ secrets.VBEE_TOKEN }}
+        run: node render.mjs
+
+      - name: Xuất MP4 ra artifact (luôn — tải về xem)
+        uses: actions/upload-artifact@v4
+        with:
+          name: antoa-video
+          path: |
+            out.mp4
+            duration.txt
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Up R2 (chỉ khi đã có secret R2 — để mai)
+        env:
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          CONTENT_ID: ${{ github.event.client_payload.contentId }}
+        if: ${{ env.R2_BUCKET != '' }}
+        run: |
+          KEY="renders/${CONTENT_ID:-test-$GITHUB_RUN_ID}.mp4"
+          aws s3 cp out.mp4 "s3://$R2_BUCKET/$KEY" \
+            --endpoint-url "${{ secrets.R2_ENDPOINT }}" --content-type video/mp4
+          echo "R2_KEY=$KEY" >> "$GITHUB_ENV"
+
+      - name: Callback về Tower (chỉ khi Tower gọi — có callback URL)
+        if: ${{ github.event.client_payload.callback != '' }}
+        run: |
+          DUR=$(cat duration.txt 2>/dev/null || echo 0)
+          URL="${{ secrets.R2_PUBLIC_URL }}/$R2_KEY"
+          curl -sS -X POST "${{ github.event.client_payload.callback }}" \
+            -H 'content-type: application/json' \
+            -d "{\"jobId\":\"${{ github.event.client_payload.jobId }}\",\"contentId\":\"${{ github.event.client_payload.contentId }}\",\"status\":\"done\",\"outputUrl\":\"$URL\",\"durationSec\":$DUR,\"secret\":\"${{ secrets.RENDER_CALLBACK_SECRET }}\"}"
+
+      - name: Callback lỗi (nếu Tower gọi)
+        if: ${{ failure() && github.event.client_payload.callback != '' }}
+        run: |
+          curl -sS -X POST "${{ github.event.client_payload.callback }}" \
+            -H 'content-type: application/json' \
+            -d "{\"jobId\":\"${{ github.event.client_payload.jobId }}\",\"contentId\":\"${{ github.event.client_payload.contentId }}\",\"status\":\"failed\",\"error\":\"render workflow lỗi\",\"secret\":\"${{ secrets.RENDER_CALLBACK_SECRET }}\"}" || true

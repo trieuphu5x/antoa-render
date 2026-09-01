@@ -1,0 +1,38 @@
+{
+  "_doc": "DANH MỤC MẪU (đóng gói). Mỗi mẫu = 1 thư mục con tự chứa (assets + builder). Orchestrator render.mjs đọc template id → chạy đúng gói. Thêm mẫu tương lai: (1) thả thư mục gói vào đây, (2) thêm 1 mục bên dưới, (3) thêm metadata gallery trong Tower (VIDEO_TEMPLATES). status: ready=chạy được | soon=đã có kênh chốt mẫu, đang nối pipeline.",
+  "templates": [
+    {
+      "id": "newsroom",
+      "package": "newsroom",
+      "name": "AI Có Gì Mới",
+      "kind": "news",
+      "status": "ready",
+      "builder": "python",
+      "entry": "build.py"
+    },
+    {
+      "id": "slides",
+      "package": "slides",
+      "name": "Agent Thực Chiến",
+      "kind": "slide-infographic",
+      "status": "soon",
+      "note": "slidelib.py 30 kiểu slide — port sau"
+    },
+    {
+      "id": "netchi",
+      "package": "netchi",
+      "name": "Nét Chì Của Mẹ",
+      "kind": "storytelling",
+      "status": "soon",
+      "note": "build_video.py riêng — port sau"
+    },
+    {
+      "id": "phunu",
+      "package": "phunu",
+      "name": "Phụ Nữ Kinh Doanh Online",
+      "kind": "talking-editorial",
+      "status": "soon",
+      "note": "build_video.py riêng — port sau"
+    }
+  ]
+}
