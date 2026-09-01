@@ -49,6 +49,10 @@ if (isNews && (!spec || !spec.scenes || !spec.scenes.length)) {
 }
 if (!spec) { console.error(`[render] Thiếu SPEC cho mẫu "${TEMPLATE}" — Tower/soạn-cảnh chưa cấp.`); process.exit(1); }
 
+// CAP VIDEO NGẮN ≤ 3 phút (chốt chặn số cảnh/câu).
+if (Array.isArray(spec.scenes) && spec.scenes.length > 24) spec.scenes = spec.scenes.slice(0, 24);
+if (Array.isArray(spec.script) && spec.script.length > 22) spec.script = spec.script.slice(0, 22);
+
 // ---- 3) giọng đọc → nạp vào spec + env cho builder ----
 if (ENGINE === 'vbee') { process.env.VBEE_VOICE = CODE; spec.tts = 'vbee'; }   // vbee_tts.py đọc creds từ env
 else { spec.tts = 'edge'; if (isNews) spec.voice = CODE; }                     // edge chỉ dùng cho newsroom
