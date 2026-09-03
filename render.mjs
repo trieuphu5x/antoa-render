@@ -60,8 +60,20 @@ else { spec.tts = 'edge'; if (isNews) spec.voice = CODE; }                     /
 // ---- 4) chạy gói mẫu → HyperFrames render ----
 rmSync(WORK, { recursive: true, force: true }); mkdirSync(WORK, { recursive: true });
 writeFileSync(join(WORK, 'spec.json'), JSON.stringify(spec, null, 2));
-// CAPTION THẬT (grounded, do backend soạn) → file cho bước callback gửi kèm về Tower (Telegram/webhook cần caption + link).
-try { const cap = spec.caption || {}; writeFileSync(join(HERE, 'caption.txt'), [cap.title, cap.desc].map((s) => String(s || '').trim()).filter(Boolean).join('\n\n')); } catch (e) { /* bỏ qua */ }
+// CAPTION THẬT + BIÊN TẬP NHẸ → file cho bước callback gửi về Tower (Telegram/webhook cần caption + link).
+// LUẬT: tối đa 3 câu (title tính là câu mở) + tối đa 5 hashtag + chốt 500 ký tự — KHÔNG nhồi cả bài vào caption.
+try {
+  const cap = spec.caption || {};
+  const title = String(cap.title || '').trim();
+  let desc = String(cap.desc || '').trim();
+  const tags = (desc.match(/#[\p{L}0-9_]+/gu) || []).slice(0, 5);                    // tách hashtag
+  const prose = desc.replace(/#[\p{L}0-9_]+/gu, ' ').replace(/\s+/g, ' ').trim();    // bỏ hashtag khỏi phần chữ
+  const sents = prose.split(/(?<=[.!?…])\s+/).map((s) => s.trim()).filter(Boolean);
+  const body = sents.slice(0, title ? 2 : 3).join(' ').trim();                        // title + tối đa 2 câu ≈ 3 câu
+  const capText = [title, body, tags.join(' ')].map((s) => s.trim()).filter(Boolean).join('\n\n').slice(0, 500);
+  writeFileSync(join(HERE, 'caption.txt'), capText);
+  console.log(`[render] caption ${capText.length}c · ${sents.length}→${Math.min(sents.length, title ? 2 : 3)} câu · ${tags.length} hashtag`);
+} catch (e) { /* bỏ qua */ }
 const sceneInfo = isNews ? `${spec.scenes.length} cảnh · palette=${spec.palette}` : (spec.scenes ? `${spec.scenes.length} cảnh` : `${(spec.script || []).length || '?'} câu`);
 console.log(`[render] mẫu=${tpl.name} · ${sceneInfo} · giọng=${VOICE}`);
 run('python3', [entry, WORK, join(WORK, 'spec.json'), '--render'], { cwd: pkgDir });

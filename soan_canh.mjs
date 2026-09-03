@@ -19,7 +19,7 @@ TỪ KHOÁ THƯƠNG HIỆU (bám sát): ${BRANDKW}
 JSON dạng:
 {
  "palette": "<một trong: hot|launch|creative|biz|research — chọn theo LOẠI tin: hot=drama/an ninh, launch=ra mắt/model mới, creative=phim-ảnh-nghệ thuật AI, biz=thị trường/kinh doanh, research=nghiên cứu>",
- "caption": {"title":"<tiêu đề đăng>", "desc":"<caption ngắn 1-2 câu + 4-5 hashtag>"},
+ "caption": {"title":"<tiêu đề đăng, 1 dòng>", "desc":"<caption đăng: TỐI ĐA 2 câu ngắn gọn + 4-5 hashtag. TUYỆT ĐỐI KHÔNG nhồi toàn bộ nội dung/kịch bản vào đây>"},
  "scenes": [
    {"id":"s1","inner":"<HTML cảnh HOOK>","vo":"<lời đọc cảnh 1>"},
    ... các cảnh giữa ...,
