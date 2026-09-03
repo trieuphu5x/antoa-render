@@ -73,6 +73,15 @@ spec.mast_a = spec.mast_a || 'TIN';
 spec.mast_b = CAT[spec.palette] || spec.mast_b || 'CÔNG NGHỆ';
 console.log(`✓ Nguồn: "${SOURCE || '(trống)'}" · Danh mục: ${spec.mast_a} ${spec.mast_b}`);
 
+// #7 HASHTAG THƯƠNG HIỆU: đảm bảo caption có hashtag brand (từ BRAND_LABEL, bỏ dấu) — như local #AICoGiMoi.
+try {
+  const brandTag = '#' + String(BRAND_LABEL).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').replace(/[^A-Za-z0-9]/g, '');
+  if (brandTag.length > 2 && spec.caption) {
+    const d = String(spec.caption.desc || '');
+    if (!new RegExp('\\' + brandTag + '\\b', 'i').test(d)) spec.caption.desc = (brandTag + ' ' + d).trim();   // prepend → render.mjs gom về cụm hashtag
+  }
+} catch (e) { /* bỏ qua */ }
+
 spec.tts = process.env.SPEC_TTS || 'edge';
 if (process.env.SPEC_VOICE) spec.voice = process.env.SPEC_VOICE;
 writeFileSync('spec.json', JSON.stringify(spec, null, 2));
