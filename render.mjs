@@ -60,6 +60,8 @@ else { spec.tts = 'edge'; if (isNews) spec.voice = CODE; }                     /
 // ---- 4) chạy gói mẫu → HyperFrames render ----
 rmSync(WORK, { recursive: true, force: true }); mkdirSync(WORK, { recursive: true });
 writeFileSync(join(WORK, 'spec.json'), JSON.stringify(spec, null, 2));
+// CAPTION THẬT (grounded, do backend soạn) → file cho bước callback gửi kèm về Tower (Telegram/webhook cần caption + link).
+try { const cap = spec.caption || {}; writeFileSync(join(HERE, 'caption.txt'), [cap.title, cap.desc].map((s) => String(s || '').trim()).filter(Boolean).join('\n\n')); } catch (e) { /* bỏ qua */ }
 const sceneInfo = isNews ? `${spec.scenes.length} cảnh · palette=${spec.palette}` : (spec.scenes ? `${spec.scenes.length} cảnh` : `${(spec.script || []).length || '?'} câu`);
 console.log(`[render] mẫu=${tpl.name} · ${sceneInfo} · giọng=${VOICE}`);
 run('python3', [entry, WORK, join(WORK, 'spec.json'), '--render'], { cwd: pkgDir });
