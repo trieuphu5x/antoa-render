@@ -42,11 +42,17 @@ const r = await fetch('https://api.anthropic.com/v1/messages', {
   headers: { 'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
   body: JSON.stringify({ model: MODEL, max_tokens: 2600, messages: [{ role: 'user', content: PROMPT }] }),
 });
+if (!r.ok) { console.error(`❌ Claude ${r.status}:`, (await r.text().catch(() => '')).slice(0, 300)); process.exit(1); }
 const j = await r.json();
 const raw = (j?.content || []).map((b) => b.text || '').join('');
 const m = raw.match(/\{[\s\S]*\}/);
-if (!m) { console.error('Không parse được JSON:', raw.slice(0, 300)); process.exit(1); }
+if (!m) { console.error('❌ Không parse được JSON:', raw.slice(0, 300)); process.exit(1); }
 const spec = JSON.parse(m[0]);
+// 🛡️ KIỂM SÁT VIÊN (chạy tại backend Mỹ, nơi Claude không bị 403): kịch bản phải ≥3 cảnh, nếu không → chặn, KHÔNG render video rỗng.
+if (!Array.isArray(spec.scenes) || spec.scenes.length < 3) {
+  console.error(`❌ KIỂM SÁT chặn: kịch bản chỉ ${spec.scenes?.length || 0} cảnh (<3) — không sản xuất video rỗng.`);
+  process.exit(1);
+}
 spec.tts = process.env.SPEC_TTS || 'edge';
 if (process.env.SPEC_VOICE) spec.voice = process.env.SPEC_VOICE;
 writeFileSync('spec.json', JSON.stringify(spec, null, 2));

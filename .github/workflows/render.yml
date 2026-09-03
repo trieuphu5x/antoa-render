@@ -57,23 +57,27 @@ jobs:
           # CHỈ cài thư viện hệ thống cho Chrome (KHÔNG tải browser Playwright — HyperFrames dùng Chrome của puppeteer, tự tải + đã cache).
           npx --yes playwright@latest install-deps chromium || true
 
-      - name: Soạn cảnh bằng Claude (test tay — theo mẫu)
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+      # AI SOẠN CẢNH CHẠY Ở ĐÂY (runner Mỹ) — vì Anthropic trả 403 "Request not allowed" cho request
+      # phát từ Cloudflare Workers. Tower auto KHÔNG gửi spec (spec:null) → bước này gọi Claude soạn.
+      # Cũng chạy khi test tay (workflow_dispatch). Có spec sẵn (hiếm) thì bỏ qua.
+      - name: Soạn cảnh bằng Claude (Tower auto khi không gửi spec, hoặc test tay)
+        if: ${{ github.event_name == 'workflow_dispatch' || !github.event.client_payload.spec }}
         env:
           CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
           CLAUDE_MODEL: ${{ secrets.CLAUDE_MODEL }}
-          TITLE: ${{ github.event.inputs.title }}
-          ARTICLE: ${{ github.event.inputs.article }}
-          TEMPLATE: ${{ github.event.inputs.template }}
-          BRANDKW: "AI Agent, tự động hoá kinh doanh, AI thực chiến"
+          TITLE: ${{ github.event.client_payload.title || github.event.inputs.title }}
+          ARTICLE: ${{ github.event.client_payload.script || github.event.inputs.article }}
+          TEMPLATE: ${{ github.event.client_payload.template || github.event.inputs.template }}
+          BRANDKW: ${{ github.event.client_payload.brandkw || 'AI Agent, tự động hoá kinh doanh, AI thực chiến' }}
+          SPEC_VOICE: ${{ github.event.client_payload.voice || github.event.inputs.voice }}
         run: |
-          if [ -z "$CLAUDE_API_KEY" ]; then echo "Chưa có CLAUDE_API_KEY → render.mjs dùng spec tối giản"; exit 0; fi
+          if [ -z "$CLAUDE_API_KEY" ]; then echo "❌ Thiếu CLAUDE_API_KEY secret trên render-backend — không soạn được"; exit 1; fi
           case "$TEMPLATE" in
             slides)   node soan_slides.mjs ;;
             newsroom) node soan_canh.mjs ;;
             phunu)    node soan_phunu.mjs ;;
             broll)    node soan_broll.mjs ;;
-            *)        echo "Mẫu '$TEMPLATE' chưa có soạn-cảnh test tay — cần Tower cấp spec" ;;
+            *)        echo "❌ Mẫu '$TEMPLATE' chưa hỗ trợ soạn-cảnh"; exit 1 ;;
           esac
 
       - name: Render MP4 (chạy đúng gói mẫu)
