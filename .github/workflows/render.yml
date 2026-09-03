@@ -47,15 +47,26 @@ jobs:
             ~/.npm
             ~/.cache/pip
             ~/.cache/puppeteer
-          key: antoa-deps-${{ runner.os }}-node22-hf0764
+            ~/.cache/ms-playwright
+            node_modules
+          key: antoa-deps-${{ runner.os }}-node22-hf0764-pw
           restore-keys: antoa-deps-${{ runner.os }}-
 
       - name: Cài ffmpeg + font + edge-tts + thư viện Chromium
         run: |
           sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core fonts-noto-core
           pip install edge-tts
-          # CHỈ cài thư viện hệ thống cho Chrome (KHÔNG tải browser Playwright — HyperFrames dùng Chrome của puppeteer, tự tải + đã cache).
+          # Thư viện hệ thống cho Chromium (HyperFrames dùng Chrome puppeteer; chụp ảnh dùng Chromium Playwright).
           npx --yes playwright@latest install-deps chromium || true
+          # Cài Playwright (package.json) + tải Chromium (cache lại) — để chup.mjs chụp ảnh bài gốc.
+          npm install --no-audit --no-fund --silent || true
+          npx playwright install chromium || true
+
+      # CHỤP ẢNH BÀI GỐC (Playwright) → shots/img/*.png cho cảnh .card (độ tin cậy). Fail-safe: lỗi → soạn text-only.
+      - name: Chụp ảnh bài gốc (2-3 ảnh, ảnh đầu làm thumbnail)
+        if: ${{ github.event.client_payload.meta.url != '' }}
+        continue-on-error: true
+        run: node chup.mjs "${{ github.event.client_payload.meta.url }}" shots 2
 
       # AI SOẠN CẢNH CHẠY Ở ĐÂY (runner Mỹ) — vì Anthropic trả 403 "Request not allowed" cho request
       # phát từ Cloudflare Workers. Tower auto KHÔNG gửi spec (spec:null) → bước này gọi Claude soạn.

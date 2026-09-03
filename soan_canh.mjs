@@ -1,6 +1,6 @@
 // Soạn SPEC (cảnh + inner HTML kiểu AI Có Gì Mới) bằng Claude → spec.json cho dung.py.
 // Dùng để validate bê nguyên mẫu. Sau sẽ chuyển logic này vào Tower (ai.js generateScenes).
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, readFileSync, existsSync } from 'node:fs';
 
 const KEY = process.env.CLAUDE_API_KEY;
 const MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001';
@@ -11,12 +11,24 @@ const BRAND_LABEL = (process.env.BRAND_LABEL || '').trim() || 'ANTOA';          
 const SLOGAN = (process.env.SLOGAN || '').trim() || 'Theo dõi để cập nhật mỗi ngày.';        // slogan cuối video (theo workflow)
 const SOURCE = (process.env.SOURCE || '').trim();                                            // NGUỒN THẬT (masthead góc trên + "Nguồn:" dưới) — KHÔNG mặc định VnExpress
 
+// #1 ẢNH BÀI GỐC: đọc manifest do chup.mjs ghi (nếu chụp thành công). Ảnh ĐẦU (hl.png) vào cảnh HOOK → thumbnail.
+let SHOTS = [];
+try { if (existsSync('shots/manifest.json')) SHOTS = (JSON.parse(readFileSync('shots/manifest.json', 'utf8')).shots || []); } catch (e) { SHOTS = []; }
+const cardH = (s) => Math.max(80, Math.min(340, Math.round(770 * (s.h || 150) / (s.w || 770))));   // cao hiển thị (card rộng 770px)
+const cardTag = 'BÀI GỐC' + (SOURCE ? ' · ' + SOURCE.toUpperCase() : '');
+const cardHtml = (file, h) => `<div class="card anim"><div class="tab">${cardTag}</div><img src="assets/img/${file}" style="width:770px;height:${h}px" /></div>`;
+const IMG_BLOCK = SHOTS.length ? `
+CÓ ${SHOTS.length} ẢNH CHỤP BÀI GỐC (dán vào cảnh bằng thẻ .card — TĂNG ĐỘ TIN CẬY):
+${SHOTS.map((s, i) => `- Ảnh ${i + 1} (${s.kind === 'title' ? 'TIÊU ĐỀ' : 'đoạn'}): dán NGUYÊN ${cardHtml(s.file, cardH(s))}`).join('\n')}
+LUẬT DÙNG ẢNH: ĐẶT ảnh đầu "${SHOTS[0].file}" VÀO CẢNH HOOK s1 (làm thumbnail) — s1 = <div class="mid">[head hook] + [thẻ .card ảnh đầu]</div>. Ảnh còn lại rải 1-2 cảnh giữa. Giữ NGUYÊN src+style, đặt TRONG <div class="mid">.
+` : '';
+
 const PROMPT = `Bạn là biên tập viên video tin ngắn 9:16 (kênh kiểu "AI Có Gì Mới"). Việt hoá tin dưới đây thành KỊCH BẢN VIDEO gồm 7-8 CẢNH, trả về DUY NHẤT một JSON hợp lệ (không markdown, không giải thích).
 
 TIN: "${TITLE}"
 NỘI DUNG GỐC: """${ARTICLE.slice(0, 2400)}"""
 TỪ KHOÁ THƯƠNG HIỆU (bám sát): ${BRANDKW}
-
+${IMG_BLOCK}
 JSON dạng:
 {
  "palette": "<một trong: hot|launch|creative|biz|research — chọn theo LOẠI tin: hot=drama/an ninh, launch=ra mắt/model mới, creative=phim-ảnh-nghệ thuật AI, biz=thị trường/kinh doanh, research=nghiên cứu>",
@@ -35,7 +47,7 @@ LUẬT viết "inner" (BẮT BUỘC, chỉ dùng các class này):
 - Tiêu đề cảnh: <div class="head h-md anim">Chữ chính <span class="emr">nhấn ĐỎ/CAM</span></div>  (dùng <span class="em">…</span> nhấn màu phụ; xuống dòng bằng <br/> khi cần, tránh mồ côi 1 từ).
 - Câu diễn giải: <div class="lede anim">1 câu ngắn, dễ hiểu cho người Việt.</div>
 - Cảnh cuối (sO): dùng <div class="brand anim">${BRAND_LABEL}</div>.
-- KHÔNG dùng class/thẻ khác, KHÔNG style inline, KHÔNG ảnh.
+- KHÔNG dùng class/thẻ khác. ${SHOTS.length ? 'ẢNH: CHỈ dùng qua thẻ .card đã cho ở trên (giữ nguyên src+style).' : 'KHÔNG dùng ảnh, KHÔNG style inline.'}
 - "vo" = lời đọc tự nhiên tiếng Việt (1 câu/cảnh), KHÔNG chứa HTML.
 - An toàn nền tảng: KHÔNG hứa thu nhập/mốc thời gian/comment-bait/thổi phồng, KHÔNG ký tự < > trong text hiển thị (dùng "trên/dưới").
 Chỉ in JSON.`;
@@ -63,6 +75,20 @@ const sO = spec.scenes.find((s) => s.id === 'sO');
 if (sO) { sO.inner = closing; if (!sO.vo) sO.vo = SLOGAN; }
 else spec.scenes.push({ id: 'sO', inner: closing, vo: SLOGAN });
 console.log(`✓ Cảnh cuối: thương hiệu="${BRAND_LABEL}" · slogan="${SLOGAN}"`);
+
+// #1 ẢNH: đảm bảo ảnh ĐẦU (hl.png) nằm ở cảnh HOOK s1 → thành thumbnail; nếu AI quên thì tự chèn.
+if (SHOTS.length) {
+  const usable = SHOTS.filter((s) => existsSync('shots/img/' + s.file));
+  const first = usable[0];
+  if (first && spec.scenes[0]) {
+    const s1 = spec.scenes[0];
+    if (!/class="card/.test(s1.inner || '')) {
+      const fc = cardHtml(first.file, cardH(first));
+      s1.inner = /<\/div>\s*$/.test(s1.inner || '') ? s1.inner.replace(/<\/div>\s*$/, fc + '</div>') : `<div class="mid">${s1.inner || ''}${fc}</div>`;
+    }
+    console.log(`✓ Ảnh bài gốc: ${usable.length}/${SHOTS.length} — ảnh đầu "${first.file}" ở cảnh hook (thumbnail)`);
+  } else console.log('• Ảnh chụp không dùng được → text/stat');
+} else console.log('• Không có ảnh chụp → text/stat');
 
 // NGUỒN THẬT: masthead góc trên (mr) + "Nguồn:" dưới đều lấy đúng nguồn (bỏ mặc định VnExpress). Rỗng → để trống.
 spec.source = SOURCE;

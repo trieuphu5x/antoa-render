@@ -1,0 +1,9 @@
+{
+  "name": "antoa-render",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ANTOA render backend — chụp ảnh bài gốc (Playwright) cho cảnh .card. HyperFrames render chạy qua npx.",
+  "dependencies": {
+    "playwright": "^1.48.0"
+  }
+}

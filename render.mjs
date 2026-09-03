@@ -61,6 +61,16 @@ else { spec.tts = 'edge'; if (isNews) spec.voice = CODE; }                     /
 rmSync(WORK, { recursive: true, force: true }); mkdirSync(WORK, { recursive: true });
 if (!spec.bgm_seed) spec.bgm_seed = TITLE || String(spec.caption?.title || '');   // seed xoay nhạc theo tiêu đề (WORK cố định)
 writeFileSync(join(WORK, 'spec.json'), JSON.stringify(spec, null, 2));
+// #1 ẢNH: copy shots/img (chup.mjs chụp) → WORK/assets/img để cảnh .card hiển thị đúng src.
+try {
+  const shotDir = join(HERE, 'shots', 'img');
+  if (existsSync(shotDir)) {
+    const dst = join(WORK, 'assets', 'img'); mkdirSync(dst, { recursive: true });
+    const imgs = readdirSync(shotDir).filter((f) => /\.(png|jpe?g)$/i.test(f));
+    for (const f of imgs) copyFileSync(join(shotDir, f), join(dst, f));
+    console.log(`[render] copy ${imgs.length} ảnh bài gốc → assets/img`);
+  }
+} catch (e) { console.log('[render] copy ảnh lỗi:', e.message); }
 // CAPTION THẬT + BIÊN TẬP NHẸ → file cho bước callback gửi về Tower (Telegram/webhook cần caption + link).
 // LUẬT: tối đa 3 câu (title tính là câu mở) + tối đa 5 hashtag + chốt 500 ký tự — KHÔNG nhồi cả bài vào caption.
 try {
