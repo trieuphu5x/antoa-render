@@ -104,12 +104,14 @@ jobs:
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto                      # R2 CẦN region='auto' — thiếu là aws-cli exit 1 (thủ phạm run #11)
+          AWS_EC2_METADATA_DISABLED: "true"             # né lookup metadata thừa
           CONTENT_ID: ${{ github.event.client_payload.contentId }}
         if: ${{ env.R2_BUCKET != '' }}
         run: |
           KEY="renders/${CONTENT_ID:-test-$GITHUB_RUN_ID}.mp4"
           aws s3 cp out.mp4 "s3://$R2_BUCKET/$KEY" \
-            --endpoint-url "${{ secrets.R2_ENDPOINT }}" --content-type video/mp4
+            --endpoint-url "${{ secrets.R2_ENDPOINT }}" --region auto --content-type video/mp4
           echo "R2_KEY=$KEY" >> "$GITHUB_ENV"
 
       - name: Callback về Tower (chỉ khi Tower gọi — có callback URL)
