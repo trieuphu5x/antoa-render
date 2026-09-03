@@ -278,7 +278,7 @@ def build(video_dir, spec):
                   + '<div class="pbar"></div><div class="pfill" id="pfill"></div>')
     else:
         chrome = (f'<div class="mast"><span class="dot"></span><span class="tag">{spec.get("mast_a","TIN")} <b>{spec.get("mast_b","KINH DOANH")}</b></span></div>'
-                  f'<div class="mr">{spec.get("mr", "VnExpress · " + spec.get("date",""))}</div>'
+                  f'<div class="mr">{spec.get("mr", spec.get("source",""))}</div>'
                   f'<div class="src">Nguồn: {spec.get("source","")}</div>'
                   f'<div class="pbar"></div><div class="pfill" id="pfill"></div>')
     html.append(f'<div class="layer clip" data-start="0" data-duration="{total}" data-track-index="2">{chrome}</div>')

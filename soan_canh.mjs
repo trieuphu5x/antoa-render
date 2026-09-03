@@ -9,6 +9,7 @@ const ARTICLE = process.env.ARTICLE || '';
 const BRANDKW = process.env.BRANDKW || 'AI Agent, tự động hoá';
 const BRAND_LABEL = (process.env.BRAND_LABEL || '').trim() || 'ANTOA';                       // tên hiện cuối video (theo workflow)
 const SLOGAN = (process.env.SLOGAN || '').trim() || 'Theo dõi để cập nhật mỗi ngày.';        // slogan cuối video (theo workflow)
+const SOURCE = (process.env.SOURCE || '').trim();                                            // NGUỒN THẬT (masthead góc trên + "Nguồn:" dưới) — KHÔNG mặc định VnExpress
 
 const PROMPT = `Bạn là biên tập viên video tin ngắn 9:16 (kênh kiểu "AI Có Gì Mới"). Việt hoá tin dưới đây thành KỊCH BẢN VIDEO gồm 7-8 CẢNH, trả về DUY NHẤT một JSON hợp lệ (không markdown, không giải thích).
 
@@ -62,6 +63,15 @@ const sO = spec.scenes.find((s) => s.id === 'sO');
 if (sO) { sO.inner = closing; if (!sO.vo) sO.vo = SLOGAN; }
 else spec.scenes.push({ id: 'sO', inner: closing, vo: SLOGAN });
 console.log(`✓ Cảnh cuối: thương hiệu="${BRAND_LABEL}" · slogan="${SLOGAN}"`);
+
+// NGUỒN THẬT: masthead góc trên (mr) + "Nguồn:" dưới đều lấy đúng nguồn (bỏ mặc định VnExpress). Rỗng → để trống.
+spec.source = SOURCE;
+spec.mr = SOURCE;
+// Danh mục masthead theo palette (thay "KINH DOANH" cứng cho mọi tin).
+const CAT = { hot: 'NÓNG', launch: 'CÔNG NGHỆ', creative: 'SÁNG TẠO', biz: 'KINH DOANH', research: 'NGHIÊN CỨU' };
+spec.mast_a = spec.mast_a || 'TIN';
+spec.mast_b = CAT[spec.palette] || spec.mast_b || 'CÔNG NGHỆ';
+console.log(`✓ Nguồn: "${SOURCE || '(trống)'}" · Danh mục: ${spec.mast_a} ${spec.mast_b}`);
 
 spec.tts = process.env.SPEC_TTS || 'edge';
 if (process.env.SPEC_VOICE) spec.voice = process.env.SPEC_VOICE;
