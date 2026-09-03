@@ -246,17 +246,24 @@ def build(video_dir, spec):
             subprocess.run(["cp", src, os.path.join(audio_dir, base)])
             sfx_files.append((base, dur(os.path.join(audio_dir, base)) or 0.6))
     sfx_vol = spec.get("sfx_vol", 0.5)
-    # nhạc nền: ưu tiên kho nhạc RIÊNG của kênh (_assets/music), luân phiên theo tên video
+    # nhạc nền: LUÂN PHIÊN kho nhạc — ưu tiên kho riêng kênh (_assets/music), nếu không có → kho ĐÓNG GÓI trong mẫu
+    # (assets/music, nhiều track tin tức). Seed xoay = spec["bgm_seed"] (tiêu đề, do render.mjs cấp) vì WORK dir cố định.
     bgm_dst = os.path.join(audio_dir, "bgm.mp3")
     if not os.path.exists(bgm_dst):
         ch_music = os.path.join(os.path.dirname(os.path.abspath(video_dir)), "_assets", "music")
-        tracks = sorted(f for f in os.listdir(ch_music)) if os.path.isdir(ch_music) else []
+        pack_music = os.path.join(ASSETS, "music")
+        music_dir = ch_music if os.path.isdir(ch_music) else pack_music
+        tracks = sorted(f for f in os.listdir(music_dir)) if os.path.isdir(music_dir) else []
         tracks = [f for f in tracks if f.lower().endswith(".mp3")]
-        if spec.get("bgm") and os.path.exists(os.path.join(ch_music, spec["bgm"])):
-            src = os.path.join(ch_music, spec["bgm"])
+        seed = str(spec.get("bgm_seed") or os.path.basename(os.path.normpath(video_dir)))
+        if spec.get("bgm") and os.path.exists(os.path.join(music_dir, spec["bgm"])):
+            src = os.path.join(music_dir, spec["bgm"])
         elif tracks:
-            idx = sum(ord(c) for c in os.path.basename(os.path.normpath(video_dir))) % len(tracks)
-            src = os.path.join(ch_music, tracks[idx])
+            _h = 2166136261
+            for _c in seed:
+                _h = ((_h ^ ord(_c)) * 16777619) & 0xFFFFFFFF  # FNV-1a → phân bố đều (sum(ord) tiếng Việt bị cụm)
+            idx = _h % len(tracks)                             # xoay theo tiêu đề → mỗi video 1 nhạc khác
+            src = os.path.join(music_dir, tracks[idx])
         else:
             src = BGM_SRC  # fallback dùng chung
         if os.path.exists(src):

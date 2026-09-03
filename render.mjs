@@ -59,6 +59,7 @@ else { spec.tts = 'edge'; if (isNews) spec.voice = CODE; }                     /
 
 // ---- 4) chạy gói mẫu → HyperFrames render ----
 rmSync(WORK, { recursive: true, force: true }); mkdirSync(WORK, { recursive: true });
+if (!spec.bgm_seed) spec.bgm_seed = TITLE || String(spec.caption?.title || '');   // seed xoay nhạc theo tiêu đề (WORK cố định)
 writeFileSync(join(WORK, 'spec.json'), JSON.stringify(spec, null, 2));
 // CAPTION THẬT + BIÊN TẬP NHẸ → file cho bước callback gửi về Tower (Telegram/webhook cần caption + link).
 // LUẬT: tối đa 3 câu (title tính là câu mở) + tối đa 5 hashtag + chốt 500 ký tự — KHÔNG nhồi cả bài vào caption.
