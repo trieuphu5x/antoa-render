@@ -7,6 +7,8 @@ const MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001';
 const TITLE = process.env.TITLE || '';
 const ARTICLE = process.env.ARTICLE || '';
 const BRANDKW = process.env.BRANDKW || 'AI Agent, tự động hoá';
+const BRAND_LABEL = (process.env.BRAND_LABEL || '').trim() || 'ANTOA';                       // tên hiện cuối video (theo workflow)
+const SLOGAN = (process.env.SLOGAN || '').trim() || 'Theo dõi để cập nhật mỗi ngày.';        // slogan cuối video (theo workflow)
 
 const PROMPT = `Bạn là biên tập viên video tin ngắn 9:16 (kênh kiểu "AI Có Gì Mới"). Việt hoá tin dưới đây thành KỊCH BẢN VIDEO gồm 7-8 CẢNH, trả về DUY NHẤT một JSON hợp lệ (không markdown, không giải thích).
 
@@ -22,7 +24,7 @@ JSON dạng:
    {"id":"s1","inner":"<HTML cảnh HOOK>","vo":"<lời đọc cảnh 1>"},
    ... các cảnh giữa ...,
    {"id":"s7","inner":"<HTML cảnh CTA hỏi>","vo":"<lời đọc>"},
-   {"id":"sO","inner":"<div class=\\"mid\\"><div class=\\"brand anim\\">ANTOA</div><div class=\\"lede anim\\">Theo dõi để cập nhật mỗi ngày.</div></div>"}
+   {"id":"sO","inner":"<div class=\\"mid\\"><div class=\\"brand anim\\">${BRAND_LABEL}</div><div class=\\"lede anim\\">${SLOGAN}</div></div>"}
  ]
 }
 
@@ -31,7 +33,7 @@ LUẬT viết "inner" (BẮT BUỘC, chỉ dùng các class này):
 - Nhãn nhỏ trên cùng: <div class="kick anim">Nhãn ngắn</div>  (VD "Sự thật", "Số liệu", "Ra mắt").
 - Tiêu đề cảnh: <div class="head h-md anim">Chữ chính <span class="emr">nhấn ĐỎ/CAM</span></div>  (dùng <span class="em">…</span> nhấn màu phụ; xuống dòng bằng <br/> khi cần, tránh mồ côi 1 từ).
 - Câu diễn giải: <div class="lede anim">1 câu ngắn, dễ hiểu cho người Việt.</div>
-- Cảnh cuối (sO): dùng <div class="brand anim">ANTOA</div>.
+- Cảnh cuối (sO): dùng <div class="brand anim">${BRAND_LABEL}</div>.
 - KHÔNG dùng class/thẻ khác, KHÔNG style inline, KHÔNG ảnh.
 - "vo" = lời đọc tự nhiên tiếng Việt (1 câu/cảnh), KHÔNG chứa HTML.
 - An toàn nền tảng: KHÔNG hứa thu nhập/mốc thời gian/comment-bait/thổi phồng, KHÔNG ký tự < > trong text hiển thị (dùng "trên/dưới").
@@ -53,6 +55,14 @@ if (!Array.isArray(spec.scenes) || spec.scenes.length < 3) {
   console.error(`❌ KIỂM SÁT chặn: kịch bản chỉ ${spec.scenes?.length || 0} cảnh (<3) — không sản xuất video rỗng.`);
   process.exit(1);
 }
+// ÉP cảnh cuối (thương hiệu) dùng đúng BRAND_LABEL + SLOGAN theo workflow — AI có thể không theo sát mẫu.
+const escHtml = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const closing = `<div class="mid"><div class="brand anim">${escHtml(BRAND_LABEL)}</div><div class="lede anim">${escHtml(SLOGAN)}</div></div>`;
+const sO = spec.scenes.find((s) => s.id === 'sO');
+if (sO) { sO.inner = closing; if (!sO.vo) sO.vo = SLOGAN; }
+else spec.scenes.push({ id: 'sO', inner: closing, vo: SLOGAN });
+console.log(`✓ Cảnh cuối: thương hiệu="${BRAND_LABEL}" · slogan="${SLOGAN}"`);
+
 spec.tts = process.env.SPEC_TTS || 'edge';
 if (process.env.SPEC_VOICE) spec.voice = process.env.SPEC_VOICE;
 writeFileSync('spec.json', JSON.stringify(spec, null, 2));
