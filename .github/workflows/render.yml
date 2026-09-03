@@ -68,9 +68,9 @@ jobs:
           TITLE: ${{ github.event.client_payload.title || github.event.inputs.title }}
           ARTICLE: ${{ github.event.client_payload.script || github.event.inputs.article }}
           TEMPLATE: ${{ github.event.client_payload.template || github.event.inputs.template }}
-          BRANDKW: ${{ github.event.client_payload.brandkw || 'AI Agent, tự động hoá kinh doanh, AI thực chiến' }}
-          BRAND_LABEL: ${{ github.event.client_payload.brandLabel }}
-          SLOGAN: ${{ github.event.client_payload.slogan }}
+          BRANDKW: ${{ github.event.client_payload.meta.brandkw || 'AI Agent, tự động hoá kinh doanh, AI thực chiến' }}
+          BRAND_LABEL: ${{ github.event.client_payload.meta.brandLabel }}
+          SLOGAN: ${{ github.event.client_payload.meta.slogan }}
           SPEC_VOICE: ${{ github.event.client_payload.voice || github.event.inputs.voice }}
         run: |
           if [ -z "$CLAUDE_API_KEY" ]; then echo "❌ Thiếu CLAUDE_API_KEY secret trên render-backend — không soạn được"; exit 1; fi
