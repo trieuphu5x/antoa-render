@@ -69,6 +69,7 @@ html,body{width:1080px;height:1920px;overflow:hidden;background:var(--bg3);font-
 .mast .tag{color:var(--ink)} .mast .tag b{color:var(--red)}
 .mr{position:absolute;top:178px;right:174px;font-family:"JetBrains Mono",monospace;font-size:24px;color:var(--mut);letter-spacing:.04em}
 .src{position:absolute;top:1560px;left:96px;font-family:"JetBrains Mono",monospace;font-size:22px;color:var(--mut);letter-spacing:.03em}
+.credit{position:absolute;top:1598px;left:96px;font-family:"JetBrains Mono",monospace;font-size:19px;color:var(--mut);opacity:.72;letter-spacing:.02em}
 .pbar{position:absolute;left:0;bottom:0;height:10px;width:1080px;background:rgba(255,255,255,.10)}
 .pfill{position:absolute;left:0;bottom:0;height:10px;width:1080px;background:linear-gradient(90deg,var(--red),var(--amber));transform-origin:left center}
 .scene{position:absolute;inset:0}
@@ -101,7 +102,7 @@ html,body{width:1080px;height:1920px;overflow:hidden;background:var(--bg3);font-
 .big{font-family:"Anton",sans-serif;font-size:62px;line-height:1.18;text-transform:uppercase}
 .chip{display:inline-flex;gap:14px;align-items:baseline;background:var(--bg2);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:22px 30px;font-size:38px;font-weight:700;margin:10px 14px 0 0}
 .chip .n{font-family:"Anton",sans-serif;font-size:56px;color:var(--amber);line-height:.8}
-.brand{font-family:"Anton",sans-serif;font-size:92px;text-transform:uppercase}.brand .emr{color:var(--red)}
+.brand{font-family:"Anton",sans-serif;font-size:92px;text-transform:uppercase;color:var(--red)}.brand .emr{color:var(--red)}
 .stat{font-family:"Anton",sans-serif;font-size:300px;line-height:.86;color:var(--amber)}
 </style></head><body>
 '''
@@ -248,6 +249,7 @@ def build(video_dir, spec):
     sfx_vol = spec.get("sfx_vol", 0.5)
     # nhạc nền: LUÂN PHIÊN kho nhạc — ưu tiên kho riêng kênh (_assets/music), nếu không có → kho ĐÓNG GÓI trong mẫu
     # (assets/music, nhiều track tin tức). Seed xoay = spec["bgm_seed"] (tiêu đề, do render.mjs cấp) vì WORK dir cố định.
+    music_credit = ""  # ghi nguồn nhạc THEO TRACK THẬT — chỉ nhạc CC BY (inc-*) mới cần; Pixabay để trống
     bgm_dst = os.path.join(audio_dir, "bgm.mp3")
     if not os.path.exists(bgm_dst):
         ch_music = os.path.join(os.path.dirname(os.path.abspath(video_dir)), "_assets", "music")
@@ -268,6 +270,10 @@ def build(video_dir, spec):
             src = BGM_SRC  # fallback dùng chung
         if os.path.exists(src):
             subprocess.run(["cp", src, bgm_dst])
+            if os.path.basename(src).lower().startswith("inc-"):
+                music_credit = "Kevin MacLeod (incompetech.com) · CC BY 4.0"
+    # ghi credit nhạc ra file để render.mjs nối vào caption (đồng bộ với credit trên video)
+    open(os.path.join(video_dir, "music_credit.txt"), "w", encoding="utf-8").write(music_credit)
 
     # 3) HTML
     is_ad = spec.get("theme") == "ad"
@@ -284,10 +290,13 @@ def build(video_dir, spec):
                   + (f'<div class="ribbon">{spec["ribbon"]}</div>' if spec.get("ribbon") else '')
                   + '<div class="pbar"></div><div class="pfill" id="pfill"></div>')
     else:
+        _mr = spec.get("mr", "")   # góc trên-phải ĐỂ TRỐNG (loại tin đã ở góc trái); KHÔNG lặp nguồn, KHÔNG để ngày
+        _credit_html = f'<div class="credit">🎵 Nhạc: {music_credit}</div>' if music_credit else ''
         chrome = (f'<div class="mast"><span class="dot"></span><span class="tag">{spec.get("mast_a","TIN")} <b>{spec.get("mast_b","KINH DOANH")}</b></span></div>'
-                  f'<div class="mr">{spec.get("mr", spec.get("source",""))}</div>'
-                  f'<div class="src">Nguồn: {spec.get("source","")}</div>'
-                  f'<div class="pbar"></div><div class="pfill" id="pfill"></div>')
+                  + (f'<div class="mr">{_mr}</div>' if _mr else '')
+                  + f'<div class="src">Nguồn: {spec.get("source","")}</div>'
+                  + _credit_html
+                  + '<div class="pbar"></div><div class="pfill" id="pfill"></div>')
     html.append(f'<div class="layer clip" data-start="0" data-duration="{total}" data-track-index="2">{chrome}</div>')
     ti = 3
     anims = []

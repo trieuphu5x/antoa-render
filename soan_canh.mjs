@@ -90,9 +90,9 @@ if (SHOTS.length) {
   } else console.log('• Ảnh chụp không dùng được → text/stat');
 } else console.log('• Không có ảnh chụp → text/stat');
 
-// NGUỒN THẬT: masthead góc trên (mr) + "Nguồn:" dưới đều lấy đúng nguồn (bỏ mặc định VnExpress). Rỗng → để trống.
+// NGUỒN: chỉ hiện DƯỚI ĐÁY ("Nguồn:"). Góc trên-phải ĐỂ TRỐNG — loại tin đã ở góc trái (mỗi loại 1 màu),
+// KHÔNG để ngày (tránh khách tưởng tin cũ → giảm giữ chân). Boss chốt 2026-09-03.
 spec.source = SOURCE;
-spec.mr = SOURCE;
 // Danh mục masthead theo palette (thay "KINH DOANH" cứng cho mọi tin).
 const CAT = { hot: 'NÓNG', launch: 'CÔNG NGHỆ', creative: 'SÁNG TẠO', biz: 'KINH DOANH', research: 'NGHIÊN CỨU' };
 spec.mast_a = spec.mast_a || 'TIN';

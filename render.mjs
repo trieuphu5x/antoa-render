@@ -82,14 +82,24 @@ try {
   const sents = prose.split(/(?<=[.!?…])\s+/).map((s) => s.trim()).filter(Boolean);
   const body = sents.slice(0, title ? 2 : 3).join(' ').trim();                        // title + tối đa 2 câu ≈ 3 câu
   const capText = [title, body, tags.join(' ')].map((s) => s.trim()).filter(Boolean).join('\n\n').slice(0, 500);
-  // GHI NGUỒN NHẠC (Incompetech CC BY 4.0 có trong kho xoay) — thêm SAU caption, không tính vào giới hạn 3 câu.
-  const MUSIC_CREDIT = '🎵 Nhạc: Kevin MacLeod (incompetech.com) · CC BY 4.0';
-  writeFileSync(join(HERE, 'caption.txt'), capText + '\n\n' + MUSIC_CREDIT);
+  // Caption KHÔNG kèm credit nhạc ở đây — credit phụ thuộc track THỰC TẾ (build.py chọn).
+  // Sẽ đọc music_credit.txt SAU render rồi mới nối (chỉ khi track cần ghi nguồn → đồng bộ credit trên video).
+  writeFileSync(join(HERE, 'caption.txt'), capText);
   console.log(`[render] caption ${capText.length}c · ${sents.length}→${Math.min(sents.length, title ? 2 : 3)} câu · ${tags.length} hashtag`);
 } catch (e) { /* bỏ qua */ }
 const sceneInfo = isNews ? `${spec.scenes.length} cảnh · palette=${spec.palette}` : (spec.scenes ? `${spec.scenes.length} cảnh` : `${(spec.script || []).length || '?'} câu`);
 console.log(`[render] mẫu=${tpl.name} · ${sceneInfo} · giọng=${VOICE}`);
 run('python3', [entry, WORK, join(WORK, 'spec.json'), '--render'], { cwd: pkgDir });
+
+// NỐI CREDIT NHẠC vào caption — CHỈ khi track thực tế cần ghi nguồn (build.py ghi music_credit.txt).
+try {
+  const mc = readFileSync(join(WORK, 'music_credit.txt'), 'utf8').trim();
+  if (mc) {
+    const cur = readFileSync(join(HERE, 'caption.txt'), 'utf8');
+    writeFileSync(join(HERE, 'caption.txt'), cur + '\n\n🎵 Nhạc: ' + mc);
+    console.log('[render] caption += credit nhạc: ' + mc);
+  }
+} catch (e) { /* không có credit → bỏ qua */ }
 
 // ---- 5) tìm MP4 render mới nhất trong work → out.mp4 ----
 function newestMp4(dir) {
