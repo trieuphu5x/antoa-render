@@ -6,13 +6,13 @@ name: ANTOA Evergreen (hunt + phoi)
 # workflow_dispatch = Boss bấm tay TEST. Nhẹ (chỉ node + fetch, KHÔNG ffmpeg/chromium).
 on:
   repository_dispatch:
-    types: [evergreen-hunt, evergreen-phoi]
+    types: [evergreen-hunt, evergreen-phoi, evergreen-auto]
   workflow_dispatch:
     inputs:
       action:
-        description: "hunt hoặc phoi"
+        description: "hunt / phoi / auto"
         type: choice
-        options: [hunt, phoi]
+        options: [hunt, phoi, auto]
         default: hunt
       keywords:
         description: "(hunt) từ khoá, cách nhau dấu phẩy"
@@ -95,6 +95,32 @@ jobs:
             '{kind:"evergreen-phoi", jobId:$jobId, sourceId:$sourceId, secret:$secret, script:$script, hasTranscript:($hasTranscript=="1")}' \
           | curl -sS -X POST "${{ github.event.client_payload.callback }}" -H 'content-type: application/json' -d @-
 
+      # ===================== SẢN XUẤT AUTO =====================
+      - name: AUTO (random 2key×3 → gate → chống trùng → top1 → phối)
+        if: ${{ env.ACTION == 'auto' }}
+        env:
+          PER_KEYWORD: "3"
+          MIN_SCORE: "4"
+          KW_JSON: ${{ github.event.client_payload.keywords && toJSON(github.event.client_payload.keywords) || '' }}
+          KW_CSV: ${{ github.event.inputs.keywords }}
+          PRODUCED_TITLES: ${{ github.event.client_payload.producedTitles && toJSON(github.event.client_payload.producedTitles) || '[]' }}
+        run: |
+          if [ -n "$KW_JSON" ]; then export KEYWORDS="$KW_JSON";
+          else export KEYWORDS=$(python3 -c "import json,os;print(json.dumps([s.strip() for s in os.environ.get('KW_CSV','').split(',') if s.strip()]))"); fi
+          echo "KEYWORDS=$KEYWORDS"
+          node evergreen_auto.mjs
+
+      - name: Callback AUTO về Tower
+        if: ${{ env.ACTION == 'auto' && github.event_name == 'repository_dispatch' && github.event.client_payload.callback != '' }}
+        run: |
+          jq -n --slurpfile r auto.json \
+            --arg jobId "${{ github.event.client_payload.jobId }}" \
+            --arg brandId "${{ github.event.client_payload.brandId }}" \
+            --arg workflowId "${{ github.event.client_payload.workflowId }}" \
+            --arg secret "${{ secrets.RENDER_CALLBACK_SECRET }}" \
+            '{kind:"evergreen-auto", jobId:$jobId, brandId:$brandId, workflowId:$workflowId, secret:$secret, result:$r[0]}' \
+          | curl -sS -X POST "${{ github.event.client_payload.callback }}" -H 'content-type: application/json' -d @-
+
       # Test tay → xuất kết quả ra artifact để Boss tải xem
       - name: Xuất kết quả (test tay)
         if: ${{ github.event_name == 'workflow_dispatch' }}
@@ -105,5 +131,6 @@ jobs:
             candidates.json
             script.txt
             has_transcript.txt
+            auto.json
           if-no-files-found: ignore
           retention-days: 7
