@@ -32,7 +32,7 @@ ${IMG_BLOCK}
 JSON dạng:
 {
  "palette": "<một trong: hot|launch|creative|biz|research — chọn theo LOẠI tin: hot=drama/an ninh, launch=ra mắt/model mới, creative=phim-ảnh-nghệ thuật AI, biz=thị trường/kinh doanh, research=nghiên cứu>",
- "caption": {"title":"<tiêu đề đăng, 1 dòng>", "desc":"<caption đăng: TỐI ĐA 2 câu ngắn gọn + 4-5 hashtag. TUYỆT ĐỐI KHÔNG nhồi toàn bộ nội dung/kịch bản vào đây>"},
+ "caption": {"title":"<TIÊU ĐỀ chuẩn SEO cho Facebook & YouTube: TIẾNG VIỆT, 1 dòng, ĐẶT TỪ KHOÁ/tên chủ thể QUAN TRỌNG NHẤT LÊN ĐẦU (vd tên model/hãng/công nghệ), có yếu tố người-hay-tìm + hấp dẫn (con số/kết quả/'mới nhất'/'vừa ra mắt'…), 50-90 ký tự, KHÔNG hashtag, KHÔNG dấu ngoặc kép, KHÔNG viết HOA toàn bộ>", "desc":"<caption đăng: TỐI ĐA 2 câu ngắn gọn + 4-5 hashtag. TUYỆT ĐỐI KHÔNG nhồi toàn bộ nội dung/kịch bản vào đây>"},
  "scenes": [
    {"id":"s1","inner":"<HTML cảnh HOOK>","vo":"<lời đọc cảnh 1>"},
    ... các cảnh giữa ...,
