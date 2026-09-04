@@ -1,0 +1,109 @@
+name: ANTOA Evergreen (hunt + phoi)
+
+# CF Worker (Tower) chỉ đạo qua repository_dispatch; runner Mỹ làm việc (Claude không 403 + Supadata transcript).
+#  - evergreen-hunt: săn YouTube (viewCount 30 ngày) + outlier(views/subs) + Claude phân tích swipe → callback candidates.
+#  - evergreen-phoi: Supadata transcript + Claude viết kịch bản 2-3' → callback script.
+# workflow_dispatch = Boss bấm tay TEST. Nhẹ (chỉ node + fetch, KHÔNG ffmpeg/chromium).
+on:
+  repository_dispatch:
+    types: [evergreen-hunt, evergreen-phoi]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "hunt hoặc phoi"
+        type: choice
+        options: [hunt, phoi]
+        default: hunt
+      keywords:
+        description: "(hunt) từ khoá, cách nhau dấu phẩy"
+        default: "AI Agent kinh doanh, AI thay nhân viên"
+      videoUrl:
+        description: "(phoi) link YouTube"
+        default: "https://youtu.be/aircAruvnKk"
+      brandName:
+        default: "Agent Thực Chiến"
+      niche:
+        default: "ứng dụng AI Agent vào kinh doanh sản phẩm số và công việc"
+
+jobs:
+  evergreen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLAUDE_KEY: ${{ secrets.CLAUDE_API_KEY }}
+      CLAUDE_MODEL: ${{ secrets.CLAUDE_MODEL }}
+      YT_KEY: ${{ secrets.YT_KEY }}
+      SUPADATA_KEY: ${{ secrets.SUPADATA_KEY }}
+      BRAND_NAME: ${{ github.event.client_payload.brandName || github.event.inputs.brandName }}
+      NICHE: ${{ github.event.client_payload.niche || github.event.inputs.niche }}
+      PERSONA: ${{ github.event.client_payload.persona }}
+      SLOGAN: ${{ github.event.client_payload.slogan }}
+      REGION: ${{ github.event.client_payload.region || 'vn' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+
+      - name: Chuẩn hoá ACTION (repository_dispatch → bỏ tiền tố evergreen-)
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            echo "ACTION=${{ github.event.action }}" | sed 's/evergreen-//' >> "$GITHUB_ENV"
+          else
+            echo "ACTION=${{ github.event.inputs.action }}" >> "$GITHUB_ENV"
+          fi
+
+      # ===================== SĂN =====================
+      - name: SĂN (hunt)
+        if: ${{ env.ACTION == 'hunt' }}
+        env:
+          PER_KEYWORD: ${{ github.event.client_payload.perKeyword || '2' }}
+          OUTLIER_MIN: ${{ github.event.client_payload.outlierMin || '0' }}
+          KW_JSON: ${{ github.event.client_payload.keywords && toJSON(github.event.client_payload.keywords) || '' }}
+          KW_CSV: ${{ github.event.inputs.keywords }}
+        run: |
+          if [ -n "$KW_JSON" ]; then export KEYWORDS="$KW_JSON";
+          else export KEYWORDS=$(python3 -c "import json,os;print(json.dumps([s.strip() for s in os.environ.get('KW_CSV','').split(',') if s.strip()]))"); fi
+          echo "KEYWORDS=$KEYWORDS"
+          node evergreen_hunt.mjs
+
+      - name: Callback SĂN về Tower
+        if: ${{ env.ACTION == 'hunt' && github.event_name == 'repository_dispatch' && github.event.client_payload.callback != '' }}
+        run: |
+          jq -n --slurpfile r candidates.json \
+            --arg jobId "${{ github.event.client_payload.jobId }}" \
+            --arg brandId "${{ github.event.client_payload.brandId }}" \
+            --arg secret "${{ secrets.RENDER_CALLBACK_SECRET }}" \
+            '{kind:"evergreen-hunt", jobId:$jobId, brandId:$brandId, secret:$secret, result:$r[0]}' \
+          | curl -sS -X POST "${{ github.event.client_payload.callback }}" -H 'content-type: application/json' -d @-
+
+      # ===================== PHỐI =====================
+      - name: PHỐI (phoi)
+        if: ${{ env.ACTION == 'phoi' }}
+        env:
+          VIDEO_URL: ${{ github.event.client_payload.videoUrl || github.event.inputs.videoUrl }}
+          SWIPE: ${{ github.event.client_payload.swipe && toJSON(github.event.client_payload.swipe) || '{"hook":"","cau_truc":"","tai_sao_thang":"","goi_y_remix":""}' }}
+        run: node evergreen_phoi.mjs
+
+      - name: Callback PHỐI về Tower
+        if: ${{ env.ACTION == 'phoi' && github.event_name == 'repository_dispatch' && github.event.client_payload.callback != '' }}
+        run: |
+          jq -n --rawfile script script.txt \
+            --arg hasTranscript "$(cat has_transcript.txt 2>/dev/null || echo 0)" \
+            --arg jobId "${{ github.event.client_payload.jobId }}" \
+            --arg sourceId "${{ github.event.client_payload.sourceId }}" \
+            --arg secret "${{ secrets.RENDER_CALLBACK_SECRET }}" \
+            '{kind:"evergreen-phoi", jobId:$jobId, sourceId:$sourceId, secret:$secret, script:$script, hasTranscript:($hasTranscript=="1")}' \
+          | curl -sS -X POST "${{ github.event.client_payload.callback }}" -H 'content-type: application/json' -d @-
+
+      # Test tay → xuất kết quả ra artifact để Boss tải xem
+      - name: Xuất kết quả (test tay)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: evergreen-out
+          path: |
+            candidates.json
+            script.txt
+            has_transcript.txt
+          if-no-files-found: ignore
+          retention-days: 7
