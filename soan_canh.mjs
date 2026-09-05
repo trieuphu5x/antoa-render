@@ -108,6 +108,15 @@ try {
   }
 } catch (e) { /* bỏ qua */ }
 
+// #8 TIÊU ĐỀ KHÔNG RỖNG: YouTube BẮT BUỘC title — rỗng → video "unknown" + mất caption/hashtag ở Short.
+//    Claude thỉnh thoảng trả caption.title rỗng → ép fallback: TITLE nguồn → câu đầu desc → mặc định.
+spec.caption = spec.caption || {};
+if (!String(spec.caption.title || '').trim()) {
+  const fromDesc = String(spec.caption.desc || '').replace(/#[\p{L}0-9_]+/gu, ' ').replace(/\s+/g, ' ').trim().split(/(?<=[.!?…])\s+/)[0] || '';
+  spec.caption.title = (String(TITLE || '').trim() || fromDesc || 'AI Có Gì Mới').slice(0, 90);
+  console.log(`⚠️ caption.title RỖNG → fallback: "${spec.caption.title}"`);
+}
+
 spec.tts = process.env.SPEC_TTS || 'edge';
 if (process.env.SPEC_VOICE) spec.voice = process.env.SPEC_VOICE;
 writeFileSync('spec.json', JSON.stringify(spec, null, 2));
