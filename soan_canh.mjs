@@ -17,6 +17,20 @@ try { if (existsSync('shots/manifest.json')) SHOTS = (JSON.parse(readFileSync('s
 const cardH = (s) => Math.max(80, Math.min(340, Math.round(770 * (s.h || 150) / (s.w || 770))));   // cao hiển thị (card rộng 770px)
 const cardTag = 'BÀI GỐC' + (SOURCE ? ' · ' + SOURCE.toUpperCase() : '');
 const cardHtml = (file, h) => `<div class="card anim"><div class="tab">${cardTag}</div><img src="assets/img/${file}" style="width:770px;height:${h}px" /></div>`;
+// 🩹 FIX "dán sai vị trí ảnh": ép MỌI thẻ .card nằm TRONG <div class="mid"> (haiku hay đặt card SAU </div> đóng mid →
+// card position:relative rơi lên đỉnh scene, ĐÈ masthead "TIN NÓNG"). Gỡ card ra rồi chèn lại vào cuối .mid → luôn ở vùng nội dung.
+function ensureCardInMid(inner) {
+  inner = String(inner || '');
+  const cardRe = /<div class="card[^>]*">[\s\S]*?<img[^>]*>\s*<\/div>/g;
+  const cards = inner.match(cardRe) || [];
+  if (!cards.length) return inner;
+  const rest = inner.replace(cardRe, '').trim();
+  if (/^<div class="mid[^>]*>[\s\S]*<\/div>\s*$/.test(rest)) {
+    return rest.replace(/<\/div>\s*$/, cards.join('') + '</div>');   // chèn card vào cuối .mid (trong vùng nội dung)
+  }
+  const body = rest.replace(/^<div class="mid[^>]*>/, '').replace(/<\/div>\s*$/, '');   // gỡ mid lỗi/không chuẩn
+  return `<div class="mid">${body}${cards.join('')}</div>`;           // bọc lại sạch, card nằm trong
+}
 const IMG_BLOCK = SHOTS.length ? `
 CÓ ${SHOTS.length} ẢNH CHỤP BÀI GỐC (dán vào cảnh bằng thẻ .card — TĂNG ĐỘ TIN CẬY):
 ${SHOTS.map((s, i) => `- Ảnh ${i + 1} (${s.kind === 'title' ? 'TIÊU ĐỀ' : 'đoạn'}): dán NGUYÊN ${cardHtml(s.file, cardH(s))}`).join('\n')}
@@ -47,7 +61,7 @@ LUẬT viết "inner" (BẮT BUỘC, chỉ dùng các class này):
 - Tiêu đề cảnh: <div class="head h-md anim">Chữ chính <span class="emr">nhấn ĐỎ/CAM</span></div>  (dùng <span class="em">…</span> nhấn màu phụ; xuống dòng bằng <br/> khi cần, tránh mồ côi 1 từ).
 - Câu diễn giải: <div class="lede anim">1 câu ngắn, dễ hiểu cho người Việt.</div>
 - Cảnh cuối (sO): dùng <div class="brand anim">${BRAND_LABEL}</div>.
-- KHÔNG dùng class/thẻ khác. ${SHOTS.length ? 'ẢNH: CHỈ dùng qua thẻ .card đã cho ở trên (giữ nguyên src+style).' : 'KHÔNG dùng ảnh, KHÔNG style inline.'}
+- KHÔNG dùng class/thẻ khác. ${SHOTS.length ? 'ẢNH: CHỈ dùng qua thẻ .card đã cho ở trên (giữ nguyên src+style). BẮT BUỘC đặt thẻ .card BÊN TRONG <div class="mid">…</div> (là phần tử con cuối) — TUYỆT ĐỐI KHÔNG đặt sau thẻ </div> đóng .mid, nếu không ảnh sẽ rơi lên đỉnh đè tiêu đề.' : 'KHÔNG dùng ảnh, KHÔNG style inline.'}
 - "vo" = lời đọc tự nhiên tiếng Việt (1 câu/cảnh), KHÔNG chứa HTML.
 - An toàn nền tảng: KHÔNG hứa thu nhập/mốc thời gian/comment-bait/thổi phồng, KHÔNG ký tự < > trong text hiển thị (dùng "trên/dưới").
 Chỉ in JSON.`;
@@ -89,6 +103,15 @@ if (SHOTS.length) {
     console.log(`✓ Ảnh bài gốc: ${usable.length}/${SHOTS.length} — ảnh đầu "${first.file}" ở cảnh hook (thumbnail)`);
   } else console.log('• Ảnh chụp không dùng được → text/stat');
 } else console.log('• Không có ảnh chụp → text/stat');
+
+// 🩹 CHUẨN HOÁ vị trí ảnh cho MỌI cảnh: ép .card vào trong .mid (chống card đè masthead — Boss báo khung 20h 2026-09-05).
+let fixedCards = 0;
+for (const sc of spec.scenes) {
+  const before = sc.inner;
+  sc.inner = ensureCardInMid(sc.inner);
+  if (sc.inner !== before) fixedCards++;
+}
+if (fixedCards) console.log(`✓ Chuẩn hoá vị trí ảnh: ${fixedCards} cảnh (ép .card vào .mid, không đè masthead)`);
 
 // NGUỒN: chỉ hiện DƯỚI ĐÁY ("Nguồn:"). Góc trên-phải ĐỂ TRỐNG — loại tin đã ở góc trái (mỗi loại 1 màu),
 // KHÔNG để ngày (tránh khách tưởng tin cũ → giảm giữ chân). Boss chốt 2026-09-03.
