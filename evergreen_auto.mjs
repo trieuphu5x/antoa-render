@@ -13,6 +13,7 @@ const p = {
   slogan: process.env.SLOGAN || '',
   region: process.env.REGION || 'vn',
   producedTitles: (JSON.parse(process.env.PRODUCED_TITLES || '[]')).map((s) => String(s || '')),
+  seenUrls: (JSON.parse(process.env.SEEN_URLS || '[]')).map((s) => String(s || '')),   // MỌI video evergreen đã săn (produced+hunted) → chặn trùng đúng video
   perKeyword: Math.max(1, Math.min(5, Number(process.env.PER_KEYWORD) || 3)),   // 3 bài/key (Boss chốt)
   minScore: Math.max(1, Math.min(5, Number(process.env.MIN_SCORE) || 4)),       // độ_hợp ≥4
 };
@@ -23,6 +24,10 @@ const titleWords = (t) => new Set(String(t || '').toLowerCase().replace(/[^\p{L}
 const overlap = (a, b) => { let n = 0; for (const w of a) if (b.has(w)) n++; return n; };
 const producedW = p.producedTitles.map(titleWords);
 const isDup = (title) => { const w = titleWords(title); if (w.size < 2) return false; for (const ew of producedW) { const ov = overlap(w, ew); if (ov >= 4 || (ov >= 3 && 2 * ov >= Math.min(w.size, ew.size))) return true; } return false; };
+// Trùng ĐÚNG video: so video-id YouTube (né youtu.be/watch?v/shorts) với mọi video đã săn trước → không lấy lại bài hôm trước.
+const vidId = (u) => { const m = String(u || '').match(/(?:v=|youtu\.be\/|\/shorts\/|\/embed\/)([\w-]{11})/); return m ? m[1] : String(u || '').trim(); };
+const seenIds = new Set(p.seenUrls.map(vidId));
+const isSeen = (url) => seenIds.has(vidId(url));
 
 const shuffle = (arr) => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
@@ -44,6 +49,7 @@ const main = async () => {
     const passed = [];
     for (const c of cands) {
       try {
+        if (isSeen(c.url)) { console.log(`  ✗ ĐÃ SĂN/SẢN XUẤT trước (trùng video) — ${c.title.slice(0, 45)}`); continue; }
         const a = await phanTichClaude(c, sys);
         const score = Number(a.do_phu_hop) || 0;
         const onTopic = a.dung_chu_de === true || a.dung_chu_de === 'true' || a.dung_chu_de === 1;

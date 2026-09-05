@@ -104,6 +104,7 @@ jobs:
           KW_JSON: ${{ github.event.client_payload.keywords && toJSON(github.event.client_payload.keywords) || '' }}
           KW_CSV: ${{ github.event.inputs.keywords }}
           PRODUCED_TITLES: ${{ github.event.client_payload.producedTitles && toJSON(github.event.client_payload.producedTitles) || '[]' }}
+          SEEN_URLS: ${{ github.event.client_payload.seenUrls && toJSON(github.event.client_payload.seenUrls) || '[]' }}
           BRAND_NAME: ${{ github.event.client_payload.meta.brandName }}
           NICHE: ${{ github.event.client_payload.meta.niche }}
           PERSONA: ${{ github.event.client_payload.meta.persona }}
