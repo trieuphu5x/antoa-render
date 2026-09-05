@@ -1,5 +1,5 @@
 // ANTOA — Evergreen SẢN XUẤT AUTO (Boss chốt logic) — 1 job làm TRỌN trên GitHub runner Mỹ.
-// random 2 từ khoá × 3 bài = 6 → swipe (do_phu_hop + dung_chu_de theo TIÊU ĐỀ, free) → lọc ≥4 & đúng chủ đề →
+// random 2 từ khoá × 3 bài = 6 → swipe (do_phu_hop + dung_chu_de theo TIÊU ĐỀ, free) → lọc ≥8/10 & đúng chủ đề →
 // chống trùng vs video đã sản xuất → nếu cặp key trùng/rỗng thì thử CẶP KHÁC → TOP 1 (điểm; bằng điểm→view) →
 // CHỈ top 1 qua Supadata (transcript) → kịch bản. Trả về chosen+script, hoặc none nếu ngày đó không có tin.
 import { writeFileSync } from 'node:fs';
@@ -15,7 +15,7 @@ const p = {
   producedTitles: (JSON.parse(process.env.PRODUCED_TITLES || '[]')).map((s) => String(s || '')),
   seenUrls: (JSON.parse(process.env.SEEN_URLS || '[]')).map((s) => String(s || '')),   // MỌI video evergreen đã săn (produced+hunted) → chặn trùng đúng video
   perKeyword: Math.max(1, Math.min(5, Number(process.env.PER_KEYWORD) || 3)),   // 3 bài/key (Boss chốt)
-  minScore: Math.max(1, Math.min(5, Number(process.env.MIN_SCORE) || 4)),       // độ_hợp ≥4
+  minScore: Math.max(1, Math.min(10, Number(process.env.MIN_SCORE) || 8)),      // độ_hợp ≥8/10 (thang 1-10 như News/Trend)
 };
 
 // ---- chống trùng theo SỰ KIỆN (word-overlap, port từ hunt.js) ----
@@ -54,11 +54,11 @@ const main = async () => {
         const a = await phanTichClaude(c, sys);
         const score = Number(a.do_phu_hop) || 0;
         const onTopic = a.dung_chu_de === true || a.dung_chu_de === 'true' || a.dung_chu_de === 1;
-        if (score < p.minScore) { console.log(`  ✗ ${score}/5 (dưới ${p.minScore}) — ${c.title.slice(0, 45)}`); continue; }
+        if (score < p.minScore) { console.log(`  ✗ ${score}/10 (dưới ${p.minScore}) — ${c.title.slice(0, 45)}`); continue; }
         if (!onTopic) { console.log(`  ✗ lệch chủ đề (tiêu đề) — ${c.title.slice(0, 45)}`); continue; }
         if (isDup(c.title)) { console.log(`  ✗ TRÙNG video đã sản xuất — ${c.title.slice(0, 45)}`); continue; }
         passed.push({ ...c, do_phu_hop: score, hook: a.hook || '', cau_truc: a.cau_truc || '', tai_sao_thang: a.tai_sao_thang || '', goi_y_remix: a.goi_y_remix || '' });
-        console.log(`  ✓ ${score}/5 [${c.outlier}] — ${c.title.slice(0, 45)}`);
+        console.log(`  ✓ ${score}/10 [${c.outlier}] — ${c.title.slice(0, 45)}`);
       } catch (e) { console.error('  swipe lỗi:', e.message); }
     }
     if (passed.length) {
@@ -69,7 +69,7 @@ const main = async () => {
 
   if (!chosen) { writeFileSync('auto.json', JSON.stringify({ ok: true, none: true, reason: 'không có tin ĐẠT (≥' + p.minScore + ' + đúng chủ đề + không trùng) sau khi thử ' + pairs.length + ' cặp từ khoá' })); console.log('➡️ KHÔNG có tin để phối hôm nay'); return; }
 
-  console.log(`🏆 TOP 1: [${chosen.outlier} · ${chosen.do_phu_hop}/5] ${chosen.title}`);
+  console.log(`🏆 TOP 1: [${chosen.outlier} · ${chosen.do_phu_hop}/10] ${chosen.title}`);
   const swipe = { hook: chosen.hook, cau_truc: chosen.cau_truc, tai_sao_thang: chosen.tai_sao_thang, goi_y_remix: chosen.goi_y_remix };
   const transcript = await layTranscript(chosen.url);   // CHỈ top 1 tốn Supadata
   console.log('transcript:', transcript ? transcript.length + ' ký tự' : 'KHÔNG có (fallback hook+cấu trúc)');

@@ -100,7 +100,7 @@ jobs:
         if: ${{ env.ACTION == 'auto' }}
         env:
           PER_KEYWORD: "3"
-          MIN_SCORE: "4"
+          MIN_SCORE: "8"
           KW_JSON: ${{ github.event.client_payload.keywords && toJSON(github.event.client_payload.keywords) || '' }}
           KW_CSV: ${{ github.event.inputs.keywords }}
           PRODUCED_TITLES: ${{ github.event.client_payload.producedTitles && toJSON(github.event.client_payload.producedTitles) || '[]' }}

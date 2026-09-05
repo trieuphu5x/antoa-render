@@ -77,11 +77,11 @@ export function SYSTEM_PROMPT(p) {
     ' "hook":"Viết lại hook 3 giây mở đầu bằng tiếng Việt, giữ đúng chiêu bản gốc (open loop / phản trực giác / gọi thẳng đối tượng / promise + mốc thời gian)",\n' +
     ' "cau_truc":"Mạch mở→thân→chốt, 3-5 bước ngắn",\n' +
     ' "tai_sao_thang":"Nỗi đau/khao khát nó chạm — 1-2 câu",\n' +
-    ' "do_phu_hop": (số 1-5),\n' +
+    ' "do_phu_hop": (số 1-10),\n' +
     ' "dung_chu_de": (true nếu TIÊU ĐỀ thuộc đúng niche "' + niche + '"; false nếu lệch — vd phim ngôn tình/drama "tổng tài/CEO", giải trí, tin lá cải... CHỈ nhìn TIÊU ĐỀ để quyết),\n' +
     ' "goi_y_remix":"Cách phối: giữ hook+cấu trúc; nội dung TÔN VINH GIÁ TRỊ CỐT LÕI của niche nói chung, KHÔNG khen ' + brand + ' liên tục; chỉ gợi ý chèn ' + brand + ' nhẹ như một lựa chọn giải pháp nếu thật sự hợp"\n' +
     '}\n' +
-    'Quy tắc: viết giọng thương hiệu câu ngắn; chấm do_phu_hop thẳng tay, lệch niche cho <=2; dung_chu_de=false khi tiêu đề rõ ràng không thuộc niche.';
+    'Quy tắc: viết giọng thương hiệu câu ngắn; chấm do_phu_hop thẳng tay theo THANG 1-10 (10=cực hợp, 1=lạc hẳn), lệch niche cho <=4; dung_chu_de=false khi tiêu đề rõ ràng không thuộc niche.';
 }
 export function POST_PROMPT(p) {
   const brand = p.brandName || 'thương hiệu';

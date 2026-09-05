@@ -43,6 +43,6 @@ const main = async () => {
   const result = { ok: true, candidates: out, scanned: cands.length };
   writeFileSync('candidates.json', JSON.stringify(result));
   console.log('✅ SĂN xong:', out.length, 'candidate /', cands.length, 'quét');
-  for (const c of out) console.log(`  • [${c.outlier} · hợp ${c.do_phu_hop}/5] ${c.title.slice(0, 60)}`);
+  for (const c of out) console.log(`  • [${c.outlier} · hợp ${c.do_phu_hop}/10] ${c.title.slice(0, 60)}`);
 };
 main().catch((e) => { console.error('FATAL:', e); writeFileSync('candidates.json', JSON.stringify({ ok: false, err: String(e) })); process.exit(1); });
