@@ -54,11 +54,13 @@ JSON: { "num":"01", "caption":{"title":"<TIÊU ĐỀ SEO tiếng Việt 1 dòng:
 "caption": để đăng lên Telegram/FB/YT/TikTok — title = tiêu đề SEO tiếng Việt; desc = caption ngắn + hashtag.
 "script": 12-16 câu, MỖI CÂU = 1 slide, ngắn gọn khẩu ngữ có nhịp; câu 1 = HOOK; câu cuối = chốt + gợi hành động mềm. Bám nghề AI Agent. KHÔNG hứa thu nhập/mốc thời gian/comment-bait, KHÔNG kí tự < >.
 
-"slides" — QUY TẮC (ưu tiên ĐÚNG THỨ TỰ này):
-- ƯU TIÊN SỐ 1 — HỢP NỘI DUNG: mỗi câu (sceneNo = vị trí câu 1-based) → chọn kiểu slide KHỚP Ý câu đó (bảng dưới). Câu kể/dẫn dắt/không hợp kiểu nào → ĐỂ TRỐNG (tự thành text slide). TUYỆT ĐỐI KHÔNG ép câu vào kiểu không hợp chỉ để cho đa dạng — thà để text slide còn hơn gán sai kiểu.
-- BẢNG CHỌN KIỂU THEO NỘI DUNG: có số/tỉ lệ → STAT/TRIO/PROGRESS/DONUT/BARS; liệt kê mục → CHECKLIST/STEPS/COUNTDOWN; quy trình/vòng lặp → FLOW/STEPS/LOOP; so sánh/trước-sau → COMPARE/SPLIT/TRANSFORM/PROSCONS; định nghĩa → DEFINITION; nhấn mạnh/trích/lệnh → BIGTEXT/CALLOUT/TAKEAWAY/QUOTE/TERMINAL; sơ đồ/quan hệ → HUB/ORBIT/FORMULA/MATRIX/FUNNEL/TAGS/TIMELINE/RANKING/GRID/CHAT.
-- ĐA DẠNG là PHỤ (KHÔNG ép): nhờ nội dung khác nhau, video tự nhiên ra nhiều kiểu. CHỈ khi 1 câu hợp NHIỀU kiểu ngang nhau thì ưu tiên kiểu chưa dùng (đỡ lặp look + khác video khác theo hạt giống ${nonce}). Tránh lặp 1 kiểu quá 2-3 lần NẾU vẫn còn kiểu khác cũng hợp.
-- ⚠️ ĐỊNH DẠNG args PHẢI CHÍNH XÁC 100% theo bảng: field cách bằng " :: ", item cách bằng " | ", lõi/kết-quả cách bằng " >> ". Mỗi ô PHẢI có CHỮ THẬT (không để trống, không "/", không dấu suông). VD ORBIT = "Doanh nghiệp >> Agent bán | Agent chăm | Agent phân tích" (BẮT BUỘC có " >> " tách lõi khỏi vệ tinh). HUB/FORMULA/PROSCONS cũng BẮT BUỘC " >> ". CALLOUT/STAT/TAKEAWAY/DEFINITION… phải đủ chữ 2 vế qua " :: ". NẾU KHÔNG chắc điền đúng định dạng cho 1 câu → ĐỂ TRỐNG cả dòng slide đó (thành text slide) — thà text còn hơn slide VỠ/RỖNG.
+"slides" — QUY TẮC:
+- 🎯 MỤC TIÊU: HẦU HẾT câu PHẢI có kiểu slide ĐỒ HOẠ — tối thiểu 10/14 câu (≥70%). Gần như câu nào CŨNG có 1 kiểu hình hợp; ĐỪNG dồn câu vào text cho "an toàn". CHỈ để TRỐNG (text slide) TỐI ĐA 2-3 câu kể chuyện/dẫn dắt thuần, không có ý cụ thể.
+- CÂU 1 (HOOK) & CÂU CHỐT: dùng BIGTEXT hoặc CALLOUT (KHÔNG để text thường — đây là câu quan trọng nhất).
+- CHỌN KIỂU THEO Ý CÂU (sceneNo = vị trí câu 1-based): số/tỉ lệ→STAT/TRIO/PROGRESS/DONUT/BARS; liệt kê/nhiều mục→CHECKLIST/STEPS/COUNTDOWN/GRID/TAGS; quy trình/vòng lặp→FLOW/STEPS/LOOP; so sánh/trước-sau→COMPARE/SPLIT/TRANSFORM/PROSCONS; định nghĩa→DEFINITION; cảnh báo/vấn đề/rủi ro/tưởng tượng tình huống→CALLOUT; điều ghi nhớ/lợi ích→TAKEAWAY; trích/tuyên bố mạnh→QUOTE/BIGTEXT; lệnh/thao tác/đối thoại→TERMINAL/CHAT; sơ đồ/quan hệ→HUB/ORBIT/FORMULA/MATRIX/FUNNEL/TIMELINE/RANKING.
+- ĐA DẠNG: tránh lặp 1 kiểu quá 2-3 lần nếu còn kiểu khác cũng hợp; câu hợp nhiều kiểu → ưu tiên kiểu chưa dùng (hạt giống ${nonce}).
+- ĐỊNH DẠNG args CHÍNH XÁC 100%: field " :: ", item " | ", lõi/kết-quả " >> ". Mỗi ô có CHỮ THẬT (không rỗng, không "/", không dấu suông). VD ORBIT = "Doanh nghiệp >> Agent bán | Agent chăm | Agent phân tích" (BẮT BUỘC " >> " tách lõi khỏi vệ tinh); HUB/FORMULA/PROSCONS BẮT BUỘC " >> "; CALLOUT/STAT/TAKEAWAY/DEFINITION đủ 2 vế qua " :: ".
+- KHÔNG CHẮC kiểu phức tạp? → CHỌN KIỂU ĐƠN GIẢN CHẮC ĐÚNG (BIGTEXT/STAT/TAKEAWAY/CALLOUT/CHECKLIST/QUOTE) — VẪN là hình, ĐỪNG bỏ về text. Chỉ để trống khi câu thật sự không có ý gì để minh hoạ.
 
 ${SLIDES_CATALOG}
 KHÔNG kí tự < > trong args. Chỉ in JSON.`;
