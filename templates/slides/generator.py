@@ -120,8 +120,24 @@ def main():
     for item in ("hyperframes.json", "package.json", "meta.json"):
         dst = os.path.join(folder, item)
         if not os.path.exists(dst): shutil.copy(os.path.join(tmpl, item), dst)
-    if not os.path.exists(os.path.join(folder, "audio/bgm.mp3")):
-        shutil.copy(os.path.join(tmpl, "audio/bgm.mp3"), os.path.join(folder, "audio/bgm.mp3"))
+    # NHẠC NỀN: DÙNG CHUNG kho nhạc News (newsroom/assets/music) — XOAY theo tiêu đề (FNV-1a) + credit CC BY (inc-*).
+    # Trước chỉ 1 track cố định; nay mỗi video 1 nhạc khác như News. Fallback track đóng gói nếu thiếu kho.
+    music_credit = ""
+    bgm_dst = os.path.join(folder, "audio/bgm.mp3")
+    if not os.path.exists(bgm_dst):
+        news_music = os.path.join(HERE, "..", "newsroom", "assets", "music")
+        tracks = sorted(f for f in os.listdir(news_music) if f.lower().endswith(".mp3")) if os.path.isdir(news_music) else []
+        if tracks:
+            seed = str(os.environ.get("TITLE") or (sents[0] if sents else "") or args.num)
+            _h = 2166136261
+            for _c in seed:
+                _h = ((_h ^ ord(_c)) * 16777619) & 0xFFFFFFFF   # FNV-1a: phân bố đều (khớp News)
+            src = os.path.join(news_music, tracks[_h % len(tracks)])
+            shutil.copy(src, bgm_dst)
+            if os.path.basename(src).lower().startswith("inc-"): music_credit = "Kevin MacLeod (incompetech.com) · CC BY 4.0"
+        elif os.path.exists(os.path.join(tmpl, "audio/bgm.mp3")):
+            shutil.copy(os.path.join(tmpl, "audio/bgm.mp3"), bgm_dst)
+    open(os.path.join(folder, "music_credit.txt"), "w", encoding="utf-8").write(music_credit)
     # SFX chuyển cảnh — kho DÙNG CHUNG sab-video-studio/sfx/ (sfx1-5.mp3), copy vào audio/ nếu chưa có
     _sfxsrc = os.path.join(ASSETS, "sfx")
     for k in range(1, 6):
