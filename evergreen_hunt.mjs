@@ -1,7 +1,7 @@
 // ANTOA — Evergreen SĂN (bước ① Kho Swipe) — chạy trên GitHub Actions runner Mỹ.
 // Đọc env → YouTube săn (viewCount 30 ngày) + outlier(views/subs) + Claude phân tích swipe → ghi candidates.json.
 import { writeFileSync } from 'node:fs';
-import { timKiemYouTube, SYSTEM_PROMPT, phanTichClaude } from './evergreen_lib.mjs';
+import { timKiemYouTube, SYSTEM_PROMPT, phanTichClaude, translateKeywordsEn } from './evergreen_lib.mjs';
 
 const p = {
   keywords: JSON.parse(process.env.KEYWORDS || '[]'),
@@ -14,13 +14,14 @@ const p = {
 };
 
 const main = async () => {
-  const keywords = p.keywords.map((s) => String(s).trim()).filter(Boolean);
+  let keywords = p.keywords.map((s) => String(s).trim()).filter(Boolean);
   if (!keywords.length) { console.error('❌ thiếu KEYWORDS'); writeFileSync('candidates.json', JSON.stringify({ ok: false, err: 'thiếu keywords' })); process.exit(1); }
+  if (p.region === 'world') { const en = await translateKeywordsEn(keywords); if (en && en.length) { console.log('🌐 world → từ khoá EN:', en.join(', ')); keywords = en; } }   // dịch tại backend (CF 403)
   const sys = SYSTEM_PROMPT(p);
 
   const cands = [];
   for (const kw of keywords) {
-    try { for (const v of await timKiemYouTube(kw, p.perKeyword)) cands.push(v); }
+    try { for (const v of await timKiemYouTube(kw, p.perKeyword, p.region)) cands.push(v); }
     catch (e) { console.error('YT lỗi [' + kw + ']:', e.message); }
   }
 

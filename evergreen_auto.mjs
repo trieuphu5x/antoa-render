@@ -3,7 +3,7 @@
 // chống trùng vs video đã sản xuất → nếu cặp key trùng/rỗng thì thử CẶP KHÁC → TOP 1 (điểm; bằng điểm→view) →
 // CHỈ top 1 qua Supadata (transcript) → kịch bản. Trả về chosen+script, hoặc none nếu ngày đó không có tin.
 import { writeFileSync } from 'node:fs';
-import { timKiemYouTube, SYSTEM_PROMPT, phanTichClaude, layTranscript, POST_PROMPT, phoiClaude } from './evergreen_lib.mjs';
+import { timKiemYouTube, SYSTEM_PROMPT, phanTichClaude, layTranscript, POST_PROMPT, phoiClaude, translateKeywordsEn } from './evergreen_lib.mjs';
 
 const p = {
   keywords: (JSON.parse(process.env.KEYWORDS || '[]')).map((s) => String(s).trim()).filter(Boolean),
@@ -33,6 +33,7 @@ const shuffle = (arr) => { const a = arr.slice(); for (let i = a.length - 1; i >
 
 const main = async () => {
   if (!p.keywords.length) { writeFileSync('auto.json', JSON.stringify({ ok: true, none: true, reason: 'brand chưa có từ khoá' })); return; }
+  if (p.region === 'world') { const en = await translateKeywordsEn(p.keywords); if (en && en.length) { console.log('🌐 world → từ khoá EN:', en.join(', ')); p.keywords = en; } }   // dịch tại backend (CF 403)
   const sys = SYSTEM_PROMPT(p);
   // Chia từ khoá thành các CẶP 2 (đã trộn ngẫu nhiên) → thử từng cặp tới khi có winner (tránh trùng/lặp video).
   const kws = shuffle(p.keywords);
@@ -44,7 +45,7 @@ const main = async () => {
   for (const pair of pairs) {
     if (chosen) break;
     let cands = [];
-    for (const kw of pair) { try { for (const v of await timKiemYouTube(kw, p.perKeyword)) if (!seenUrl.has(v.url)) { seenUrl.add(v.url); cands.push(v); } } catch (e) { console.error('YT lỗi [' + kw + ']:', e.message); } }
+    for (const kw of pair) { try { for (const v of await timKiemYouTube(kw, p.perKeyword, p.region)) if (!seenUrl.has(v.url)) { seenUrl.add(v.url); cands.push(v); } } catch (e) { console.error('YT lỗi [' + kw + ']:', e.message); } }
     console.log(`Cặp [${pair.join(', ')}] → ${cands.length} bài`);
     const passed = [];
     for (const c of cands) {

@@ -14,10 +14,11 @@ async function getJSON(url) {
 }
 
 // ===================== SĂN (bước ① Kho Swipe) =====================
-export async function timKiemYouTube(keyword, max) {
+export async function timKiemYouTube(keyword, max, region) {
   const after = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();   // 30 NGÀY (Evergreen)
+  const bias = region === 'world' ? '&relevanceLanguage=en&regionCode=US' : '';   // world → ưu tiên video global tiếng Anh (né video Việt nhiễu)
   const url = 'https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&order=viewCount&maxResults=' + max +
-    '&publishedAfter=' + encodeURIComponent(after) + '&q=' + encodeURIComponent(keyword) + '&key=' + YT_KEY();
+    '&publishedAfter=' + encodeURIComponent(after) + '&q=' + encodeURIComponent(keyword) + bias + '&key=' + YT_KEY();
   const items = (await getJSON(url)).items || [];
   const out = [];
   for (const it of items) { const v = await layChiTietVideo(it.id.videoId); if (v) out.push(v); }
@@ -122,6 +123,17 @@ async function callClaude(system, user, maxTokens) {
 export async function phanTichClaude(c, sys) {
   const txt = await callClaude(sys, c.noidung, 1024);
   return JSON.parse(txt.slice(txt.indexOf('{'), txt.lastIndexOf('}') + 1));
+}
+// Dịch từ khoá VN→EN — CHẠY BACKEND (Claude không 403 như trên CF Workers). Cho region 'world' săn nguồn global.
+export async function translateKeywordsEn(keywords) {
+  const kws = (keywords || []).map((k) => String(k).trim()).filter(Boolean);
+  if (!kws.length) return [];
+  try {
+    const out = await callClaude('Bạn là trợ lý dịch thuật ngữ chuyên ngành.',
+      `Dịch các CỤM TỪ KHOÁ sau sang tiếng Anh (đúng thuật ngữ, ngắn gọn, dễ ra kết quả YouTube). Mỗi cụm 1 dòng, KHÔNG đánh số, KHÔNG giải thích:\n${kws.join('\n')}`, 300);
+    const lines = String(out || '').split('\n').map((s) => s.replace(/^[-*\d.)\s]+/, '').trim()).filter(Boolean);
+    return lines.length ? lines.slice(0, kws.length) : kws;
+  } catch (e) { return kws; }
 }
 export async function phoiClaude(swipe, transcript, videoUrl, sys) {
   const user = 'HOOK: ' + (swipe.hook || '') + '\nCẤU TRÚC: ' + (swipe.cau_truc || '') + '\nTẠI SAO THẮNG: ' + (swipe.tai_sao_thang || '') +
