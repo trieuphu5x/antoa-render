@@ -101,6 +101,8 @@ jobs:
           TITLE: ${{ github.event.client_payload.title || github.event.inputs.title }}
           SCRIPT: ${{ github.event.client_payload.script || github.event.inputs.article }}
           VOICE: ${{ github.event.client_payload.voice || github.event.inputs.voice }}
+          BRAND_LABEL: ${{ github.event.client_payload.meta.brandLabel }}
+          SLOGAN: ${{ github.event.client_payload.meta.slogan }}
           VBEE_APP_ID: ${{ secrets.VBEE_APP_ID }}
           VBEE_TOKEN: ${{ secrets.VBEE_TOKEN }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}

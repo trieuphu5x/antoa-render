@@ -15,6 +15,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ASSETS = os.path.join(HERE, "assets")
 CHANNEL = ASSETS            # gói tự chứa: _template/_slides-catalog/image nằm trong assets/
 FFPROBE = os.environ.get("FFPROBE", "ffprobe")
+# THƯƠNG HIỆU đa-tenant: masthead/outro lấy từ workflow (BRAND_LABEL/SLOGAN), KHÔNG hardcode "Agent Thực Chiến"/SAB.
+BRAND_LABEL = (os.environ.get("BRAND_LABEL") or "").strip() or "ANTOA"
+SLOGAN = (os.environ.get("SLOGAN") or "").strip()
 sys.path.insert(0, HERE)   # slidelib + vbee_tts cạnh generator
 
 PAD_LEAD, PAD_TAIL, OUTRO = 0.15, 0.25, 3.4
@@ -69,19 +72,13 @@ def build_scene(i, s, d, ti, sent, spec, variant):
     return _wrap(i, s, d, ti, inner), [f'enter("#s{i}",{round(s+0.2,3)},{A_enter()});']
 
 def build_outro(i, s, d, ti, sab_img=False):
-    if sab_img:  # nhắc nhẹ bộ SAB bằng ảnh sơ đồ 8 Agent ở cuối video
-        inner = ('<div style="position:absolute;left:96px;right:174px;top:452px;text-align:center">'
-                 '<div class="anim" style="font-family:\'JetBrains Mono\';font-size:26px;letter-spacing:.3em;color:var(--cyan)">AGENT THỰC CHIẾN</div>'
-                 '<div class="anim" style="margin:26px auto 0;width:726px;border-radius:28px;overflow:hidden;border:1px solid rgba(61,231,218,.32);box-shadow:0 0 54px rgba(61,231,218,.22)">'
-                 '<img src="assets/sab.png" style="width:100%;display:block"/></div>'
-                 '<div class="sub anim" style="margin-top:34px;text-align:center">Trọn hệ thống trong <span class="em">Super Agent Business</span>.</div>'
-                 '<div class="anim" style="margin-top:16px;font-family:\'JetBrains Mono\';font-size:26px;letter-spacing:.14em;color:var(--muted)">Theo dõi để không bỏ lỡ →</div></div>')
-    else:
-        inner = ('<div style="position:absolute;left:96px;right:174px;top:660px;text-align:center">'
-                 '<div class="anim" style="font-family:\'JetBrains Mono\';font-size:30px;letter-spacing:.34em;color:var(--cyan)">AI AGENT</div>'
-                 '<div class="head anim glow" style="position:static;margin-top:18px;font-size:118px;text-align:center">Agent <span class="em">Thực Chiến</span></div>'
-                 '<div class="sub anim" style="margin-top:28px;text-align:center">Tự động hoá việc kinh doanh của bạn.</div>'
-                 '<div class="anim" style="margin-top:40px;font-family:\'JetBrains Mono\';font-size:26px;letter-spacing:.14em;color:var(--muted)">Theo dõi để không bỏ lỡ →</div></div>')
+    # Cảnh cuối = THƯƠNG HIỆU của workflow (BRAND_LABEL + SLOGAN). KHÔNG ảnh SAB, KHÔNG hardcode Agent Thực Chiến.
+    bl = html.escape(BRAND_LABEL)
+    sub = f'<div class="sub anim" style="margin-top:28px;text-align:center">{html.escape(SLOGAN)}</div>' if SLOGAN else ''
+    inner = ('<div style="position:absolute;left:96px;right:174px;top:660px;text-align:center">'
+             f'<div class="head anim glow" style="position:static;margin-top:18px;font-size:96px;line-height:1.08;text-align:center">{bl}</div>'
+             f'{sub}'
+             '<div class="anim" style="margin-top:40px;font-family:\'JetBrains Mono\';font-size:26px;letter-spacing:.14em;color:var(--muted)">Theo dõi để không bỏ lỡ →</div></div>')
     return _wrap(i, s, d, ti, inner), [f'enter("#s{i}",{round(s+0.3,3)},{{stagger:0.14}});']
 
 def parse_slides(path):
@@ -131,11 +128,7 @@ def main():
         _s = os.path.join(_sfxsrc, f"sfx{k}.mp3"); _d = os.path.join(folder, f"audio/sfx{k}.mp3")
         if os.path.exists(_s) and not os.path.exists(_d): shutil.copy(_s, _d)
     for f in os.listdir(os.path.join(folder, "renders")): os.remove(os.path.join(folder, "renders", f))
-    # Ảnh bộ SAB cho outro (nhắc nhẹ SAB cuối video) — copy vào assets nếu có nguồn
-    sab_src = os.path.join(CHANNEL, "image/sab.png")
-    has_sab = os.path.exists(sab_src)
-    if has_sab:
-        shutil.copy(sab_src, os.path.join(folder, "assets/sab.png"))
+    # (Bỏ ảnh SAB ở cảnh cuối — đa-tenant dùng BRAND_LABEL/SLOGAN của workflow, không nhét brand SAB.)
 
     # ===== SPEC SLIDE: <folder>/slides.txt (sceneNo | TYPE | pill | args). Cảnh không spec -> text slide =====
     spec = parse_slides(os.path.join(folder, "slides.txt"))
@@ -172,7 +165,7 @@ def main():
         hh, aa = build_scene(i, s, d, track, sent, sp, variant)
         scenes.append(hh); anims += aa; track += 1
     oi = N + 1
-    hh, aa = build_outro(oi, S[oi], SD[oi], track, sab_img=has_sab); scenes.append(hh); anims += aa; track += 1
+    hh, aa = build_outro(oi, S[oi], SD[oi], track); scenes.append(hh); anims += aa; track += 1
     audios = []
     for i in range(1, N + 1):
         audios.append(f'      <audio id="a{i}" src="audio/s{i}.mp3" data-start="{A[i]}" data-duration="{L[i-1]}" data-track-index="{track}" data-volume="1"></audio>'); track += 1
@@ -207,8 +200,8 @@ def main():
       </div>
       <div class="layer frame clip" id="bgFrame" data-start="0" data-duration="{TOTAL}" data-track-index="3">
         <div class="rt"></div><div class="rb"></div><div class="cn c1"></div><div class="cn c2"></div>
-        <div class="mast"><span class="dot">◇</span> AGENT THỰC <b>CHIẾN</b></div><div class="mr">{args.num}</div>
-        <div class="ft">AI Agent · Thực Chiến</div>
+        <div class="mast"><span class="dot">◇</span> {html.escape(BRAND_LABEL)}</div><div class="mr">{args.num}</div>
+        <div class="ft">{html.escape(BRAND_LABEL)}</div>
       </div>
 
 {chr(10).join(scenes)}
