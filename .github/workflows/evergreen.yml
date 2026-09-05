@@ -104,6 +104,11 @@ jobs:
           KW_JSON: ${{ github.event.client_payload.keywords && toJSON(github.event.client_payload.keywords) || '' }}
           KW_CSV: ${{ github.event.inputs.keywords }}
           PRODUCED_TITLES: ${{ github.event.client_payload.producedTitles && toJSON(github.event.client_payload.producedTitles) || '[]' }}
+          BRAND_NAME: ${{ github.event.client_payload.meta.brandName }}
+          NICHE: ${{ github.event.client_payload.meta.niche }}
+          PERSONA: ${{ github.event.client_payload.meta.persona }}
+          SLOGAN: ${{ github.event.client_payload.meta.slogan }}
+          REGION: ${{ github.event.client_payload.meta.region }}
         run: |
           if [ -n "$KW_JSON" ]; then export KEYWORDS="$KW_JSON";
           else export KEYWORDS=$(python3 -c "import json,os;print(json.dumps([s.strip() for s in os.environ.get('KW_CSV','').split(',') if s.strip()]))"); fi
