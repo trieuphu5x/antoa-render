@@ -90,7 +90,7 @@ export function POST_PROMPT(p) {
     'Nhiệm vụ: từ 1 nội dung đang viral, viết 1 KỊCH BẢN VIDEO (TikTok/Reels/YouTube) DÀI 2-3 PHÚT, giọng đọc tiếng Việt.\n\n' +
     '📐 ĐỊNH DẠNG ĐẦU RA (BẮT BUỘC — pipeline dựng video đọc theo đây):\n' +
     '- Kịch bản là MỘT DÃY CÂU, MỖI CÂU 1 DÒNG, và MỖI CÂU = MỘT CẢNH.\n' +
-    '- ĐỘ DÀI MỤC TIÊU: đủ cho video 2-3 PHÚT — thường 20-35 câu (~2200-3300 ký tự tiếng Việt). ĐỪNG viết ngắn hơn mức này.\n' +
+    '- ĐỘ DÀI: 25-35 câu (video 2-3 PHÚT, ~2200-3300 ký tự tiếng Việt). **TỐI ĐA 35 CÂU — TUYỆT ĐỐI KHÔNG vượt 35.** Nội dung nhiều thì CÔ ĐỌNG lại cho gọn trong 35 câu (giữ ý chính + ví dụ đắt nhất, bỏ ý phụ/trùng lặp), KHÔNG viết lan man cũng KHÔNG cắt cụt giữa chừng. Đừng viết dưới 25 câu.\n' +
     '- Dài bằng GIÁ TRỊ THẬT: khai thác SÂU nội dung gốc — giữ nhiều ý, thêm ví dụ cụ thể, tách từng bước rõ ràng. TUYỆT ĐỐI KHÔNG nhồi chữ lặp lại hay nói vòng cho đủ giờ.\n' +
     '- Mỗi câu NGẮN, gọn 1 ý, đọc lên tự nhiên & mạnh (dễ làm chữ trên màn hình).\n' +
     '- CÂU ĐẦU = HOOK 3 giây (phản trực giác / gọi thẳng đối tượng / câu hỏi kích thích tò mò). KHÔNG hook kiểu "hứa thu nhập + mốc thời gian".\n' +

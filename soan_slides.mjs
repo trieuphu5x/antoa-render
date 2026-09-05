@@ -1,5 +1,5 @@
 // Soạn SPEC cho mẫu "slides" (Agent Thực Chiến) → spec.json cho templates/slides/build.py.
-// TRIẾT LÝ: 30 kiểu slide → mỗi video TRỘN nhiều kiểu khác nhau (không lặp look). Có nonce để 2 video khác nhau.
+// TRIẾT LÝ (Boss chốt): mỗi CÂU → CHỌN kiểu slide HỢP nội dung câu đó (KHÔNG random/ép câu vào kiểu). Nội dung đa dạng → video tự nhiên nhiều kiểu. Nonce chỉ để 2 video CÙNG chủ đề đỡ giống nhau.
 import { writeFileSync } from 'node:fs';
 
 const KEY = process.env.CLAUDE_API_KEY;
@@ -52,11 +52,10 @@ JSON: { "num":"01", "script":["câu 1", ... 12-16 câu ...], "slides":["<sceneNo
 
 "script": 12-16 câu, MỖI CÂU = 1 slide, ngắn gọn khẩu ngữ có nhịp; câu 1 = HOOK; câu cuối = chốt + gợi hành động mềm. Bám nghề AI Agent. KHÔNG hứa thu nhập/mốc thời gian/comment-bait, KHÔNG kí tự < >.
 
-"slides" — TRIẾT LÝ QUAN TRỌNG (đừng để video nào cũng giống nhau):
-- Gán 1 kiểu slide cho ÍT NHẤT 70% số câu (sceneNo = vị trí câu 1-based). Câu kể/chuyển tiếp thì để trống (tự thành text slide).
-- Dùng NHIỀU kiểu KHÁC NHAU: tối thiểu 8 kiểu phân biệt trong 1 video; KHÔNG lặp 1 kiểu quá 2 lần.
-- Chọn kiểu HỢP nội dung: có số → STAT/TRIO/PROGRESS/DONUT/BARS; liệt kê → CHECKLIST/STEPS/COUNTDOWN; quy trình → FLOW/STEPS/LOOP; so sánh → COMPARE/SPLIT/TRANSFORM/PROSCONS; định nghĩa → DEFINITION; nhấn mạnh → BIGTEXT/CALLOUT/TAKEAWAY/QUOTE/TERMINAL; sơ đồ → HUB/ORBIT/FORMULA/MATRIX/FUNNEL/TAGS/TIMELINE/RANKING/GRID/CHAT.
-- Với hạt giống trên, hãy ĐA DẠNG lựa chọn để 2 video cùng chủ đề vẫn khác nhau.
+"slides" — QUY TẮC (ưu tiên ĐÚNG THỨ TỰ này):
+- ƯU TIÊN SỐ 1 — HỢP NỘI DUNG: mỗi câu (sceneNo = vị trí câu 1-based) → chọn kiểu slide KHỚP Ý câu đó (bảng dưới). Câu kể/dẫn dắt/không hợp kiểu nào → ĐỂ TRỐNG (tự thành text slide). TUYỆT ĐỐI KHÔNG ép câu vào kiểu không hợp chỉ để cho đa dạng — thà để text slide còn hơn gán sai kiểu.
+- BẢNG CHỌN KIỂU THEO NỘI DUNG: có số/tỉ lệ → STAT/TRIO/PROGRESS/DONUT/BARS; liệt kê mục → CHECKLIST/STEPS/COUNTDOWN; quy trình/vòng lặp → FLOW/STEPS/LOOP; so sánh/trước-sau → COMPARE/SPLIT/TRANSFORM/PROSCONS; định nghĩa → DEFINITION; nhấn mạnh/trích/lệnh → BIGTEXT/CALLOUT/TAKEAWAY/QUOTE/TERMINAL; sơ đồ/quan hệ → HUB/ORBIT/FORMULA/MATRIX/FUNNEL/TAGS/TIMELINE/RANKING/GRID/CHAT.
+- ĐA DẠNG là PHỤ (KHÔNG ép): nhờ nội dung khác nhau, video tự nhiên ra nhiều kiểu. CHỈ khi 1 câu hợp NHIỀU kiểu ngang nhau thì ưu tiên kiểu chưa dùng (đỡ lặp look + khác video khác theo hạt giống ${nonce}). Tránh lặp 1 kiểu quá 2-3 lần NẾU vẫn còn kiểu khác cũng hợp.
 
 ${SLIDES_CATALOG}
 KHÔNG kí tự < > trong args. Chỉ in JSON.`;
