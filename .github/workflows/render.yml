@@ -66,6 +66,8 @@ jobs:
       - name: Chụp ảnh bài gốc (2-3 ảnh, ảnh đầu làm thumbnail)
         if: ${{ github.event.client_payload.meta.url != '' }}
         continue-on-error: true
+        env:
+          IMG_MODE: ${{ github.event.client_payload.meta.imgMode }}   # 'article' = Tin tức VN: tải ẢNH BÀI BÁO (og:image) thay chụp chữ
         run: node chup.mjs "${{ github.event.client_payload.meta.url }}" shots 2
 
       # AI SOẠN CẢNH CHẠY Ở ĐÂY (runner Mỹ) — vì Anthropic trả 403 "Request not allowed" cho request

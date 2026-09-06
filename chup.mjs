@@ -9,6 +9,7 @@ import { join } from 'node:path';
 const URL = process.argv[2] || '';
 const OUT = process.argv[3] || 'shots';
 const NPARA = Math.max(1, Math.min(3, Number(process.argv[4]) || 2));   // Boss: 2-3 ảnh cho video ~1 phút
+const IMG_MODE = process.env.IMG_MODE || '';   // 'article' = TIN TỨC VN: tải ẢNH BÀI BÁO (og:image) thay chụp chữ
 const IMGDIR = join(OUT, 'img');
 const CONSENT = ['Agree', 'Accept all', 'Accept All', 'Accept', 'I agree', 'Consent', 'Got it', 'Đồng ý', 'OK', 'Allow all', 'Continue'];
 const score = (t) => { let s = 0; const n = t.length; if (n >= 90) s += 2; if (n >= 180) s += 1; if (/\d/.test(t)) s += 3; if (/[%$€]|billion|million|percent|\bAI\b|model/i.test(t)) s += 1; return s; };
@@ -29,6 +30,27 @@ async function run() {
       try { const btn = page.getByRole('button', { name: label, exact: false }); if (await btn.count() > 0) { await btn.first().click({ timeout: 1500 }); await page.waitForTimeout(400); break; } } catch (e) { /* thử nhãn khác */ }
     }
     await page.waitForTimeout(400);
+    // TIN TỨC VN (IMG_MODE=article): tải ẢNH BÀI BÁO (og:image) → hl.png. Lỗi → rơi xuống chụp chữ như thường.
+    if (IMG_MODE === 'article') {
+      try {
+        const ogUrl = await page.evaluate(() => {
+          const pick = (sel, attr) => { const e = document.querySelector(sel); return e ? (e.getAttribute(attr) || '') : ''; };
+          let u = pick('meta[property="og:image"]', 'content') || pick('meta[name="og:image"]', 'content') || pick('meta[name="twitter:image"]', 'content');
+          if (!u) { const im = [...document.querySelectorAll('article img, figure img, .fig-picture img, img')].find((i) => (i.naturalWidth || i.width || 0) >= 300); u = im ? (im.currentSrc || im.src || '') : ''; }
+          return u;
+        });
+        if (ogUrl && /^https?:\/\//.test(ogUrl)) {
+          const resp = await page.request.get(ogUrl, { timeout: 20000 });
+          if (resp.ok()) {
+            writeFileSync(join(IMGDIR, 'hl.png'), await resp.body());
+            manifest.shots.push({ file: 'hl.png', kind: 'article', w: 1200, h: 630 });   // og chuẩn ~1.91:1; card tự canh cao
+            console.log('chup: og:image → hl.png (ảnh bài báo)');
+            return done();
+          }
+        }
+        console.log('chup: không lấy được og:image → fallback chụp chữ');
+      } catch (e) { console.log('chup: og:image lỗi —', e.message, '→ fallback chụp chữ'); }
+    }
     // 1) TIÊU ĐỀ (hl.png) — ảnh ĐẦU TIÊN, sẽ đặt vào cảnh hook (0s) → làm thumbnail
     try {
       const h1 = page.locator('h1').first();
