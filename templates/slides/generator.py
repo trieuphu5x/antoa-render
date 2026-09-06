@@ -75,10 +75,10 @@ def build_outro(i, s, d, ti, sab_img=False):
     # Cảnh cuối = THƯƠNG HIỆU của workflow (BRAND_LABEL + SLOGAN). KHÔNG ảnh SAB, KHÔNG hardcode Agent Thực Chiến.
     bl = html.escape(BRAND_LABEL)
     sub = f'<div class="sub anim" style="margin-top:28px;text-align:center">{html.escape(SLOGAN)}</div>' if SLOGAN else ''
+    # Outro = HOÀN TOÀN theo workflow: chỉ Tên cuối (BRAND_LABEL) + Slogan. BỎ dòng hardcode "Theo dõi để không bỏ lỡ →".
     inner = ('<div style="position:absolute;left:96px;right:174px;top:660px;text-align:center">'
              f'<div class="head anim glow" style="position:static;margin-top:18px;font-size:96px;line-height:1.08;text-align:center">{bl}</div>'
-             f'{sub}'
-             '<div class="anim" style="margin-top:40px;font-family:\'JetBrains Mono\';font-size:26px;letter-spacing:.14em;color:var(--muted)">Theo dõi để không bỏ lỡ →</div></div>')
+             f'{sub}</div>')
     return _wrap(i, s, d, ti, inner), [f'enter("#s{i}",{round(s+0.3,3)},{{stagger:0.14}});']
 
 def parse_slides(path):
