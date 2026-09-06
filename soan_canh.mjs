@@ -20,7 +20,8 @@ let SHOTS = [];
 try { if (existsSync('shots/manifest.json')) SHOTS = (JSON.parse(readFileSync('shots/manifest.json', 'utf8')).shots || []); } catch (e) { SHOTS = []; }
 const cardH = (s) => Math.max(80, Math.min(340, Math.round(770 * (s.h || 150) / (s.w || 770))));   // cao hiển thị (card rộng 770px)
 const cardTag = 'BÀI GỐC' + (SOURCE ? ' · ' + SOURCE.toUpperCase() : '');
-const cardHtml = (file, h) => `<div class="card anim"><div class="tab">${cardTag}</div><img src="assets/img/${file}" style="width:770px;height:${h}px" /></div>`;
+// Ảnh THẬT của bài → nhãn "BÀI GỐC · nguồn"; ảnh bù → "ẢNH MINH HOẠ" (trung thực, không nhận vơ của báo).
+const cardHtml = (file, h, kind) => `<div class="card anim"><div class="tab">${kind === 'stock' ? 'ẢNH MINH HOẠ' : cardTag}</div><img src="assets/img/${file}" style="width:770px;height:${h}px" /></div>`;
 // 🩹 FIX "dán sai vị trí ảnh": ép MỌI thẻ .card nằm TRONG <div class="mid"> (haiku hay đặt card SAU </div> đóng mid →
 // card position:relative rơi lên đỉnh scene, ĐÈ masthead "TIN NÓNG"). Gỡ card ra rồi chèn lại vào cuối .mid → luôn ở vùng nội dung.
 function ensureCardInMid(inner) {
@@ -37,7 +38,7 @@ function ensureCardInMid(inner) {
 }
 const IMG_BLOCK = SHOTS.length ? `
 CÓ ${SHOTS.length} ẢNH CHỤP BÀI GỐC (dán vào cảnh bằng thẻ .card — TĂNG ĐỘ TIN CẬY):
-${SHOTS.map((s, i) => `- Ảnh ${i + 1} (${s.kind === 'title' ? 'TIÊU ĐỀ' : 'đoạn'}): dán NGUYÊN ${cardHtml(s.file, cardH(s))}`).join('\n')}
+${SHOTS.map((s, i) => `- Ảnh ${i + 1} (${s.kind === 'stock' ? 'MINH HOẠ' : s.kind === 'title' ? 'TIÊU ĐỀ' : 'BÀI GỐC'}): dán NGUYÊN ${cardHtml(s.file, cardH(s), s.kind)}`).join('\n')}
 LUẬT DÙNG ẢNH: ĐẶT ảnh đầu "${SHOTS[0].file}" VÀO CẢNH HOOK s1 (làm thumbnail) — s1 = <div class="mid">[head hook] + [thẻ .card ảnh đầu]</div>. Ảnh còn lại rải 1-2 cảnh giữa. Giữ NGUYÊN src+style, đặt TRONG <div class="mid">.
 ` : '';
 
@@ -130,10 +131,22 @@ if (SHOTS.length) {
   if (first && spec.scenes[0]) {
     const s1 = spec.scenes[0];
     if (!/class="card/.test(s1.inner || '')) {
-      const fc = cardHtml(first.file, cardH(first));
+      const fc = cardHtml(first.file, cardH(first), first.kind);
       s1.inner = /<\/div>\s*$/.test(s1.inner || '') ? s1.inner.replace(/<\/div>\s*$/, fc + '</div>') : `<div class="mid">${s1.inner || ''}${fc}</div>`;
     }
-    console.log(`✓ Ảnh bài gốc: ${usable.length}/${SHOTS.length} — ảnh đầu "${first.file}" ở cảnh hook (thumbnail)`);
+    // RẢI các ảnh còn lại (shot2..) vào những cảnh CHƯA có ảnh (bỏ outro sO) — QUAN TRỌNG cho VERBATIM (Claude không tự chèn).
+    const referenced = (f) => spec.scenes.some((sc) => (sc.inner || '').includes(f));
+    let placeIdx = 1;
+    for (const shot of usable.slice(1)) {
+      if (referenced(shot.file)) continue;
+      while (placeIdx < spec.scenes.length && (spec.scenes[placeIdx].id === 'sO' || /class="card/.test(spec.scenes[placeIdx].inner || ''))) placeIdx++;
+      if (placeIdx >= spec.scenes.length) break;
+      const sc = spec.scenes[placeIdx];
+      const fc = cardHtml(shot.file, cardH(shot), shot.kind);
+      sc.inner = /<\/div>\s*$/.test(sc.inner || '') ? sc.inner.replace(/<\/div>\s*$/, fc + '</div>') : `<div class="mid">${sc.inner || ''}${fc}</div>`;
+      placeIdx++;
+    }
+    console.log(`✓ Ảnh: ${usable.length}/${SHOTS.length} — ảnh đầu ở hook, còn lại rải vào các cảnh`);
   } else console.log('• Ảnh chụp không dùng được → text/stat');
 } else console.log('• Không có ảnh chụp → text/stat');
 

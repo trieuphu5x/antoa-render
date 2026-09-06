@@ -68,6 +68,9 @@ jobs:
         continue-on-error: true
         env:
           IMG_MODE: ${{ github.event.client_payload.meta.imgMode }}   # 'article' = Tin tức VN: tải ẢNH BÀI BÁO (og:image) thay chụp chữ
+          IMG_QUERY: ${{ github.event.client_payload.meta.brandkw }}   # từ khoá phụ để tìm ẢNH MINH HOẠ khi bài thiếu ảnh
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}                # bù ẢNH MINH HOẠ (đủ 3-4 ảnh dù bài ít ảnh)
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
         run: node chup.mjs "${{ github.event.client_payload.meta.url }}" shots 2
 
       # AI SOẠN CẢNH CHẠY Ở ĐÂY (runner Mỹ) — vì Anthropic trả 403 "Request not allowed" cho request
