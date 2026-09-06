@@ -142,14 +142,16 @@ jobs:
           DUR=$(cat duration.txt 2>/dev/null || echo 0); case "$DUR" in ''|*[!0-9.]*) DUR=0;; esac
           URL="${{ secrets.R2_PUBLIC_URL }}/$R2_KEY"
           CAP=$(cat caption.txt 2>/dev/null || echo "")
-          # jq dựng JSON an toàn (caption có xuống dòng/dấu ngoặc) — gửi kèm caption grounded + link video.
+          SCRIPT=$(cat script.txt 2>/dev/null || echo "")
+          # jq dựng JSON an toàn (caption/script có xuống dòng/dấu ngoặc) — gửi caption + KỊCH BẢN THẬT + link video.
           jq -n --arg jobId "${{ github.event.client_payload.jobId }}" \
                 --arg contentId "${{ github.event.client_payload.contentId }}" \
                 --arg outputUrl "$URL" \
                 --argjson durationSec "$DUR" \
                 --arg caption "$CAP" \
+                --arg script "$SCRIPT" \
                 --arg secret "${{ secrets.RENDER_CALLBACK_SECRET }}" \
-                '{jobId:$jobId,contentId:$contentId,status:"done",outputUrl:$outputUrl,durationSec:$durationSec,caption:$caption,secret:$secret}' \
+                '{jobId:$jobId,contentId:$contentId,status:"done",outputUrl:$outputUrl,durationSec:$durationSec,caption:$caption,script:$script,secret:$secret}' \
           | curl -sS -X POST "${{ github.event.client_payload.callback }}" -H 'content-type: application/json' -d @-
 
       - name: Callback lỗi (nếu Tower gọi)

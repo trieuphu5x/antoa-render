@@ -89,6 +89,15 @@ try {
 } catch (e) { /* bỏ qua */ }
 const sceneInfo = isNews ? `${spec.scenes.length} cảnh · palette=${spec.palette}` : (spec.scenes ? `${spec.scenes.length} cảnh` : `${(spec.script || []).length || '?'} câu`);
 console.log(`[render] mẫu=${tpl.name} · ${sceneInfo} · giọng=${VOICE}`);
+// #FIX KỊCH BẢN: ghi KỊCH BẢN THẬT (câu AI sinh) → callback gửi về Tower lưu vào content → "Sửa kịch bản" luôn có nội dung.
+try {
+  let lines = [];
+  if (Array.isArray(spec.script)) lines = spec.script;                                        // slides/phunu/broll = mảng câu
+  else if (Array.isArray(spec.scenes)) lines = spec.scenes.map((s) => s && s.vo).filter(Boolean);   // newsroom = lời đọc từng cảnh
+  const scriptTxt = lines.map((s) => String(s).trim()).filter(Boolean).join('\n');
+  writeFileSync(join(HERE, 'script.txt'), scriptTxt);
+  console.log(`[render] script.txt: ${lines.length} câu (gửi về Tower)`);
+} catch (e) { console.error('[render] script.txt lỗi (bỏ qua):', e.message); }
 run('python3', [entry, WORK, join(WORK, 'spec.json'), '--render'], { cwd: pkgDir });
 
 // NỐI CREDIT NHẠC vào caption — CHỈ khi track thực tế cần ghi nguồn (build.py ghi music_credit.txt).
