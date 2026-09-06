@@ -10,6 +10,10 @@ const BRANDKW = process.env.BRANDKW || 'AI Agent, tự động hoá';
 const BRAND_LABEL = (process.env.BRAND_LABEL || '').trim() || 'ANTOA';                       // tên hiện cuối video (theo workflow)
 const SLOGAN = (process.env.SLOGAN || '').trim() || 'Theo dõi để cập nhật mỗi ngày.';        // slogan cuối video (theo workflow)
 const SOURCE = (process.env.SOURCE || '').trim();                                            // NGUỒN THẬT (masthead góc trên + "Nguồn:" dưới) — KHÔNG mặc định VnExpress
+const IMG_MODE = (process.env.IMG_MODE || '').trim();                                        // 'article' = TIN TỨC VN → video DÀI hơn (~85s) vì bài VN dày số liệu
+const VERBATIM = process.env.VERBATIM === '1';                                               // 1 = dùng ĐÚNG NGUYÊN VĂN kịch bản Boss đã sửa (ARTICLE = kịch bản), KHÔNG để Claude viết lại lời
+const NSCENES = IMG_MODE === 'article' ? '10-12' : '7-8';                                    // VN: 10-12 cảnh (~85s); News: 7-8 (~60s) — GIỮ NGUYÊN
+const MAXTOK = IMG_MODE === 'article' ? 3800 : 2600;                                         // VN nhiều cảnh → nới token
 
 // #1 ẢNH BÀI GỐC: đọc manifest do chup.mjs ghi (nếu chụp thành công). Ảnh ĐẦU (hl.png) vào cảnh HOOK → thumbnail.
 let SHOTS = [];
@@ -37,7 +41,7 @@ ${SHOTS.map((s, i) => `- Ảnh ${i + 1} (${s.kind === 'title' ? 'TIÊU ĐỀ' : 
 LUẬT DÙNG ẢNH: ĐẶT ảnh đầu "${SHOTS[0].file}" VÀO CẢNH HOOK s1 (làm thumbnail) — s1 = <div class="mid">[head hook] + [thẻ .card ảnh đầu]</div>. Ảnh còn lại rải 1-2 cảnh giữa. Giữ NGUYÊN src+style, đặt TRONG <div class="mid">.
 ` : '';
 
-const PROMPT = `Bạn là biên tập viên video tin ngắn 9:16 (kênh kiểu "AI Có Gì Mới"). Việt hoá tin dưới đây thành KỊCH BẢN VIDEO gồm 7-8 CẢNH, trả về DUY NHẤT một JSON hợp lệ (không markdown, không giải thích).
+const PROMPT = `Bạn là biên tập viên video tin ngắn 9:16 (kênh kiểu "AI Có Gì Mới"). Việt hoá tin dưới đây thành KỊCH BẢN VIDEO gồm ${NSCENES} CẢNH${IMG_MODE === 'article' ? ' (tin Việt Nam nhiều số liệu — khai thác SÂU, mỗi cảnh 1 ý/1 con số rõ, KHÔNG lặp; đủ dày cho video ~85 giây)' : ''}, trả về DUY NHẤT một JSON hợp lệ (không markdown, không giải thích).
 
 TIN: "${TITLE}"
 NỘI DUNG GỐC: """${ARTICLE.slice(0, 2400)}"""
@@ -66,20 +70,49 @@ LUẬT viết "inner" (BẮT BUỘC, chỉ dùng các class này):
 - An toàn nền tảng: KHÔNG hứa thu nhập/mốc thời gian/comment-bait/thổi phồng, KHÔNG ký tự < > trong text hiển thị (dùng "trên/dưới").
 Chỉ in JSON.`;
 
-const r = await fetch('https://api.anthropic.com/v1/messages', {
-  method: 'POST',
-  headers: { 'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-  body: JSON.stringify({ model: MODEL, max_tokens: 2600, messages: [{ role: 'user', content: PROMPT }] }),
-});
-if (!r.ok) { console.error(`❌ Claude ${r.status}:`, (await r.text().catch(() => '')).slice(0, 300)); process.exit(1); }
-const j = await r.json();
-const raw = (j?.content || []).map((b) => b.text || '').join('');
-const m = raw.match(/\{[\s\S]*\}/);
-if (!m) { console.error('❌ Không parse được JSON:', raw.slice(0, 300)); process.exit(1); }
-const spec = JSON.parse(m[0]);
+// ===== VERBATIM: dùng ĐÚNG NGUYÊN VĂN kịch bản Boss sửa (ARTICLE = kịch bản) — KHÔNG để Claude viết lại lời =====
+// Mỗi câu/dòng = 1 cảnh, "vo" giữ NGUYÊN 100%. Máy render chỉ dựng HÌNH (deterministic, không phụ thuộc Claude → chắc chắn không lệch chữ).
+function buildVerbatimSpec(scriptText) {
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  let lines = String(scriptText || '').split(/\r?\n+/).map((x) => x.replace(/^\s*[-•*–]\s*/, '').trim()).filter((x) => x.length > 1);
+  if (lines.length < 3) lines = String(scriptText || '').replace(/\s+/g, ' ').split(/(?<=[.!?…])\s+/).map((x) => x.trim()).filter((x) => x.length > 1);
+  lines = lines.slice(0, 14);   // trần an toàn số cảnh
+  if (!lines.length) lines = [String(TITLE || 'Tin mới')];
+  const KICK = ['Điểm chính', 'Chi tiết', 'Đáng chú ý', 'Bối cảnh', 'Con số', 'Diễn biến', 'Kết luận'];
+  const P = /kinh doanh|thị trường|lợi nhuận|tỉ đồng|doanh nghiệp|tài chính|cổ phiếu|tăng trưởng/i.test(scriptText) ? 'biz'
+    : /ra mắt|vừa công bố|trình làng|phiên bản|model|sản phẩm mới/i.test(scriptText) ? 'launch'
+    : /nghiên cứu|khoa học|phát hiện|thử nghiệm/i.test(scriptText) ? 'research'
+    : /phim|nghệ thuật|âm nhạc|sáng tạo|thời trang/i.test(scriptText) ? 'creative' : 'hot';
+  const scenes = lines.map((vo, i) => ({
+    id: `s${i + 1}`,
+    inner: `<div class="mid"><div class="kick anim">${KICK[i % KICK.length]}</div><div class="head h-md anim">${esc(vo)}</div></div>`,
+    vo,   // NGUYÊN VĂN
+  }));
+  const desc = lines.slice(0, 2).join(' ').slice(0, 180);
+  return { palette: P, caption: { title: TITLE || '', desc }, scenes };
+}
+let spec;
+if (VERBATIM) {
+  spec = buildVerbatimSpec(ARTICLE);
+  console.log(`✓ VERBATIM: dùng nguyên văn kịch bản Boss sửa → ${spec.scenes.length} cảnh (lời đọc giữ 100%)`);
+} else {
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+    body: JSON.stringify({ model: MODEL, max_tokens: MAXTOK, messages: [{ role: 'user', content: PROMPT }] }),
+  });
+  if (!r.ok) { console.error(`❌ Claude ${r.status}:`, (await r.text().catch(() => '')).slice(0, 300)); process.exit(1); }
+  const j = await r.json();
+  const raw = (j?.content || []).map((b) => b.text || '').join('');
+  const m = raw.match(/\{[\s\S]*\}/);
+  if (!m) { console.error('❌ Không parse được JSON:', raw.slice(0, 300)); process.exit(1); }
+  spec = JSON.parse(m[0]);
+}
 // 🛡️ KIỂM SÁT VIÊN (chạy tại backend Mỹ, nơi Claude không bị 403): kịch bản phải ≥3 cảnh, nếu không → chặn, KHÔNG render video rỗng.
-if (!Array.isArray(spec.scenes) || spec.scenes.length < 3) {
-  console.error(`❌ KIỂM SÁT chặn: kịch bản chỉ ${spec.scenes?.length || 0} cảnh (<3) — không sản xuất video rỗng.`);
+// VERBATIM: Boss tự quyết nội dung/độ dài → chỉ cần ≥1 cảnh (không ép ≥3).
+const MIN_SCENES = VERBATIM ? 1 : 3;
+if (!Array.isArray(spec.scenes) || spec.scenes.length < MIN_SCENES) {
+  console.error(`❌ KIỂM SÁT chặn: kịch bản chỉ ${spec.scenes?.length || 0} cảnh (<${MIN_SCENES}) — không sản xuất video rỗng.`);
   process.exit(1);
 }
 // ÉP cảnh cuối (thương hiệu) dùng đúng BRAND_LABEL + SLOGAN theo workflow — AI có thể không theo sát mẫu.

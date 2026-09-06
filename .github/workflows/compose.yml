@@ -1,0 +1,62 @@
+name: ANTOA Compose Script
+
+# SOẠN KỊCH BẢN (không render) — Tower gọi khi Boss bấm "Phối" ở Sản xuất THỦ CÔNG.
+# Chạy Claude soạn kịch bản đầy đủ từ bài gốc (runner Mỹ — Claude không bị 403 như trên Cloudflare),
+# rồi callback TRẢ VỀ kịch bản để Boss ĐỌC/SỬA trước khi làm video. NHẸ: chỉ Node + Claude, KHÔNG ffmpeg/chromium/render.
+on:
+  repository_dispatch:
+    types: [compose]
+
+jobs:
+  compose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Soạn kịch bản (soan_canh.mjs mẫu newsroom). IMG_MODE=article → kịch bản DÀI ~85s cho tin VN.
+      - name: Soạn kịch bản bằng Claude
+        env:
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          CLAUDE_MODEL: ${{ secrets.CLAUDE_MODEL }}
+          TITLE: ${{ github.event.client_payload.title }}
+          ARTICLE: ${{ github.event.client_payload.script }}
+          BRANDKW: ${{ github.event.client_payload.meta.brandkw || 'AI Agent, tự động hoá kinh doanh, AI thực chiến' }}
+          BRAND_LABEL: ${{ github.event.client_payload.meta.brandLabel }}
+          SLOGAN: ${{ github.event.client_payload.meta.slogan }}
+          SOURCE: ${{ github.event.client_payload.meta.source }}
+          IMG_MODE: ${{ github.event.client_payload.meta.imgMode }}
+        run: |
+          if [ -z "$CLAUDE_API_KEY" ]; then echo "❌ Thiếu CLAUDE_API_KEY secret"; exit 1; fi
+          node soan_canh.mjs
+
+      # Trích LỜI ĐỌC từng cảnh (bỏ cảnh outro sO thương hiệu) → gộp thành kịch bản 1 câu/dòng → callback về Tower.
+      - name: Callback kịch bản về Tower
+        if: ${{ github.event.client_payload.callback != '' }}
+        env:
+          CALLBACK: ${{ github.event.client_payload.callback }}
+          SOURCE_ID: ${{ github.event.client_payload.sourceId }}
+          SECRET: ${{ secrets.RENDER_CALLBACK_SECRET }}
+        run: |
+          node -e '
+            const fs = require("fs");
+            let script = "";
+            try {
+              const spec = JSON.parse(fs.readFileSync("spec.json", "utf8"));
+              script = (spec.scenes || []).filter(s => s && s.id !== "sO").map(s => (s.vo || "").trim()).filter(Boolean).join("\n");
+            } catch (e) { console.error("đọc spec.json lỗi:", e.message); }
+            const body = JSON.stringify({ kind: "compose", sourceId: process.env.SOURCE_ID, script, secret: process.env.SECRET });
+            fetch(process.env.CALLBACK, { method: "POST", headers: { "content-type": "application/json" }, body })
+              .then(r => console.log("callback:", r.status))
+              .catch(e => { console.error("callback lỗi:", e.message); process.exit(1); });
+          '
+
+      - name: Callback lỗi (nếu soạn hỏng)
+        if: ${{ failure() && github.event.client_payload.callback != '' }}
+        run: |
+          curl -sS -X POST "${{ github.event.client_payload.callback }}" \
+            -H 'content-type: application/json' \
+            -d "{\"kind\":\"compose\",\"sourceId\":\"${{ github.event.client_payload.sourceId }}\",\"error\":\"soan kich ban loi\",\"secret\":\"${{ secrets.RENDER_CALLBACK_SECRET }}\"}" || true

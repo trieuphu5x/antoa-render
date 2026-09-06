@@ -86,6 +86,8 @@ jobs:
           SLOGAN: ${{ github.event.client_payload.meta.slogan }}
           SOURCE: ${{ github.event.client_payload.meta.source }}
           SPEC_VOICE: ${{ github.event.client_payload.voice || github.event.inputs.voice }}
+          IMG_MODE: ${{ github.event.client_payload.meta.imgMode }}     # 'article' = Tin tức VN → video dài ~85s (10-12 cảnh)
+          VERBATIM: ${{ github.event.client_payload.meta.verbatim }}    # '1' = dùng ĐÚNG NGUYÊN VĂN kịch bản Boss sửa (không viết lại lời)
         run: |
           if [ -z "$CLAUDE_API_KEY" ]; then echo "❌ Thiếu CLAUDE_API_KEY secret trên render-backend — không soạn được"; exit 1; fi
           case "$TEMPLATE" in
