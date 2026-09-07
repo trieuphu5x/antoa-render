@@ -71,9 +71,10 @@ LUẬT viết "inner" (BẮT BUỘC, chỉ dùng các class này):
 - An toàn nền tảng: KHÔNG hứa thu nhập/mốc thời gian/comment-bait/thổi phồng, KHÔNG ký tự < > trong text hiển thị (dùng "trên/dưới").
 Chỉ in JSON.`;
 
-// ===== VERBATIM: dùng ĐÚNG NGUYÊN VĂN kịch bản Boss sửa (ARTICLE = kịch bản) — KHÔNG để Claude viết lại lời =====
-// Mỗi câu/dòng = 1 cảnh, "vo" giữ NGUYÊN 100%. Máy render chỉ dựng HÌNH (deterministic, không phụ thuộc Claude → chắc chắn không lệch chữ).
-function buildVerbatimSpec(scriptText) {
+// ===== VERBATIM: dùng ĐÚNG NGUYÊN VĂN kịch bản Boss sửa (ARTICLE = kịch bản) — KHÔNG để Claude viết lại LỜI ĐỌC =====
+// Mỗi câu/dòng = 1 cảnh, "vo" giữ NGUYÊN 100%. HÌNH thì Claude CÔ ĐỌNG (head NGẮN in hoa + lede chữ thường) như bản News
+// đẹp — KHÔNG nhét cả câu vào head (tránh bức tường chữ hoa). Claude lỗi → fallback tách câu (head = cụm đầu, lede = phần còn lại).
+async function buildVerbatimSpec(scriptText) {
   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   let lines = String(scriptText || '').split(/\r?\n+/).map((x) => x.replace(/^\s*[-•*–]\s*/, '').trim()).filter((x) => x.length > 1);
   if (lines.length < 3) lines = String(scriptText || '').replace(/\s+/g, ' ').split(/(?<=[.!?…])\s+/).map((x) => x.trim()).filter((x) => x.length > 1);
@@ -84,18 +85,36 @@ function buildVerbatimSpec(scriptText) {
     : /ra mắt|vừa công bố|trình làng|phiên bản|model|sản phẩm mới/i.test(scriptText) ? 'launch'
     : /nghiên cứu|khoa học|phát hiện|thử nghiệm/i.test(scriptText) ? 'research'
     : /phim|nghệ thuật|âm nhạc|sáng tạo|thời trang/i.test(scriptText) ? 'creative' : 'hot';
-  const scenes = lines.map((vo, i) => ({
-    id: `s${i + 1}`,
-    inner: `<div class="mid"><div class="kick anim">${KICK[i % KICK.length]}</div><div class="head h-md anim">${esc(vo)}</div></div>`,
-    vo,   // NGUYÊN VĂN
-  }));
+  // CÔ ĐỌNG HÌNH bằng Claude (KHÔNG đổi lời đọc). Trả head ngắn + lede thường cho từng câu.
+  let vis = [];
+  if (KEY) {
+    try {
+      const vp = `Cho ${lines.length} câu LỜI ĐỌC video tin ngắn 9:16, theo thứ tự. Với MỖI câu, tạo phần HÌNH gọn & chuyên nghiệp:
+- "head": ý chính RẤT NGẮN 3-7 từ (hiện chữ TO in hoa) — TUYỆT ĐỐI KHÔNG chép cả câu.
+- "lede": 1 câu diễn giải ngắn (tối đa 16 từ), chữ thường tự nhiên.
+KHÔNG trả lời đọc. Trả DUY NHẤT JSON: {"v":[{"head":"...","lede":"..."}]} đúng ${lines.length} phần tử, đúng thứ tự.
+CÁC CÂU:
+${lines.map((l, i) => `${i + 1}. ${l}`).join('\n')}`;
+      const rr = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' }, body: JSON.stringify({ model: MODEL, max_tokens: 2200, messages: [{ role: 'user', content: vp }] }) });
+      if (rr.ok) { const jj = await rr.json(); const raw = (jj?.content || []).map((b) => b.text || '').join(''); const m = raw.match(/\{[\s\S]*\}/); if (m) vis = (JSON.parse(m[0]).v) || []; }
+    } catch (e) { console.log('verbatim: Claude cô đọng hình lỗi → fallback tách câu'); }
+  }
+  const words = (s) => String(s).trim().split(/\s+/);
+  const scenes = lines.map((vo, i) => {
+    const v = vis[i] || {};
+    const w = words(vo);
+    const head = String(v.head || w.slice(0, 6).join(' ')).trim().replace(/[.,!?…:;]+$/, '');
+    const lede = String(v.lede || (v.head ? '' : (w.length > 6 ? w.slice(6).join(' ') : ''))).trim();
+    const inner = `<div class="mid"><div class="kick anim">${KICK[i % KICK.length]}</div><div class="head h-md anim">${esc(head)}</div>${lede ? `<div class="lede anim">${esc(lede)}</div>` : ''}</div>`;
+    return { id: `s${i + 1}`, inner, vo };   // vo NGUYÊN VĂN 100%
+  });
   const desc = lines.slice(0, 2).join(' ').slice(0, 180);
   return { palette: P, caption: { title: TITLE || '', desc }, scenes };
 }
 let spec;
 if (VERBATIM) {
-  spec = buildVerbatimSpec(ARTICLE);
-  console.log(`✓ VERBATIM: dùng nguyên văn kịch bản Boss sửa → ${spec.scenes.length} cảnh (lời đọc giữ 100%)`);
+  spec = await buildVerbatimSpec(ARTICLE);
+  console.log(`✓ VERBATIM: lời đọc giữ 100% + hình cô đọng (head ngắn + lede) → ${spec.scenes.length} cảnh`);
 } else {
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
