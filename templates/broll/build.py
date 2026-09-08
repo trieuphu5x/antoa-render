@@ -49,6 +49,8 @@ def tts_scene(text, out, engine, voice):
     except Exception: pass
     if engine == "vbee":
         import vbee_tts; vbee_tts.synth(text, out, "1.0")
+    elif engine == "vieneu":
+        import vieneu_tts; vieneu_tts.synth(text, out, os.environ.get("VIENEU_VOICE"))
     elif engine == "edge":
         asyncio.run(_edge(text, voice, out))
     else:

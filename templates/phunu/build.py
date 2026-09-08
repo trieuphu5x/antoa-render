@@ -214,6 +214,10 @@ def tts_scene(text, out, engine, voice):
         sys.path.insert(0, HERE)
         import vbee_tts
         vbee_tts.synth(text, out, "1.0")
+    elif engine == "vieneu":
+        sys.path.insert(0, HERE)
+        import vieneu_tts
+        vieneu_tts.synth(text, out, os.environ.get("VIENEU_VOICE"))
     elif engine == "edge":
         asyncio.run(_edge(text, voice, out))
     else:

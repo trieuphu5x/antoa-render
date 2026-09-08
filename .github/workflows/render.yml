@@ -48,14 +48,15 @@ jobs:
             ~/.cache/pip
             ~/.cache/puppeteer
             ~/.cache/ms-playwright
+            ~/.cache/huggingface
             node_modules
-          key: antoa-deps-${{ runner.os }}-node22-hf0764-pw
+          key: antoa-deps-${{ runner.os }}-node22-hf0764-pw-vieneu
           restore-keys: antoa-deps-${{ runner.os }}-
 
-      - name: Cài ffmpeg + font + edge-tts + thư viện Chromium
+      - name: Cài ffmpeg + font + edge-tts + VieNeu + thư viện Chromium
         run: |
-          sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core fonts-noto-core
-          pip install edge-tts
+          sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core fonts-noto-core libsndfile1
+          pip install edge-tts vieneu   # VieNeu = giọng Việt offline (ONNX, free); model ~600MB tự tải lần đầu → cache ~/.cache/huggingface
           # Thư viện hệ thống cho Chromium (HyperFrames dùng Chrome puppeteer; chụp ảnh dùng Chromium Playwright).
           npx --yes playwright@latest install-deps chromium || true
           # Cài Playwright (package.json) + tải Chromium (cache lại) — để chup.mjs chụp ảnh bài gốc.

@@ -151,14 +151,15 @@ def main():
     graphic = sorted(k for k, v in spec.items() if v[0].strip().upper() not in ("TEXT", ""))
     print(f"[build] {len(graphic)} cảnh SLIDE đồ hoạ: {graphic} | còn lại text ({N - len(graphic)} cảnh)")
 
-    # 1) GIỌNG Vbee (tái dùng câu đã có file)
+    # 1) GIỌNG VieNeu (offline, free) — mặc định slides; tái dùng câu đã có file.
     if not args.no_audio:
-        import vbee_tts
+        import vieneu_tts
+        _vv = os.environ.get("VIENEU_VOICE")
         for i, s in enumerate(sents, 1):
             p = os.path.join(folder, f"audio/s{i}.mp3")
             if os.path.exists(p) and os.path.getsize(p) > 2000:
                 print(f"  voice s{i} (tái dùng)"); continue
-            vbee_tts.synth(s, p); print(f"  voice s{i} ok")
+            vieneu_tts.synth(s, p, _vv); print(f"  voice s{i} ok")
     if args.no_audio and not os.path.exists(os.path.join(folder, "audio/s1.mp3")):
         L = [4.0] * N
     else:

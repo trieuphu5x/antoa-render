@@ -55,6 +55,7 @@ if (Array.isArray(spec.script) && spec.script.length > 22) spec.script = spec.sc
 
 // ---- 3) giọng đọc → nạp vào spec + env cho builder ----
 if (ENGINE === 'vbee') { process.env.VBEE_VOICE = CODE; spec.tts = 'vbee'; }   // vbee_tts.py đọc creds từ env
+else if (ENGINE === 'vieneu') { process.env.VIENEU_VOICE = CODE; spec.tts = 'vieneu'; }   // VieNeu offline (ONNX) — CODE = tên giọng VN
 else { spec.tts = 'edge'; if (isNews) spec.voice = CODE; }                     // edge chỉ dùng cho newsroom
 
 // ---- 4) chạy gói mẫu → HyperFrames render ----

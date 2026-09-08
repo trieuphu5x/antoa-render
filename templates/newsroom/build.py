@@ -207,9 +207,13 @@ def build(video_dir, spec):
     # engine TTS: edge (mặc định, free) hoặc vbee (giọng chuyên nghiệp)
     tts_engine = spec.get("tts", "edge")
     vbee = None
+    vn = None
     if tts_engine == "vbee":
         sys.path.insert(0, HERE)
         import vbee_tts as vbee
+    elif tts_engine == "vieneu":
+        sys.path.insert(0, HERE)
+        import vieneu_tts as vn
 
     # 1) TTS + đo độ dài + tính mốc
     t = 0.0
@@ -224,6 +228,8 @@ def build(video_dir, spec):
                 pass  # tái dùng audio đã tạo (khỏi gọi lại Vbee/edge)
             elif vbee:
                 vbee.synth(vo, mp3, spec.get("speed", "1.0"))
+            elif vn:
+                vn.synth(vo, mp3, os.environ.get("VIENEU_VOICE"))
             else:
                 asyncio.run(_tts(vo, voice, rate, mp3))
             d = dur(mp3)
