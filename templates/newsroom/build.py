@@ -277,7 +277,7 @@ def build(video_dir, spec):
         if os.path.exists(src):
             subprocess.run(["cp", src, bgm_dst])
             if os.path.basename(src).lower().startswith("inc-"):
-                music_credit = "Kevin MacLeod (incompetech.com) · CC BY 4.0"
+                music_credit = "Kevin MacLeod · CC BY 4.0"
     # ghi credit nhạc ra file để render.mjs nối vào caption (đồng bộ với credit trên video)
     open(os.path.join(video_dir, "music_credit.txt"), "w", encoding="utf-8").write(music_credit)
 

@@ -134,7 +134,7 @@ def main():
                 _h = ((_h ^ ord(_c)) * 16777619) & 0xFFFFFFFF   # FNV-1a: phân bố đều (khớp News)
             src = os.path.join(news_music, tracks[_h % len(tracks)])
             shutil.copy(src, bgm_dst)
-            if os.path.basename(src).lower().startswith("inc-"): music_credit = "Kevin MacLeod (incompetech.com) · CC BY 4.0"
+            if os.path.basename(src).lower().startswith("inc-"): music_credit = "Kevin MacLeod · CC BY 4.0"
         elif os.path.exists(os.path.join(tmpl, "audio/bgm.mp3")):
             shutil.copy(os.path.join(tmpl, "audio/bgm.mp3"), bgm_dst)
     open(os.path.join(folder, "music_credit.txt"), "w", encoding="utf-8").write(music_credit)

@@ -6,8 +6,8 @@ Nhạc nền được LUÂN PHIÊN theo tiêu đề video (build.py, hash FNV-1a
 
 **bgm1–bgm6, bgm7-electronic** — Pixabay (Pixabay Content License, dùng thương mại tự do, KHÔNG bắt buộc ghi nguồn).
 
-**inc-*.mp3** — **Kevin MacLeod (incompetech.com)**, giấy phép **Creative Commons BY 4.0** (https://creativecommons.org/licenses/by/4.0/).
-→ **BẮT BUỘC ghi nguồn.** Đã tự động chèn dòng `🎵 Nhạc: Kevin MacLeod (incompetech.com) · CC BY 4.0` vào caption mỗi video (render.mjs). Các bài:
+**inc-*.mp3** — **Kevin MacLeod**, giấy phép **Creative Commons BY 4.0** (https://creativecommons.org/licenses/by/4.0/).
+→ **BẮT BUỘC ghi nguồn.** Đã tự động chèn dòng `🎵 Nhạc: Kevin MacLeod · CC BY 4.0` vào caption mỗi video (render.mjs). Các bài:
 - Deliberate Thought · Hidden Agenda · The Descent · Inspired · Volatile Reaction
 - Constance · Faceoff · Crossing the Chasm · Heavy Interlude · Dark Times
 
