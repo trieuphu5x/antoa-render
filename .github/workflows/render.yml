@@ -122,8 +122,8 @@ jobs:
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}          # Mẫu Video Vẽ Hình AI: sinh ảnh gpt-image-1 (~$0.05/ảnh)
-          SFX_DIR: ${{ github.workspace }}/assets/sfx            # SFX (tuỳ chọn — thiếu file thì mix bỏ qua)
-          MUSIC_DIR: ${{ github.workspace }}/assets/music
+          SFX_DIR: ${{ github.workspace }}/templates/illustrated/assets/sfx   # 3 SFX accent (fairy-dust/swoosh/ta-da) — kho SAB, đã commit
+          # MUSIC_DIR: không set → không ép nhạc nền. Chỉ bật khi cfg.style.music_file có file thật.
         run: node render.mjs
 
       - name: Xuất MP4 ra artifact (luôn — tải về xem)
