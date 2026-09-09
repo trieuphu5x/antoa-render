@@ -144,7 +144,8 @@ def r_image(sc, sel, iid, imgs):
     S = sel
 
     def IMG(k):
-        return f'assets/img/{imgs[k % len(imgs)]}'
+        v = imgs[k % len(imgs)]
+        return v if str(v).startswith("http") else f'assets/img/{v}'   # LINK ĐỘNG (Drive/stock) hoặc ảnh mẫu local
 
     if style == "hero":
         kick = f'<div class="kick onpaper anim" style="color:var(--gold)">{mk(sc["kick"])}</div>' if sc.get("kick") else ""
@@ -205,7 +206,7 @@ def r_stat(sc, sel, sid):   # KIỂU 10 · Số liệu lớn (điểm nhấn)
     sub = f'<div class="disp d-sm anim" style="margin-top:14px">{mk(lines[0])}</div>' if lines else ""
     inner = (f'<div class="grp" style="left:96px;top:470px;width:810px"><div class="kick anim">{mk(sc.get("kick", ""))}</div></div>'
              f'<div style="position:absolute;left:96px;top:640px;width:810px">'
-             f'<div class="stat anim" id="{sid}" style="font-size:340px">{mk(sc.get("big", "80"))}<span style="font-size:170px">{mk(sc.get("suffix", "%"))}</span></div>'
+             f'<div class="stat anim" id="{sid}" style="font-size:340px">{mk(sc.get("big", "80"))}<span style="font-size:170px">{mk(sc.get("suffix", ""))}</span></div>'
              + sub
              + (f'<div class="lede anim" style="margin-top:22px;width:760px">{mk(sc["lede"])}</div>' if sc.get("lede") else "")
              + '</div>')
@@ -319,7 +320,8 @@ def build(workdir, spec):
     engine = spec.get("tts", "vbee")
     voice = spec.get("voice", "vi-VN-HoaiMyNeural")
     scenes = spec.get("scenes", [])
-    imgs = sorted(os.listdir(os.path.join(ASSETS, "img")))
+    # NGUỒN ẢNH: spec.images = list URL động (Drive/stock, KHÔNG lưu — Chromium tải lúc render). Rỗng → ảnh mẫu local (test).
+    imgs = [str(u).strip() for u in (spec.get("images") or []) if str(u).strip()] or sorted(os.listdir(os.path.join(ASSETS, "img")))
 
     # 1) TTS + timing
     t = 0.0; laid = []

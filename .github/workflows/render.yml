@@ -92,6 +92,9 @@ jobs:
           SPEC_VOICE: ${{ github.event.client_payload.voice || github.event.inputs.voice }}
           IMG_MODE: ${{ github.event.client_payload.meta.imgMode }}     # 'article' = Tin tức VN → video dài ~85s (10-12 cảnh)
           VERBATIM: ${{ github.event.client_payload.meta.verbatim }}    # '1' = dùng ĐÚNG NGUYÊN VĂN kịch bản Boss sửa (không viết lại lời)
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}                 # Mẫu Slide Tạp Chí: ảnh free theo từ khoá (link động, không lưu)
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          OWN_IMAGES: ${{ toJSON(github.event.client_payload.meta.ownImages) }}   # ảnh riêng Drive (Phase 2) — Tower gửi list URL
         run: |
           if [ -z "$CLAUDE_API_KEY" ]; then echo "❌ Thiếu CLAUDE_API_KEY secret trên render-backend — không soạn được"; exit 1; fi
           case "$TEMPLATE" in

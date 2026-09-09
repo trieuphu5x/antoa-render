@@ -24,13 +24,13 @@ Mỗi cảnh có "vo" = lời đọc tự nhiên 1-2 câu (tiếng Việt, ấm,
 KIỂU cảnh + trường:
 - intro:   {kick, disp:[3 dòng tiêu đề lớn], lede}
 - text:    {align:"left"|"center"|"right", kick, kickInk?:true, rule?:true, disp:[2-3 dòng], lede}
-- media:   {side:"left"|"right" (phía ẢNH), kick, disp:[2-3 dòng], lede, cap:"chú thích ảnh ngắn"}  (ảnh tự lấy từ kho)
-- stat:    {kick, big:"½" hoặc "3×" (kí hiệu/số ngắn), lede}
-- quote:   {quote:"câu trích 3-6 chữ (có thể \\n)", lede}
-- band:    {pos:"top"|"bottom", kick, disp:[1-2 dòng], band:"1 câu chốt trong dải màu"}
+- media:   {kick, disp:[2-3 dòng], lede, caps:["chú thích ảnh 1","chú thích ảnh 2"]}  (cảnh ẢNH — hệ thống tự chọn 1 trong 8 kiểu bày ảnh + tự lấy ảnh thật)
+- stat:    {kick, big:"số/kí hiệu ngắn (vd 80, ½, 3×)", suffix:"đơn vị đi kèm (vd %, đơn, lần) — ĐỂ TRỐNG nếu big đã đủ nghĩa", disp:["1 dòng phụ ngắn"], lede}
+- quote:   {quote:"câu trích ngắn (có thể \\n, dùng *…* nhấn)", by:"nguồn dẫn ngắn (vd Một người bán hàng)"}
+- band:    {kick, disp:[1-2 dòng tiêu đề], band:"1 câu chốt đắt giá trong dải màu (dùng *…* nhấn)"}
 - list:    {kick, disp:[1-2 dòng], items:["mục 1","mục 2","mục 3"], lede}
 - countup: {to:90, suffix:"%", kick, lede}
-- cta:     {kick, disp:["Hôm nay,","*bạn bắt đầu.*"], lede}
+- cta:     {kick, disp:["1-2 dòng chốt"], lede, pill:"chữ ngắn trên nút CTA (vd Theo dõi ngay →)"}
 - outro:   {brand:"✳ KHỞI SỰ", lede:"1 câu kêu gọi chia sẻ mềm"}
 
 MARKUP trong text hiển thị (disp/lede/band/quote — KHÔNG dùng < >): *nhấn cam*  ·  **đậm**  ·  _nghiêng_  ·  xuống dòng \\n. Một dòng disp bọc trọn *…* sẽ thành tiêu đề nhấn cam nghiêng.
@@ -48,5 +48,46 @@ const m = raw.match(/\{[\s\S]*\}/);
 if (!m) { console.error('Không parse được JSON:', raw.slice(0, 300)); process.exit(1); }
 const spec = JSON.parse(m[0]);
 if (!spec.scenes || !spec.scenes.length) { console.error('Thiếu scenes'); process.exit(1); }
+
+// ===== NGUỒN ẢNH ĐỘNG (KHÔNG lưu — Chromium tải thẳng từ link lúc render) =====
+// Ưu tiên ẢNH RIÊNG (Drive) Tower gửi qua OWN_IMAGES (JSON []); thiếu → bù ẢNH FREE theo từ khoá (Pexels/Pixabay).
+const PEXELS_KEY = process.env.PEXELS_API_KEY || '';
+const PIXABAY_KEY = process.env.PIXABAY_API_KEY || '';
+function stockQuery(s) {
+  s = (s || '').toLowerCase();
+  if (/thời trang|thoi trang|làm đẹp|lam dep|mỹ phẩm|my pham|beauty|fashion/.test(s)) return 'woman fashion beauty lifestyle';
+  if (/ăn uống|an uong|đồ ăn|do an|food|cafe|quán|quan/.test(s)) return 'food small business cafe';
+  if (/mẹ|gia đình|gia dinh|family|mom|con/.test(s)) return 'woman family home lifestyle';
+  if (/kinh.?doanh|bán hàng|ban hang|khởi nghiệp|khoi nghiep|doanh.?nghiệp|business|finance/.test(s)) return 'business woman entrepreneur lifestyle';
+  return 'vietnamese woman business lifestyle';
+}
+async function fetchStock(query, n) {
+  if (!query || n < 1) return [];
+  if (PEXELS_KEY) {
+    try {
+      const r = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=${n + 4}&orientation=portrait`, { headers: { authorization: PEXELS_KEY } });
+      if (r.ok) { const j = await r.json(); const us = (j.photos || []).map((p) => p.src && (p.src.large2x || p.src.large || p.src.portrait)).filter(Boolean); if (us.length) return us.slice(0, n); }
+    } catch (e) { /* thử Pixabay */ }
+  }
+  if (PIXABAY_KEY) {
+    try {
+      const r = await fetch(`https://pixabay.com/api/?key=${PIXABAY_KEY}&q=${encodeURIComponent(query)}&image_type=photo&orientation=vertical&per_page=${Math.max(3, n + 4)}&safesearch=true`);
+      if (r.ok) { const j = await r.json(); const us = (j.hits || []).map((h) => h.largeImageURL || h.webformatURL).filter(Boolean); if (us.length) return us.slice(0, n); }
+    } catch (e) { /* hết nguồn */ }
+  }
+  return [];
+}
+const NEED = 14;   // đủ cho video 16-20 cảnh (lưới 4 / băng phim 4…), build.py xoay vòng
+let images = [];
+try { images = JSON.parse(process.env.OWN_IMAGES || '[]'); } catch (e) { images = []; }
+images = (images || []).map((u) => String(u).trim()).filter(Boolean).slice(0, NEED);
+if (images.length < NEED) {
+  const q = stockQuery(`${TITLE} ${BRANDKW}`);
+  const stock = await fetchStock(q, NEED - images.length);
+  console.log(`  ảnh: riêng ${images.length} + stock ${stock.length} (q="${q}")`);
+  images = images.concat(stock);
+}
+if (images.length) spec.images = images;
+
 writeFileSync('spec.json', JSON.stringify(spec, null, 2));
-console.log(`✓ spec.json (phunu): ${spec.scenes.length} cảnh`);
+console.log(`✓ spec.json (phunu): ${spec.scenes.length} cảnh · ${(spec.images || []).length} ảnh động`);
