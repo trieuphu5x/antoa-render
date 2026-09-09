@@ -12,6 +12,8 @@ const BRAND_PERSONA= (process.env.BRAND_PERSONA || '').trim();
 const CHANNEL      = (process.env.CHANNEL || 'SAB').trim();
 const PLATFORM     = (process.env.PLATFORM || 'social').trim();
 const TYPE         = process.env.TYPE === 'video' ? 'video' : 'ảnh';
+const LEN_MIN      = Math.max(40, Number(process.env.LEN_MIN) || 200);
+const LEN_MAX      = Math.max(LEN_MIN + 40, Number(process.env.LEN_MAX) || 350);
 const KEY          = (process.env.CLAUDE_API_KEY || '').trim();
 const MODEL        = (process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001').trim();
 
@@ -41,11 +43,19 @@ const img = await fetchImageB64();
 const brandBlock = BRAND_NAME
   ? `\nThương hiệu: ${BRAND_NAME}.${BRAND_KW ? ` Từ khoá chính (bám sát): ${BRAND_KW}.` : ''}${BRAND_PERSONA ? ` Giọng thương hiệu: ${BRAND_PERSONA}.` : ''}`
   : '';
-const promptText = `Viết caption ${TYPE} tiếng Việt cho kênh "${CHANNEL}" (${PLATFORM}).${brandBlock}
-${img ? 'NHÌN KỸ ẢNH đính kèm và viết caption BÁM SÁT nội dung thật trong ảnh (chủ thể, hành động, bối cảnh, cảm xúc).' : ''}
-Chủ đề/góc (định hướng): ${TOPIC || '(không có)'}.
-CẤU TRÚC: Dòng 1 = TIÊU ĐỀ ngắn, hook mạnh (KHÔNG hashtag, KHÔNG chữ "Caption"). Sau đó vài dòng caption${img ? ' bám ảnh' : ''}, xuống dòng thoáng. Cuối: 4-6 hashtag (ưu tiên từ khoá chính).
-Viết THUẦN VĂN BẢN tiếng Việt tự nhiên, có chiều sâu — TUYỆT ĐỐI KHÔNG markdown (không #, không **, không gạch đầu dòng). ${SAFETY}`;
+const promptText = `Bạn là COPYWRITER social bậc thầy tiếng Việt. Viết 1 caption ${TYPE} cho kênh "${CHANNEL}" (${PLATFORM}).${brandBlock}
+${img ? 'ẢNH đính kèm = bối cảnh THẬT (chủ thể, hành động, cảm xúc, không gian). Dùng chi tiết trong ảnh làm minh hoạ sống động.' : ''}
+Ý ĐỒ NGƯỜI DÙNG (chủ đề/góc — GỢI Ý ĐỊNH HƯỚNG, bám sát): "${TOPIC || '(tự đề xuất theo ảnh)'}".
+KẾT HỢP: lấy ${img ? 'HÌNH ẢNH THẬT + ' : ''}Ý ĐỒ NGƯỜI DÙNG làm CỐT LÕI thông điệp — nội dung phải đúng điều người dùng muốn truyền tải, tuyệt đối không lạc đề.
+
+CHẤT LƯỢNG (bắt buộc):
+- Áp dụng 1-2 CÔNG THỨC copywriting phù hợp: AIDA (Chú ý→Thích thú→Khao khát→Hành động) · PAS (Vấn đề→Khoáy sâu→Giải pháp) · Hook–Story–CTA · BAB (Trước→Sau→Cầu nối).
+- CHIỀU SÂU: có 1 insight/góc nhìn thật, chạm đúng nỗi đau hoặc khát khao của người đọc; tránh câu sáo rỗng, chung chung, "AI giọng".
+- Dòng 1 = TIÊU ĐỀ/hook đắt, dừng-lướt (KHÔNG hashtag, KHÔNG chữ "Caption"). Thân bài mạch lạc, xuống dòng thoáng, dẫn tới 1 CTA MỀM tự nhiên.
+- Cuối: 4-6 hashtag (ưu tiên từ khoá chính).
+
+ĐỘ DÀI: khoảng ${LEN_MIN}–${LEN_MAX} ký tự (không tính hashtag) — viết đủ sâu trong khoảng này, không lan man cũng không cụt lủn.
+THUẦN VĂN BẢN tiếng Việt tự nhiên — TUYỆT ĐỐI KHÔNG markdown (không #, không **, không gạch đầu dòng). ${SAFETY}`;
 
 const content = [];
 if (img) content.push({ type: 'image', source: { type: 'base64', media_type: img.mt, data: img.b64 } });
@@ -55,7 +65,7 @@ if (!KEY) { console.error('❌ Thiếu CLAUDE_API_KEY secret trên render-backen
 const r = await fetch('https://api.anthropic.com/v1/messages', {
   method: 'POST',
   headers: { 'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-  body: JSON.stringify({ model: MODEL, max_tokens: 700, messages: [{ role: 'user', content }] }),
+  body: JSON.stringify({ model: MODEL, max_tokens: 1200, messages: [{ role: 'user', content }] }),
 });
 const j = await r.json();
 if (!r.ok) { console.error('❌ Claude lỗi', r.status, JSON.stringify(j?.error || j).slice(0, 220)); process.exit(1); }

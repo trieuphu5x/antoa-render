@@ -29,6 +29,8 @@ jobs:
           CHANNEL: ${{ github.event.client_payload.meta.channel }}
           PLATFORM: ${{ github.event.client_payload.meta.platform }}
           TYPE: ${{ github.event.client_payload.meta.type }}
+          LEN_MIN: ${{ github.event.client_payload.meta.lenMin }}
+          LEN_MAX: ${{ github.event.client_payload.meta.lenMax }}
         run: node soan_caption.mjs
 
       - name: Callback caption → Tower
