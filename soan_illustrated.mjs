@@ -55,7 +55,7 @@ const spec = {
   cta: { say: (out.cta && out.cta.say) || 'Theo dõi để không bỏ lỡ.', brand: BRAND_LABEL, tag: SLOGAN },
   caption: { title: (out.caption && out.caption.title) || TITLE, desc: (out.caption && out.caption.desc) || '' },
   script: [...scenes.map((s) => s.say), (out.cta && out.cta.say) || ''].filter(Boolean),   // cho "Sửa kịch bản"
-  style: { music_file: 'bgm.mp3', musicVolume: 0.16 },   // nhạc nền ấm áp piano (Pixabay) auto-duck nhỏ lại khi có giọng
+  style: { musicVolume: 0.16 },   // nhạc nền auto-duck; build.py random 1 bài trong pool assets/music mỗi video
 };
 writeFileSync('spec.json', JSON.stringify(spec, null, 2));
 console.log(`✓ spec.json (illustrated): ${scenes.length} cảnh · style="${IMG_STYLE.slice(0, 40)}…"`);

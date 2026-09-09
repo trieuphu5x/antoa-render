@@ -8,7 +8,7 @@ spec.json (config) = { image_style, image_model, voice, fps, scenes:[{say,image_
 Luồng: gen-voice.py (VieNeu → assets/voice.wav + timings.json) → gen-illustration.mjs (OpenAI → build/assets/imgN.png)
        → build-composition.mjs (Ken Burns + caption + CTA → build/index.html) → audio-cues.json → HyperFrames render → mix-audio.mjs → output/video.mp4
 """
-import sys, os, json, subprocess
+import sys, os, json, subprocess, random
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -49,7 +49,7 @@ def build(workdir, spec_path, do_render):
         n = len(scenes)
         # SFX kho SAB (assets/sfx) — 3 accent tinh tế, đúng vai trò (mô tả trong sound-effects/library.json):
         #   fairy-dust.mp3 = bụi tiên lấp lánh mở màn · swoosh.mp3 = swoosh chuyển cảnh · ta-da.mp3 = khoe kết quả ở CTA
-        #   Nhạc nền: mix-audio auto-duck bgm.mp3 (ấm áp piano) nhỏ lại khi có giọng — chỉ trộn khi cfg.style.music_file trỏ file thật.
+        #   Nhạc nền: bước 6 random 1 bài trong pool assets/music (6 track Pixabay), auto-duck nhỏ lại khi có giọng.
         cues = [{"at": 0.6, "sound": "fairy-dust.mp3", "vol": 0.16}]
         for i in range(1, n):
             if i < len(L):
@@ -71,8 +71,21 @@ def build(workdir, spec_path, do_render):
                    cwd=os.path.join(workdir, "build"), check=True)
 
     # 6) TRỘN ÂM THANH (voice + SFX + nhạc) → output/video.mp4
-    print("[illustrated] 6) trộn âm thanh…")
-    node("mix-audio.mjs", spec_path)
+    #    Nhạc nền: RANDOM 1 bài trong pool assets/music (mỗi video 1 bài cho đỡ nhàm — không lặp nhạc cũ).
+    #    Truyền qua env MUSIC_FILE (mix-audio ưu tiên env này). Pool rỗng → mix bỏ qua nhạc.
+    mix_env = dict(os.environ)
+    music_dir = os.environ.get("MUSIC_DIR") or os.path.join(HERE, "assets", "music")
+    try:
+        pool = sorted(f for f in os.listdir(music_dir) if f.lower().endswith((".mp3", ".wav", ".m4a")))
+    except FileNotFoundError:
+        pool = []
+    if pool:
+        pick = random.choice(pool)
+        mix_env["MUSIC_FILE"] = os.path.join(music_dir, pick)
+        print(f"[illustrated] 6) trộn âm thanh… (nhạc nền ngẫu nhiên {len(pool)} bài → {pick})")
+    else:
+        print("[illustrated] 6) trộn âm thanh… (không có nhạc nền)")
+    node("mix-audio.mjs", spec_path, env=mix_env)
     print("[illustrated] ✓ output/video.mp4")
 
 
