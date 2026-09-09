@@ -154,15 +154,17 @@ jobs:
           URL="${{ secrets.R2_PUBLIC_URL }}/$R2_KEY"
           CAP=$(cat caption.txt 2>/dev/null || echo "")
           SCRIPT=$(cat script.txt 2>/dev/null || echo "")
-          # jq dựng JSON an toàn (caption/script có xuống dòng/dấu ngoặc) — gửi caption + KỊCH BẢN THẬT + link video.
+          IMAGES=$(cat images.json 2>/dev/null || echo '[]'); [ -z "$IMAGES" ] && IMAGES='[]'
+          # jq dựng JSON an toàn (caption/script có xuống dòng/dấu ngoặc) — gửi caption + KỊCH BẢN THẬT + link video + LINK ẢNH đã dùng.
           jq -n --arg jobId "${{ github.event.client_payload.jobId }}" \
                 --arg contentId "${{ github.event.client_payload.contentId }}" \
                 --arg outputUrl "$URL" \
                 --argjson durationSec "$DUR" \
                 --arg caption "$CAP" \
                 --arg script "$SCRIPT" \
+                --argjson images "$IMAGES" \
                 --arg secret "${{ secrets.RENDER_CALLBACK_SECRET }}" \
-                '{jobId:$jobId,contentId:$contentId,status:"done",outputUrl:$outputUrl,durationSec:$durationSec,caption:$caption,script:$script,secret:$secret}' \
+                '{jobId:$jobId,contentId:$contentId,status:"done",outputUrl:$outputUrl,durationSec:$durationSec,caption:$caption,script:$script,images:$images,secret:$secret}' \
           | curl -sS -X POST "${{ github.event.client_payload.callback }}" -H 'content-type: application/json' -d @-
 
       - name: Callback lỗi (nếu Tower gọi)

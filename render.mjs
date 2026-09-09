@@ -99,6 +99,8 @@ try {
   writeFileSync(join(HERE, 'script.txt'), scriptTxt);
   console.log(`[render] script.txt: ${lines.length} câu (gửi về Tower)`);
 } catch (e) { console.error('[render] script.txt lỗi (bỏ qua):', e.message); }
+// LƯU DANH SÁCH LINK ẢNH đã dùng (chỉ link, nhẹ) → callback gửi về Tower để lưu, dựng lại giữ đúng ảnh.
+try { writeFileSync(join(HERE, 'images.json'), JSON.stringify(Array.isArray(spec.images) ? spec.images : [])); } catch (e) {}
 run('python3', [entry, WORK, join(WORK, 'spec.json'), '--render'], { cwd: pkgDir });
 
 // NỐI CREDIT NHẠC vào caption — CHỈ khi track thực tế cần ghi nguồn (build.py ghi music_credit.txt).
