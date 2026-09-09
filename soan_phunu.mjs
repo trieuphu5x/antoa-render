@@ -61,18 +61,20 @@ function stockQuery(s) {
   if (/kinh.?doanh|bán hàng|ban hang|khởi nghiệp|khoi nghiep|doanh.?nghiệp|business|finance/.test(s)) return 'business woman entrepreneur lifestyle';
   return 'vietnamese woman business lifestyle';
 }
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const jx = Math.floor(Math.random() * (i + 1)); [a[i], a[jx]] = [a[jx], a[i]]; } return a; }
 async function fetchStock(query, n) {
   if (!query || n < 1) return [];
+  const page = 1 + Math.floor(Math.random() * 3);   // đổi trang + xáo trộn → "Đổi ảnh" (stock) ra bộ KHÁC
   if (PEXELS_KEY) {
     try {
-      const r = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=${n + 4}&orientation=portrait`, { headers: { authorization: PEXELS_KEY } });
-      if (r.ok) { const j = await r.json(); const us = (j.photos || []).map((p) => p.src && (p.src.large2x || p.src.large || p.src.portrait)).filter(Boolean); if (us.length) return us.slice(0, n); }
+      const r = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=30&page=${page}&orientation=portrait`, { headers: { authorization: PEXELS_KEY } });
+      if (r.ok) { const j = await r.json(); const us = (j.photos || []).map((p) => p.src && (p.src.large2x || p.src.large || p.src.portrait)).filter(Boolean); if (us.length) return shuffle(us).slice(0, n); }
     } catch (e) { /* thử Pixabay */ }
   }
   if (PIXABAY_KEY) {
     try {
-      const r = await fetch(`https://pixabay.com/api/?key=${PIXABAY_KEY}&q=${encodeURIComponent(query)}&image_type=photo&orientation=vertical&per_page=${Math.max(3, n + 4)}&safesearch=true`);
-      if (r.ok) { const j = await r.json(); const us = (j.hits || []).map((h) => h.largeImageURL || h.webformatURL).filter(Boolean); if (us.length) return us.slice(0, n); }
+      const r = await fetch(`https://pixabay.com/api/?key=${PIXABAY_KEY}&q=${encodeURIComponent(query)}&image_type=photo&orientation=vertical&per_page=30&page=${page}&safesearch=true`);
+      if (r.ok) { const j = await r.json(); const us = (j.hits || []).map((h) => h.largeImageURL || h.webformatURL).filter(Boolean); if (us.length) return shuffle(us).slice(0, n); }
     } catch (e) { /* hết nguồn */ }
   }
   return [];
