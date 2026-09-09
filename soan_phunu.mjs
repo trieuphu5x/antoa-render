@@ -91,6 +91,7 @@ if (images.length === 0) {   // KHÔNG có ảnh riêng/đã lưu → lấy STOC
   console.log(`  ảnh có sẵn (Drive/đã lưu): ${images.length}`);
 }
 if (images.length) spec.images = images;
+spec.palette = (process.env.PALETTE || 'kem-cam').trim();   // 6 màu: user chọn → dựng đúng màu
 
 writeFileSync('spec.json', JSON.stringify(spec, null, 2));
 console.log(`✓ spec.json (phunu): ${spec.scenes.length} cảnh · ${(spec.images || []).length} ảnh động`);

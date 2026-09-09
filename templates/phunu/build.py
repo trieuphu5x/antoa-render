@@ -60,6 +60,16 @@ def dispsize(lines, default):
 
 IMG_W, IMG_H = 334, 430
 
+# 6 PALETTE MÀU (:root) — user chọn màu nào, dựng đúng màu đó. Mặc định kem-cam.
+COLORS = {
+    "kem-cam": "--paper:#EFE9DC; --paperhi:#F5F0E6; --paperlo:#E7DECB; --ink:#22233F; --ink2:#5C5F79; --ember:#E2552F; --gold:#E0A43B; --card:#FBF8F1; --onmedia:#F4EFE4;",
+    "navy-vang": "--paper:#17284D; --paperhi:#1F3360; --paperlo:#101E3C; --ink:#EEF1F8; --ink2:#A8B2CC; --ember:#F5B72E; --gold:#E79A4A; --card:#223357; --onmedia:#F4EFE4;",
+    "xanh-ngoc": "--paper:#0F5B4E; --paperhi:#146C5C; --paperlo:#0A4238; --ink:#EFF5F0; --ink2:#A6CDBF; --ember:#FFC94D; --gold:#FF8560; --card:#155F52; --onmedia:#F4EFE4;",
+    "hong-dat": "--paper:#F2E6E1; --paperhi:#FAF0EC; --paperlo:#E8D6CE; --ink:#3A2630; --ink2:#6E5560; --ember:#E42D2B; --gold:#C79A5B; --card:#FCF5F1; --onmedia:#F6EFEA;",
+    "den-gold": "--paper:#16171C; --paperhi:#1E2027; --paperlo:#0F1013; --ink:#ECE7DC; --ink2:#A29E8F; --ember:#E0A43B; --gold:#C98A3A; --card:#24262E; --onmedia:#F4EFE4;",
+    "xanh-duong-cam": "--paper:#E8EDF2; --paperhi:#F2F6FA; --paperlo:#DAE1EA; --ink:#16233A; --ink2:#526079; --ember:#2F6BFF; --gold:#FF6A2C; --card:#F7FAFD; --onmedia:#F4EFE4;",
+}
+
 
 # ---------- renderers: trả (inner_html, [gsap_calls]) ; sel = "#sceneK" ----------
 def r_intro(sc, sel):
@@ -316,6 +326,8 @@ def build(workdir, spec):
         if not os.path.exists(d):
             subprocess.run(["cp", os.path.join(ASSETS, "_template", f), d])
     css = open(os.path.join(ASSETS, "style.css")).read()
+    pal = COLORS.get(str(spec.get("palette", "kem-cam")), COLORS["kem-cam"])   # user chọn màu → chèn :root (đè mặc định)
+    css = css + "\n:root{ " + pal + " }"
 
     engine = spec.get("tts", "vbee")
     voice = spec.get("voice", "vi-VN-HoaiMyNeural")

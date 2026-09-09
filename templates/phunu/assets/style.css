@@ -1,10 +1,11 @@
 
-      :root{ --paper:#EFE9DC; --ink:#22233F; --ink2:#5C5F79; --ember:#E2552F; --gold:#E0A43B; }
+      /* Palette mặc định KEM–CAM; build.py chèn :root khác cho 6 màu (navy/xanh ngọc/hồng đất/đen gold/xanh dương). */
+      :root{ --paper:#EFE9DC; --paperhi:#F5F0E6; --paperlo:#E7DECB; --ink:#22233F; --ink2:#5C5F79; --ember:#E2552F; --gold:#E0A43B; --card:var(--card); --onmedia:#F4EFE4; }
       *{margin:0;padding:0;box-sizing:border-box}
       html,body{width:1080px;height:1920px;overflow:hidden;background:var(--paper);font-family:"Be Vietnam Pro",sans-serif;color:var(--ink)}
       #root{position:relative;width:1080px;height:1920px}
       .layer{position:absolute;inset:0}
-      .paper{background:radial-gradient(120% 90% at 20% 8%, #F5F0E6 0%, #EFE9DC 42%, #E7DECB 100%)}
+      .paper{background:radial-gradient(120% 90% at 20% 8%, var(--paperhi) 0%, var(--paper) 42%, var(--paperlo) 100%)}
       .grain{opacity:.07;mix-blend-mode:multiply}.grain svg{width:1080px;height:1920px;display:block}
       .orn{position:absolute;font-family:"Playfair Display",serif;color:var(--ember);opacity:.12;font-size:400px;line-height:1;font-style:italic;right:30px;top:1070px}
 
@@ -36,12 +37,12 @@
       .listrow .n{font-family:"JetBrains Mono",monospace;font-size:32px;color:var(--ember);font-weight:500}
       .brandmark{font-family:"Playfair Display",serif;font-weight:900;font-size:140px;color:var(--ink);line-height:1.1}.brandmark .st{color:var(--ember)}
       /* CARD ẢNH (chèn ảnh của Boss) */
-      .mcard{position:absolute;padding:13px;background:#FBF8F1;border:1px solid rgba(34,35,63,.16);border-radius:15px;box-shadow:0 22px 54px rgba(34,35,63,.20)}
+      .mcard{position:absolute;padding:13px;background:var(--card);border:1px solid rgba(34,35,63,.16);border-radius:15px;box-shadow:0 22px 54px rgba(34,35,63,.20)}
       .mcard img{display:block;border-radius:9px;object-fit:cover}
       .mcap{font-family:"JetBrains Mono",monospace;font-size:19px;color:var(--ink2);padding:11px 3px 1px;letter-spacing:.02em}
 
       /* ===== 8 KHỐI ẢNH DUYỆT v2 (kho kiểu tạp chí) — to, cân 70–80% safe zone ===== */
-      .onpaper{color:var(--paper)}
+      .onpaper{color:var(--onmedia)}
       /* 01 HERO gần toàn khung + scrim + chữ đè */
       .hero{position:absolute;left:96px;top:340px;width:810px;height:1160px;border-radius:16px;overflow:hidden}
       .hero img{width:100%;height:100%;object-fit:cover;display:block}
@@ -53,7 +54,7 @@
       .duo .tint{position:absolute;inset:0;background:var(--ember);mix-blend-mode:multiply;opacity:.46}
       .duo .tint2{position:absolute;inset:0;background:var(--ink);mix-blend-mode:screen;opacity:.18}
       /* card ảnh chung (03 phim nghiêng · 05 lưới · 08 băng phim) */
-      .pc{position:absolute;padding:14px;background:#FBF8F1;border:1px solid rgba(34,35,63,.16);border-radius:16px;box-shadow:0 22px 50px rgba(34,35,63,.24)}
+      .pc{position:absolute;padding:14px;background:var(--card);border:1px solid rgba(34,35,63,.16);border-radius:16px;box-shadow:0 22px 50px rgba(34,35,63,.24)}
       .pc img{display:block;border-radius:9px;object-fit:cover}
       .pc .cap{font-family:"JetBrains Mono",monospace;font-size:18px;color:var(--ink2);padding:10px 2px 1px}
       .filmstrip .pc{position:relative;flex:0 0 auto}   /* băng phim: card xếp hàng ngang, KHÔNG absolute */
@@ -64,5 +65,5 @@
       .split{position:absolute;overflow:hidden;border-radius:14px;clip-path:polygon(0 0,100% 0,100% 84%,0 100%)}
       .split img{width:100%;height:100%;object-fit:cover;display:block}
       /* 07 CIRCLE 2 ảnh tròn */
-      .circ{position:absolute;border-radius:50%;overflow:hidden;border:12px solid #FBF8F1;box-shadow:0 22px 50px rgba(34,35,63,.26)}
+      .circ{position:absolute;border-radius:50%;overflow:hidden;border:12px solid var(--card);box-shadow:0 22px 50px rgba(34,35,63,.26)}
       .circ img{width:100%;height:100%;object-fit:cover;display:block}

@@ -96,6 +96,7 @@ jobs:
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           OWN_IMAGES: ${{ toJSON(github.event.client_payload.meta.ownImages) }}   # ảnh riêng Drive (Phase 2) — Tower gửi list URL
           IMG_STYLE: ${{ github.event.client_payload.meta.imageStyle }}           # Mẫu Video Vẽ Hình AI: phong cách tranh (preset người dùng chọn)
+          PALETTE: ${{ github.event.client_payload.meta.palette }}                # Mẫu Slide Tạp Chí: màu (kem-cam/navy-vang/xanh-ngoc/hong-dat/den-gold/xanh-duong-cam)
         run: |
           if [ -z "$CLAUDE_API_KEY" ]; then echo "❌ Thiếu CLAUDE_API_KEY secret trên render-backend — không soạn được"; exit 1; fi
           case "$TEMPLATE" in
