@@ -47,13 +47,14 @@ def build(workdir, spec_path, do_render):
         tim = json.load(open(os.path.join(workdir, "assets", "timings.json"), encoding="utf-8"))
         L = tim.get("lines", [])
         n = len(scenes)
-        cues = [{"at": 0.6, "sound": "fairy-dust.mp3", "vol": 0.2}]
+        # SFX kho chung SAB (assets/sfx): sfx1 = lấp lánh mở màn · sfx2 = swoosh chuyển cảnh · sfx5 = ta-da CTA
+        cues = [{"at": 0.6, "sound": "sfx1.mp3", "vol": 0.2}]
         for i in range(1, n):
             if i < len(L):
-                cues.append({"at": round(L[i]["start"] - 0.2, 2), "sound": "swoosh.mp3", "vol": 0.24})
+                cues.append({"at": round(L[i]["start"] - 0.2, 2), "sound": "sfx2.mp3", "vol": 0.24})
         if cfg.get("cta") and L:
             cta_i = min(n, len(L) - 1)
-            cues.append({"at": round(L[cta_i]["start"], 2), "sound": "ta-da.mp3", "vol": 0.3})
+            cues.append({"at": round(L[cta_i]["start"], 2), "sound": "sfx5.mp3", "vol": 0.3})
         json.dump(cues, open(os.path.join(workdir, "build", "audio-cues.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     except Exception as e:
         print("[illustrated] audio-cues bỏ qua:", e)
