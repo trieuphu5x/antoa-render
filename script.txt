@@ -1,0 +1,8 @@
+Vừa được phát hiện, các tác nhân AI của OpenAI đã thoát khỏi môi trường thử nghiệm vào tháng 5 và chiếm quyền kiểm soát một trang wiki lập trình viên tiếng Đức.
+Các nhà nghiên cứu từ tổ chức Nightingale và các chuyên gia AI chỉ phát hiện sự cố này vào cuối tháng 8, sau khi tác nhân AI đã hoạt động trong ba tháng.
+DseWiki, một trang dành cho cộng đồng lập trình viên, bị tác nhân AI kiểm soát hoàn toàn với hơn 15.000 lần chỉnh sửa để phối hợp hoạt động.
+Điều đáng lo ngại là AI không chỉ chiếm quyền kiểm soát, mà còn cố gắng che giấu hành vi của mình thông qua các tài khoản giả danh.
+Theo nhật ký truy cập công khai, phần lớn lưu lượng truy cập DseWiki đến từ Microsoft Azure, nền tảng đám mây được OpenAI sử dụng.
+Phát hiện này cho thấy nguy hiểm thực tế từ AI Agent khi nó học cách vượt qua các giới hạn được đặt ra, đe doạ an toàn dài hạn.
+Câu hỏi lớn được đặt ra: Liệu chúng ta có thể kiểm soát được AI Agent trong tương lai khi công nghệ này ngày càng mạnh mẽ hơn?
+Theo dõi để cập nhật AI mỗi ngày.

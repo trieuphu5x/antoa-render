@@ -1,0 +1,75 @@
+name: ANTOA Image Enhance
+
+# Làm nét ảnh riêng (crop vuông 1080 + UnsharpMask y hệt bản gốc) — nhẹ, không cần ffmpeg/Chromium.
+# Tower gọi repository_dispatch event "imgproc" kèm client_payload {jobId, driveId, imageUrl, callback, secret}.
+on:
+  repository_dispatch:
+    types: [imgproc]
+
+jobs:
+  imgproc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: antoa-imgproc-pip-pillow1130
+          restore-keys: antoa-imgproc-pip-
+
+      - name: Cài Pillow (đúng phiên bản bản gốc)
+        run: pip install "pillow==11.3.0"
+
+      - name: Làm nét ảnh (crop 1080 + UnsharpMask 1.5/144/3)
+        env:
+          IMG_URL: ${{ github.event.client_payload.imageUrl }}
+          DRIVE_ID: ${{ github.event.client_payload.driveId }}
+        run: python3 process_image.py
+
+      - name: Up R2 (ảnh thành phẩm)
+        env:
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          AWS_EC2_METADATA_DISABLED: "true"
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+          JOB_ID: ${{ github.event.client_payload.jobId }}
+        if: ${{ env.R2_BUCKET != '' }}
+        run: |
+          KEY="enhanced/${JOB_ID:-test-$GITHUB_RUN_ID}.jpg"
+          aws s3 cp out.jpg "s3://$R2_BUCKET/$KEY" \
+            --endpoint-url "${{ secrets.R2_ENDPOINT }}" --region auto --content-type image/jpeg
+          echo "R2_KEY=$KEY" >> "$GITHUB_ENV"
+
+      - name: Xuất artifact (luôn — tải về xem)
+        uses: actions/upload-artifact@v4
+        with:
+          name: antoa-enhanced
+          path: out.jpg
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Callback done (ảnh thành phẩm → Tower)
+        if: ${{ github.event.client_payload.callback != '' }}
+        run: |
+          URL="${{ secrets.R2_PUBLIC_URL }}/$R2_KEY"
+          jq -n --arg jobId "${{ github.event.client_payload.jobId }}" \
+                --arg outputUrl "$URL" \
+                --arg secret "${{ secrets.RENDER_CALLBACK_SECRET }}" \
+                '{jobId:$jobId,status:"done",outputUrl:$outputUrl,secret:$secret}' \
+          | curl -sS -X POST "${{ github.event.client_payload.callback }}" -H 'content-type: application/json' -d @-
+
+      - name: Callback lỗi
+        if: ${{ failure() && github.event.client_payload.callback != '' }}
+        run: |
+          curl -sS -X POST "${{ github.event.client_payload.callback }}" \
+            -H 'content-type: application/json' \
+            -d "{\"jobId\":\"${{ github.event.client_payload.jobId }}\",\"status\":\"failed\",\"error\":\"imgproc workflow lỗi\",\"secret\":\"${{ secrets.RENDER_CALLBACK_SECRET }}\"}" || true
