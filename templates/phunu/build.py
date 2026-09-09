@@ -163,8 +163,8 @@ def r_image(sc, sel, iid, imgs):
         c0 = f'<div class="cap">▣ {mk(cap[0])}</div>' if len(cap) > 0 else ""
         c1 = f'<div class="cap">▣ {mk(cap[1])}</div>' if len(cap) > 1 else ""
         inner = (f'<div class="grp" style="left:96px;top:520px;width:760px">{_heading(sc, "d-md")}</div>'
-                 f'<div class="pc" id="{iid}a" style="left:150px;top:760px;transform:rotate(-7deg)"><img src="{IMG(0)}" style="width:360px;height:460px"/>{c0}</div>'
-                 f'<div class="pc" id="{iid}b" style="left:470px;top:840px;transform:rotate(6deg)"><img src="{IMG(1)}" style="width:360px;height:460px"/>{c1}</div>')
+                 f'<div class="pc" id="{iid}a" style="left:150px;top:880px;transform:rotate(-7deg)"><img src="{IMG(0)}" style="width:350px;height:430px"/>{c0}</div>'
+                 f'<div class="pc" id="{iid}b" style="left:470px;top:960px;transform:rotate(6deg)"><img src="{IMG(1)}" style="width:350px;height:430px"/>{c1}</div>')
         return inner, [f'enter("{S}",AT); pop("#{iid}a",AT+0.05); pop("#{iid}b",AT+0.2);']
 
     if style == "arch":
@@ -200,39 +200,34 @@ def r_image(sc, sel, iid, imgs):
     return inner, [f'enter("{S}",AT); tl.set("#{iid}",{{x:0}},AT); tl.to("#{iid}",{{x:-980,duration:2.6,ease:"power1.inOut"}},AT+3);']
 
 
-def r_stat(sc, sel, sid):
-    inner = (f'<div class="grp" style="left:96px;top:360px"><div class="kick ink anim">{mk(sc.get("kick",""))}</div></div>'
-             f'<div style="position:absolute;left:96px;top:470px"><div class="stat s-xl" id="{sid}">{mk(sc.get("big","½"))}</div></div>'
-             f'<div class="grp" style="left:96px;top:1090px;width:800px"><div class="lede anim">{mk(sc.get("lede",""))}</div></div>')
-    gs = [f'tl.from("#{sid}",{{opacity:0,scale:0.5,duration:0.9,ease:"back.out(1.7)"}},AT);',
-          f'enter("{sel}",AT+0.2,{{y:30,stagger:0.14}});']
-    return inner, gs
-
-
-def r_quote(sc, sel):
-    inner = (f'<div class="grp" style="left:120px;top:520px;width:800px">'
-             f'<div class="qmark anim">“</div>'
-             f'<div class="quote anim" style="margin-top:20px">{mk(sc.get("quote",""))}</div>'
-             + (f'<div class="lede anim" style="margin-top:52px">{mk(sc["lede"])}</div>' if sc.get("lede") else "")
-             + '</div>')
-    return inner, [f'enter("{sel}",AT,{{y:36,stagger:0.16}});']
-
-
-def r_band(sc, sel, bid):
-    pos = sc.get("pos", "bottom")
+def r_stat(sc, sel, sid):   # KIỂU 10 · Số liệu lớn (điểm nhấn)
     lines = sc.get("disp", [])
-    size = dispsize(lines, "d-sm")
-    grp = "".join([f'<div class="kick anim">{mk(sc["kick"])}</div>' if sc.get("kick") else ""]
-                  + [disp_line(l, size) for l in lines]
-                  + ([f'<div class="lede anim" style="margin-top:18px">{mk(sc["lede"])}</div>'] if sc.get("lede") else []))
-    band = f'<div class="band" id="{bid}" style="top:{"400px" if pos=="top" else "1050px"}"><div class="bt">{mk(sc.get("band",""))}</div></div>'
-    if pos == "top":
-        inner = band + f'<div class="grp" style="left:96px;top:820px;width:810px">{grp}</div>'
-        gs = [f'tl.from("#{bid}",{{yPercent:-40,opacity:0,duration:0.8,ease:"power3.out"}},AT);', f'enter("{sel}",AT+0.3,{{y:28,stagger:0.14}});']
-    else:
-        inner = f'<div class="grp" style="left:96px;top:440px;width:810px">{grp}</div>' + band
-        gs = [f'enter("{sel}",AT,{{y:26}});', f'tl.from("#{bid}",{{yPercent:40,opacity:0,duration:0.8,ease:"power3.out"}},AT+0.15);']
-    return inner, gs
+    sub = f'<div class="disp d-sm anim" style="margin-top:14px">{mk(lines[0])}</div>' if lines else ""
+    inner = (f'<div class="grp" style="left:96px;top:470px;width:810px"><div class="kick anim">{mk(sc.get("kick", ""))}</div></div>'
+             f'<div style="position:absolute;left:96px;top:640px;width:810px">'
+             f'<div class="stat anim" id="{sid}" style="font-size:340px">{mk(sc.get("big", "80"))}<span style="font-size:170px">{mk(sc.get("suffix", "%"))}</span></div>'
+             + sub
+             + (f'<div class="lede anim" style="margin-top:22px;width:760px">{mk(sc["lede"])}</div>' if sc.get("lede") else "")
+             + '</div>')
+    return inner, [f'enter("{sel}",AT,{{stagger:0.12}});']
+
+
+def r_quote(sc, sel):   # KIỂU 11 · Câu trích dẫn
+    inner = (f'<div class="grp" style="left:96px;top:560px;width:810px">'
+             f'<div class="qmark anim">“</div>'
+             f'<div class="quote anim" style="margin-top:6px">{mk(sc.get("quote", ""))}</div>'
+             + (f'<div class="qby anim" style="margin-top:44px">— {mk(sc["by"])}</div>' if sc.get("by") else "")
+             + '</div>')
+    return inner, [f'enter("{sel}",AT,{{stagger:0.14}});']
+
+
+def r_band(sc, sel, bid):   # KIỂU 09 · Băng chữ nhấn mạnh (tiêu đề trên + băng câu đắt giá dưới)
+    lines = sc.get("disp", [])
+    size = dispsize(lines, "d-md")
+    head = "".join([f'<div class="kick anim">{mk(sc["kick"])}</div>' if sc.get("kick") else ""] + [disp_line(l, size) for l in lines])
+    inner = (f'<div class="grp" style="left:96px;top:480px;width:810px">{head}</div>'
+             f'<div class="band" id="{bid}" style="top:900px"><div class="bt">{mk(sc.get("band", ""))}</div></div>')
+    return inner, [f'enter("{sel}",AT); pop("#{bid}",AT+0.25);']
 
 
 def r_list(sc, sel):
@@ -261,14 +256,16 @@ def r_countup(sc, sel, nid):
     return inner, gs
 
 
-def r_cta(sc, sel):
+def r_cta(sc, sel):   # KIỂU 12 · Chốt / Kêu gọi hành động (có nút pill)
     lines = sc.get("disp", [])
-    inner = (f'<div class="grp" style="left:96px;right:174px;top:560px;text-align:center">'
+    size = dispsize(lines, "d-md")
+    inner = (f'<div class="grp" style="left:96px;top:560px;width:810px">'
              + (f'<div class="kick anim">{mk(sc["kick"])}</div>' if sc.get("kick") else "")
-             + "".join(disp_line(l, "d-lg") for l in lines)
-             + (f'<div class="lede anim" style="margin-left:auto;margin-right:auto;max-width:660px">{mk(sc["lede"])}</div>' if sc.get("lede") else "")
+             + "".join(disp_line(l, size) for l in lines)
+             + (f'<div class="lede anim" style="margin-top:24px;width:780px">{mk(sc["lede"])}</div>' if sc.get("lede") else "")
+             + f'<div class="anim" style="margin-top:52px"><span class="pill">{mk(sc.get("pill", "Theo dõi để không bỏ lỡ →"))}</span></div>'
              + '</div>')
-    return inner, [f'enter("{sel}",AT,{{y:40,stagger:0.16}});']
+    return inner, [f'enter("{sel}",AT,{{stagger:0.12}});']
 
 
 def r_outro(sc, sel):
