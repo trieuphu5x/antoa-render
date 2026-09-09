@@ -81,11 +81,12 @@ const NEED = 14;   // đủ cho video 16-20 cảnh (lưới 4 / băng phim 4…)
 let images = [];
 try { images = JSON.parse(process.env.OWN_IMAGES || '[]'); } catch (e) { images = []; }
 images = (images || []).map((u) => String(u).trim()).filter(Boolean).slice(0, NEED);
-if (images.length < NEED) {
+if (images.length === 0) {   // KHÔNG có ảnh riêng/đã lưu → lấy STOCK theo từ khoá. Có rồi → dùng ĐÚNG bộ đó (build.py xoay vòng), không trộn.
   const q = stockQuery(`${TITLE} ${BRANDKW}`);
-  const stock = await fetchStock(q, NEED - images.length);
-  console.log(`  ảnh: riêng ${images.length} + stock ${stock.length} (q="${q}")`);
-  images = images.concat(stock);
+  images = await fetchStock(q, NEED);
+  console.log(`  ảnh stock: ${images.length} (q="${q}")`);
+} else {
+  console.log(`  ảnh có sẵn (Drive/đã lưu): ${images.length}`);
 }
 if (images.length) spec.images = images;
 
