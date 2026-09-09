@@ -1,0 +1,49 @@
+name: ANTOA Caption
+
+# Sinh caption bằng Claude (có vision nếu có ảnh) — nhẹ, chỉ Node + fetch.
+# Tower gọi repository_dispatch event "caption" kèm {jobId, topic, imageUrl/driveId, callback, secret, meta{...}}.
+on:
+  repository_dispatch:
+    types: [caption]
+
+jobs:
+  caption:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Sinh caption (Claude + vision)
+        env:
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          CLAUDE_MODEL: ${{ secrets.CLAUDE_MODEL }}
+          TOPIC: ${{ github.event.client_payload.topic }}
+          IMAGE_URL: ${{ github.event.client_payload.imageUrl }}
+          DRIVE_ID: ${{ github.event.client_payload.driveId }}
+          BRAND_NAME: ${{ github.event.client_payload.meta.brandName }}
+          BRAND_KW: ${{ github.event.client_payload.meta.brandkw }}
+          BRAND_PERSONA: ${{ github.event.client_payload.meta.persona }}
+          CHANNEL: ${{ github.event.client_payload.meta.channel }}
+          PLATFORM: ${{ github.event.client_payload.meta.platform }}
+          TYPE: ${{ github.event.client_payload.meta.type }}
+        run: node soan_caption.mjs
+
+      - name: Callback caption → Tower
+        if: ${{ github.event.client_payload.callback != '' }}
+        run: |
+          CAP=$(cat caption_out.txt 2>/dev/null || echo "")
+          jq -n --arg jobId "${{ github.event.client_payload.jobId }}" \
+                --arg caption "$CAP" \
+                --arg secret "${{ secrets.RENDER_CALLBACK_SECRET }}" \
+                '{jobId:$jobId,status:"done",caption:$caption,secret:$secret}' \
+          | curl -sS -X POST "${{ github.event.client_payload.callback }}" -H 'content-type: application/json' -d @-
+
+      - name: Callback lỗi
+        if: ${{ failure() && github.event.client_payload.callback != '' }}
+        run: |
+          curl -sS -X POST "${{ github.event.client_payload.callback }}" \
+            -H 'content-type: application/json' \
+            -d "{\"jobId\":\"${{ github.event.client_payload.jobId }}\",\"status\":\"failed\",\"error\":\"caption workflow lỗi\",\"secret\":\"${{ secrets.RENDER_CALLBACK_SECRET }}\"}" || true
