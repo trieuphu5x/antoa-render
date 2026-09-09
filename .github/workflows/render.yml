@@ -95,14 +95,16 @@ jobs:
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}                 # Mẫu Slide Tạp Chí: ảnh free theo từ khoá (link động, không lưu)
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           OWN_IMAGES: ${{ toJSON(github.event.client_payload.meta.ownImages) }}   # ảnh riêng Drive (Phase 2) — Tower gửi list URL
+          IMG_STYLE: ${{ github.event.client_payload.meta.imageStyle }}           # Mẫu Video Vẽ Hình AI: phong cách tranh (preset người dùng chọn)
         run: |
           if [ -z "$CLAUDE_API_KEY" ]; then echo "❌ Thiếu CLAUDE_API_KEY secret trên render-backend — không soạn được"; exit 1; fi
           case "$TEMPLATE" in
-            slides)   node soan_slides.mjs ;;
-            newsroom) node soan_canh.mjs ;;
-            phunu)    node soan_phunu.mjs ;;
-            broll)    node soan_broll.mjs ;;
-            *)        echo "❌ Mẫu '$TEMPLATE' chưa hỗ trợ soạn-cảnh"; exit 1 ;;
+            slides)      node soan_slides.mjs ;;
+            newsroom)    node soan_canh.mjs ;;
+            phunu)       node soan_phunu.mjs ;;
+            broll)       node soan_broll.mjs ;;
+            illustrated) node soan_illustrated.mjs ;;
+            *)           echo "❌ Mẫu '$TEMPLATE' chưa hỗ trợ soạn-cảnh"; exit 1 ;;
           esac
 
       - name: Render MP4 (chạy đúng gói mẫu)
@@ -118,6 +120,9 @@ jobs:
           VBEE_TOKEN: ${{ secrets.VBEE_TOKEN }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}          # Mẫu Video Vẽ Hình AI: sinh ảnh gpt-image-1 (~$0.05/ảnh)
+          SFX_DIR: ${{ github.workspace }}/assets/sfx            # SFX (tuỳ chọn — thiếu file thì mix bỏ qua)
+          MUSIC_DIR: ${{ github.workspace }}/assets/music
         run: node render.mjs
 
       - name: Xuất MP4 ra artifact (luôn — tải về xem)

@@ -36,6 +36,15 @@
       "status": "ready",
       "builder": "python",
       "entry": "build.py"
+    },
+    {
+      "id": "illustrated",
+      "package": "illustrated",
+      "name": "Mẫu Video Vẽ Hình AI",
+      "kind": "illustrated-ai",
+      "status": "ready",
+      "builder": "python",
+      "entry": "build.py"
     }
   ]
 }

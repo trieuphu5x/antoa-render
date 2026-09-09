@@ -1,0 +1,6 @@
+{
+  "id": "illustrated", "name": "Mẫu Video Vẽ Hình AI", "channelOrigin": "SAB pipeline-video-illustrated",
+  "kind": "illustrated", "status": "ready", "builder": "python", "entry": "build.py",
+  "engine": "hyperframes@0.8.30", "aspect": "9:16", "specFormat": "illustrated", "tts": ["vieneu"],
+  "desc": "Tranh AI vẽ (gpt-image-1) đa phong cách (cắt giấy/pixel/origami/màu nước/flat-vector…) + Ken Burns + caption + CTA. Chọn phong cách = dropdown preset. Dùng lại VieNeu + HyperFrames + ffmpeg của ANTOA."
+}
