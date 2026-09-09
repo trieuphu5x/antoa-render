@@ -49,7 +49,7 @@ def build(workdir, spec_path, do_render):
         n = len(scenes)
         # SFX kho SAB (assets/sfx) — 3 accent tinh tế, đúng vai trò (mô tả trong sound-effects/library.json):
         #   fairy-dust.mp3 = bụi tiên lấp lánh mở màn · swoosh.mp3 = swoosh chuyển cảnh · ta-da.mp3 = khoe kết quả ở CTA
-        #   KHÔNG ép nhạc nền: mix-audio chỉ trộn nhạc khi cfg.style.music_file trỏ tới file thật.
+        #   Nhạc nền: mix-audio auto-duck bgm.mp3 (ấm áp piano) nhỏ lại khi có giọng — chỉ trộn khi cfg.style.music_file trỏ file thật.
         cues = [{"at": 0.6, "sound": "fairy-dust.mp3", "vol": 0.16}]
         for i in range(1, n):
             if i < len(L):
