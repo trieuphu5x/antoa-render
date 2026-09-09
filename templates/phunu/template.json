@@ -1,6 +1,6 @@
 {
-  "id": "phunu", "name": "Phụ Nữ Kinh Doanh Online", "channelOrigin": "Phụ Nữ & Kinh Doanh Online",
+  "id": "phunu", "name": "Mẫu Slide Tạp Chí", "channelOrigin": "Phụ Nữ & Kinh Doanh Online",
   "kind": "talking-editorial", "status": "ready", "builder": "python", "entry": "build.py",
   "engine": "hyperframes@0.7.64", "aspect": "9:16", "specFormat": "phunu", "tts": ["vbee", "edge"],
-  "desc": "Editorial kem–cam 9:16 cho phụ nữ khởi nghiệp. N cảnh có kiểu (intro/text/media/stat/quote/band/list/countup/cta/outro) + ảnh từ kho. Generator viết mới cho ANTOA."
+  "desc": "Mẫu Slide Tạp Chí — editorial kem–cam 9:16. Cảnh ảnh dùng 8 KIỂU DUYỆT v2 (hero/duo/film/arch/grid/split/circles/filmstrip, xoay vòng chống trùng) + khối chữ (intro/text/stat/quote/band/list/countup/cta/outro). Generator viết mới cho ANTOA."
 }

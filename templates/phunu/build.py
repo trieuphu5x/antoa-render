@@ -118,6 +118,88 @@ def r_media(sc, sel, mid, img):
     return card + grp, gs
 
 
+# ===== 8 KIỂU ẢNH DUYỆT v2 (kho kiểu tạp chí) — mỗi kiểu 1 layout, gsap dùng token AT (start+0.25) & DUR (sdur) =====
+IMG_STYLES = ["hero", "duo", "film", "arch", "grid", "split", "circles", "filmstrip"]
+IMG_NEED = {"hero": 1, "duo": 1, "film": 2, "arch": 1, "grid": 4, "split": 1, "circles": 2, "filmstrip": 4}
+
+
+def _heading(sc, size, extra_cls=""):
+    """kick + các dòng disp (không lede) — cho các kiểu có tiêu đề."""
+    bits = [f'<div class="kick {extra_cls} anim">{mk(sc["kick"])}</div>' if sc.get("kick") else ""]
+    bits += [disp_line(l, size) for l in sc.get("disp", [])]
+    return "".join(bits)
+
+
+def _sidetext(sc, size):
+    """kick + disp + lede — cho kiểu có cột chữ bên (duo/arch)."""
+    body = _heading(sc, size)
+    if sc.get("lede"):
+        body += f'<div class="lede anim">{mk(sc["lede"])}</div>'
+    return body
+
+
+def r_image(sc, sel, iid, imgs):
+    """Trả (inner_html, [gsap]). imgs = list tên file đủ dùng cho kiểu."""
+    style = sc.get("style", "hero")
+    S = sel
+
+    def IMG(k):
+        return f'assets/img/{imgs[k % len(imgs)]}'
+
+    if style == "hero":
+        kick = f'<div class="kick onpaper anim" style="color:var(--gold)">{mk(sc["kick"])}</div>' if sc.get("kick") else ""
+        disp = "".join(f'<div class="disp {dispsize(sc.get("disp", []), "d-md")} onpaper anim">{mk(l)}</div>' for l in sc.get("disp", []))
+        inner = (f'<div class="hero"><img id="{iid}" src="{IMG(0)}"/><div class="scrim"></div>'
+                 f'<div class="ov">{kick}{disp}</div></div>')
+        return inner, [f'enter("{S}",AT); kb("{S} .hero img",AT,DUR,1.0,1.12);']
+
+    if style == "duo":
+        inner = (f'<div class="duo" id="{iid}" style="left:96px;top:410px;width:520px;height:840px"><img src="{IMG(0)}"/><div class="tint"></div><div class="tint2"></div></div>'
+                 f'<div class="grp" style="right:174px;top:560px;width:280px;text-align:right">{_sidetext(sc, "d-sm")}</div>')
+        return inner, [f'enter("{S}",AT,{{x:36}}); reveal("{S} .duo",AT); kb("{S} .duo img",AT,DUR,1.06,1.0);']
+
+    if style == "film":   # 2 ảnh phim nghiêng chồng lớp
+        cap = sc.get("caps", [])
+        c0 = f'<div class="cap">▣ {mk(cap[0])}</div>' if len(cap) > 0 else ""
+        c1 = f'<div class="cap">▣ {mk(cap[1])}</div>' if len(cap) > 1 else ""
+        inner = (f'<div class="grp" style="left:96px;top:520px;width:760px">{_heading(sc, "d-md")}</div>'
+                 f'<div class="pc" id="{iid}a" style="left:150px;top:760px;transform:rotate(-7deg)"><img src="{IMG(0)}" style="width:360px;height:460px"/>{c0}</div>'
+                 f'<div class="pc" id="{iid}b" style="left:470px;top:840px;transform:rotate(6deg)"><img src="{IMG(1)}" style="width:360px;height:460px"/>{c1}</div>')
+        return inner, [f'enter("{S}",AT); pop("#{iid}a",AT+0.05); pop("#{iid}b",AT+0.2);']
+
+    if style == "arch":
+        inner = (f'<div class="arch" id="{iid}" style="right:174px;top:420px;width:470px;height:900px"><img src="{IMG(0)}"/></div>'
+                 f'<div class="grp" style="left:96px;top:640px;width:290px">{_sidetext(sc, "d-sm")}</div>')
+        return inner, [f'enter("{S}",AT); pop("#{iid}",AT); kb("#{iid} img",AT,DUR,1.1,1.1,24,-24);']
+
+    if style == "grid":   # lưới 4 ảnh
+        kick = f'<div class="grp" style="left:96px;top:420px"><div class="kick anim">{mk(sc.get("kick", "Bộ sưu tập"))}</div></div>'
+        cells = (f'<div class="pc" id="{iid}a" style="left:96px;top:490px"><img src="{IMG(0)}" style="width:355px;height:400px"/></div>'
+                 f'<div class="pc" id="{iid}b" style="left:508px;top:490px"><img src="{IMG(1)}" style="width:355px;height:400px"/></div>'
+                 f'<div class="pc" id="{iid}c" style="left:96px;top:930px"><img src="{IMG(2)}" style="width:355px;height:400px"/></div>'
+                 f'<div class="pc" id="{iid}d" style="left:508px;top:930px"><img src="{IMG(3)}" style="width:355px;height:400px"/></div>')
+        return kick + cells, [f'enter("{S}",AT); pop("#{iid}a",AT); pop("#{iid}b",AT+0.18); pop("#{iid}c",AT+0.36); pop("#{iid}d",AT+0.54);']
+
+    if style == "split":   # cắt chéo + chữ nửa dưới
+        inner = (f'<div class="split" id="{iid}" style="left:96px;top:410px;width:810px;height:720px"><img src="{IMG(0)}"/></div>'
+                 f'<div class="grp" style="left:96px;top:1180px;width:810px">{_heading(sc, "d-md")}</div>')
+        return inner, [f'enter("{S}",AT); reveal("#{iid}",AT); kb("#{iid} img",AT,DUR,1.0,1.1);']
+
+    if style == "circles":   # 2 ảnh tròn lệch nhịp
+        inner = (f'<div class="grp" style="left:96px;top:430px;width:760px">{_heading(sc, "d-md")}</div>'
+                 f'<div class="circ" id="{iid}a" style="left:96px;top:700px;width:430px;height:430px"><img src="{IMG(0)}"/></div>'
+                 f'<div class="circ" id="{iid}b" style="left:476px;top:1000px;width:380px;height:380px"><img src="{IMG(1)}"/></div>')
+        return inner, [f'enter("{S}",AT); pop("#{iid}a",AT+0.05); pop("#{iid}b",AT+0.35);']
+
+    # filmstrip — băng phim trượt ngang (giữ ~3s rồi cuộn)
+    kick = f'<div style="position:absolute;left:96px;top:520px"><div class="kick anim">{mk(sc.get("kick", "Cuộn ngang"))}</div></div>'
+    cards = "".join(f'<div class="pc" style="margin:0"><img src="{IMG(k)}" style="width:410px;height:510px"/></div>' for k in range(max(3, len(imgs))))
+    inner = (kick +
+             f'<div style="position:absolute;left:0;top:610px;width:1080px;height:660px;overflow:hidden">'
+             f'<div class="filmstrip" id="{iid}" style="position:absolute;left:96px;top:0;display:flex;gap:26px">{cards}</div></div>')
+    return inner, [f'enter("{S}",AT); tl.set("#{iid}",{{x:0}},AT); tl.to("#{iid}",{{x:-980,duration:2.6,ease:"power1.inOut"}},AT+3);']
+
+
 def r_stat(sc, sel, sid):
     inner = (f'<div class="grp" style="left:96px;top:360px"><div class="kick ink anim">{mk(sc.get("kick",""))}</div></div>'
              f'<div style="position:absolute;left:96px;top:470px"><div class="stat s-xl" id="{sid}">{mk(sc.get("big","½"))}</div></div>'
@@ -257,12 +339,22 @@ def build(workdir, spec):
     total = round(t, 3)
 
     # 2) scenes -> HTML + GSAP
-    track = 4; scene_html = []; gsap = []; mi = 0
+    track = 4; scene_html = []; gsap = []; mi = 0; irot = 0
     for sc in laid:
         i = sc["i"]; sel = f"#scene{i}"; typ = sc.get("type", "text")
+        durtok = round(max(1.0, sc["sdur"] - 0.4), 3)   # DUR cho kb (span cảnh)
         if typ == "intro": inner, gs = r_intro(sc, sel)
-        elif typ == "media":
-            img = sc.get("img");
+        elif typ in ("media", "image"):   # cảnh ẢNH → 1 trong 8 KIỂU DUYỆT (xoay vòng nếu không chỉ định style)
+            style = sc.get("style", "auto")
+            if style not in IMG_NEED:
+                style = IMG_STYLES[irot % len(IMG_STYLES)]; irot += 1
+            need = IMG_NEED[style]
+            simgs = list(sc.get("imgs") or ([sc["img"]] if sc.get("img") and sc.get("img") != "auto" else []))
+            while len(simgs) < need:
+                simgs.append(imgs[mi % len(imgs)]); mi += 1
+            inner, gs = r_image({**sc, "style": style}, sel, f"im{i}", simgs)
+        elif typ == "card":   # (giữ layout ảnh cũ 1 thẻ nếu spec yêu cầu)
+            img = sc.get("img")
             if not img or img == "auto": img = imgs[mi % len(imgs)]; mi += 1
             inner, gs = r_media(sc, sel, f"m{i}", img)
         elif typ == "stat": inner, gs = r_stat(sc, sel, f"stat{i}")
@@ -275,7 +367,7 @@ def build(workdir, spec):
         else: inner, gs = r_text(sc, sel)
         scene_html.append(f'<div class="scene clip" id="scene{i}" data-start="{sc["start"]}" data-duration="{sc["sdur"]}" data-track-index="{track}">{inner}</div>')
         at = round(sc["start"] + 0.25, 3)
-        gsap += [g.replace("AT", str(at)) for g in gs]
+        gsap += [g.replace("AT", str(at)).replace("DUR", str(durtok)) for g in gs]
         track += 1
 
     # 3) audio
@@ -304,6 +396,9 @@ window.__timelines=window.__timelines||{{}};var tl=gsap.timeline({{paused:true}}
 gsap.set("#root .orn",{{transformOrigin:"center center"}});tl.to("#root .orn",{{y:-24,duration:{total},ease:"sine.inOut"}},0);
 function enter(sel,at,vars){{vars=vars||{{}};tl.from(sel+" .anim",Object.assign({{opacity:0,y:32,duration:0.7,ease:"power3.out",stagger:0.12}},vars),at);}}
 function card(sel,at){{tl.from(sel,{{opacity:0,y:36,scale:0.94,duration:0.75,ease:"power3.out"}},at);}}
+function kb(sel,at,dur,s0,s1,x0,x1){{x0=x0||0;x1=x1||0;gsap.set(sel,{{transformOrigin:"50% 50%"}});tl.fromTo(sel,{{scale:s0,x:x0}},{{scale:s1,x:x1,duration:dur,ease:"none"}},at);}}
+function reveal(sel,at){{tl.fromTo(sel,{{clipPath:"inset(0 100% 0 0)"}},{{clipPath:"inset(0 0% 0 0)",duration:0.85,ease:"power3.inOut"}},at);}}
+function pop(sel,at){{tl.from(sel,{{opacity:0,y:30,scale:0.94,duration:0.62,ease:"power3.out"}},at);}}
 {chr(10).join(gsap)}
 window.__timelines["main"]=tl;
 </script></body></html>'''

@@ -37,4 +37,30 @@
       .mcard{position:absolute;padding:13px;background:#FBF8F1;border:1px solid rgba(34,35,63,.16);border-radius:15px;box-shadow:0 22px 54px rgba(34,35,63,.20)}
       .mcard img{display:block;border-radius:9px;object-fit:cover}
       .mcap{font-family:"JetBrains Mono",monospace;font-size:19px;color:var(--ink2);padding:11px 3px 1px;letter-spacing:.02em}
-    
+
+      /* ===== 8 KHỐI ẢNH DUYỆT v2 (kho kiểu tạp chí) — to, cân 70–80% safe zone ===== */
+      .onpaper{color:var(--paper)}
+      /* 01 HERO gần toàn khung + scrim + chữ đè */
+      .hero{position:absolute;left:96px;top:340px;width:810px;height:1160px;border-radius:16px;overflow:hidden}
+      .hero img{width:100%;height:100%;object-fit:cover;display:block}
+      .hero .scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(34,35,63,0) 40%,rgba(34,35,63,.88) 100%)}
+      .hero .ov{position:absolute;left:60px;right:60px;bottom:72px}
+      /* 02 DUOTONE cam */
+      .duo{position:absolute;border-radius:16px;overflow:hidden}
+      .duo img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(1) contrast(1.14) brightness(1.05)}
+      .duo .tint{position:absolute;inset:0;background:var(--ember);mix-blend-mode:multiply;opacity:.46}
+      .duo .tint2{position:absolute;inset:0;background:var(--ink);mix-blend-mode:screen;opacity:.18}
+      /* card ảnh chung (03 phim nghiêng · 05 lưới · 08 băng phim) */
+      .pc{position:absolute;padding:14px;background:#FBF8F1;border:1px solid rgba(34,35,63,.16);border-radius:16px;box-shadow:0 22px 50px rgba(34,35,63,.24)}
+      .pc img{display:block;border-radius:9px;object-fit:cover}
+      .pc .cap{font-family:"JetBrains Mono",monospace;font-size:18px;color:var(--ink2);padding:10px 2px 1px}
+      .filmstrip .pc{position:relative;flex:0 0 auto}   /* băng phim: card xếp hàng ngang, KHÔNG absolute */
+      /* 04 ARCH vòm tạp chí */
+      .arch{position:absolute;overflow:hidden;border-radius:400px 400px 20px 20px}
+      .arch img{width:100%;height:100%;object-fit:cover;display:block}
+      /* 06 SPLIT cắt chéo */
+      .split{position:absolute;overflow:hidden;border-radius:14px;clip-path:polygon(0 0,100% 0,100% 84%,0 100%)}
+      .split img{width:100%;height:100%;object-fit:cover;display:block}
+      /* 07 CIRCLE 2 ảnh tròn */
+      .circ{position:absolute;border-radius:50%;overflow:hidden;border:12px solid #FBF8F1;box-shadow:0 22px 50px rgba(34,35,63,.26)}
+      .circ img{width:100%;height:100%;object-fit:cover;display:block}
