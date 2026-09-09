@@ -11,6 +11,7 @@ KICH_THUOC = (1080, 1080)
 
 IMG_URL  = os.environ.get("IMG_URL", "").strip()
 DRIVE_ID = os.environ.get("DRIVE_ID", "").strip()
+MODE     = (os.environ.get("MODE") or "both").strip().lower()   # crop = chỉ cắt 1080 · sharp = chỉ làm nét · both = cả hai
 OUT      = "out.jpg"
 
 
@@ -56,8 +57,10 @@ def crop_vuong(img):
 
 
 img = lay_anh().convert("RGB")
-img = crop_vuong(img)
-img = img.resize(KICH_THUOC, Image.LANCZOS)
-img = img.filter(ImageFilter.UnsharpMask(radius=1.5, percent=int(DO_SHARP * 80), threshold=3))
+if MODE in ("crop", "both"):
+    img = crop_vuong(img)
+    img = img.resize(KICH_THUOC, Image.LANCZOS)          # cắt vuông giữa → 1080×1080
+if MODE in ("sharp", "both"):
+    img = img.filter(ImageFilter.UnsharpMask(radius=1.5, percent=int(DO_SHARP * 80), threshold=3))   # làm nét y hệt bản gốc (giữ nguyên kích thước/tỉ lệ)
 img.save(OUT, "JPEG", quality=95)
-print("✅ Đã làm nét (crop 1080 + UnsharpMask 1.5/144/3) →", OUT)
+print(f"✅ Xong (mode={MODE}) →", OUT, img.size)

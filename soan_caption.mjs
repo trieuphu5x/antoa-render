@@ -69,7 +69,13 @@ const r = await fetch('https://api.anthropic.com/v1/messages', {
 });
 const j = await r.json();
 if (!r.ok) { console.error('❌ Claude lỗi', r.status, JSON.stringify(j?.error || j).slice(0, 220)); process.exit(1); }
-const caption = (j?.content || []).map((b) => b.text || '').join('').trim();
+let caption = (j?.content || []).map((b) => b.text || '').join('').trim();
 if (!caption) { console.error('❌ Caption rỗng'); process.exit(1); }
+// Dọn markdown còn sót (Claude đôi khi thêm '# ' ở tiêu đề / '**') — GIỮ hashtag (#Tag không có dấu cách).
+caption = caption
+  .replace(/^#{1,6}[ \t]+/gm, '')   // '# Tiêu đề' → 'Tiêu đề' (heading có dấu cách; hashtag #Tag không dính)
+  .replace(/\*\*/g, '')             // bỏ ** đậm
+  .replace(/^[ \t]*[-*][ \t]+/gm, '')   // bỏ gạch đầu dòng '- ' / '* '
+  .trim();
 fs.writeFileSync('caption_out.txt', caption);
 console.log('✅ Caption (' + (img ? 'có nhìn ảnh' : 'theo chủ đề') + '):', caption.slice(0, 90).replace(/\n/g, ' '));

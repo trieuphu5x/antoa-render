@@ -30,6 +30,7 @@ jobs:
         env:
           IMG_URL: ${{ github.event.client_payload.imageUrl }}
           DRIVE_ID: ${{ github.event.client_payload.driveId }}
+          MODE: ${{ github.event.client_payload.mode }}
         run: python3 process_image.py
 
       - name: Up R2 (ảnh thành phẩm)
