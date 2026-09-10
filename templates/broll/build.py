@@ -17,6 +17,11 @@ LEAD, TAIL, MIN_D = 0.15, 0.8, 3.5
 AMBER = "0xFFC53D"
 BRAND = (os.environ.get("BRAND_LABEL") or "").strip()
 SLOGAN = (os.environ.get("SLOGAN") or "").strip()
+# 3 phối màu CHỮ (accent = kicker + dòng nghiêng + pill; chữ chính giữ trắng cho dễ đọc trên video).
+COLORS = {"cam": "#F0662F", "vang": "#FFC42E", "mint": "#22E0A6"}
+def _rgba(hexc, a):
+    h = hexc.lstrip("#")
+    return f"rgba({int(h[0:2],16)},{int(h[2:4],16)},{int(h[4:6],16)},{a})"
 sys.path.insert(0, HERE)
 import stock
 
@@ -69,11 +74,11 @@ OVERLAY_HTML = """<!doctype html><html lang="vi"><head><meta charset="utf-8">
 <style>
   *{{margin:0;padding:0;box-sizing:border-box}}
   html,body{{width:1080px;height:1920px;overflow:hidden;background:transparent;font-family:"Be Vietnam Pro",sans-serif}}
-  :root{{--ember:#F0662F}}
+  :root{{--ember:{accent}}}
   .scrim{{position:absolute;inset:0;background:
      linear-gradient(to bottom, rgba(16,14,22,.28) 0%, rgba(16,14,22,0) 26%, rgba(16,14,22,0) 40%, rgba(16,14,22,.55) 74%, rgba(16,14,22,.88) 100%)}}
   .pill{{position:absolute;top:96px;left:90px;display:inline-flex;align-items:center;
-     background:rgba(240,102,47,.90);color:#fff;padding:15px 26px;border-radius:999px;
+     background:{pillbg};color:#fff;padding:15px 26px;border-radius:999px;
      font-weight:700;font-size:26px;letter-spacing:.02em;text-transform:uppercase;box-shadow:0 8px 30px rgba(0,0,0,.28)}}
   .pill .star{{margin-right:10px;font-size:24px}}
   .block{{position:absolute;left:90px;bottom:300px;width:900px}}
@@ -142,11 +147,12 @@ def _body_html(sub):
     return "".join(out)
 
 
-def render_overlay(work, i, sc, chrome):
+def render_overlay(work, i, sc, chrome, accent, pillbg):
     pill = f'<div class="pill"><span class="star">✱</span>{html.escape(BRAND)}</div>' if BRAND else ""
     footer = html.escape(SLOGAN) if SLOGAN else "VIDEO EDITORIAL · 9:16"
     doc = OVERLAY_HTML.format(pill=pill, kicker=html.escape(str(sc.get("kick", "")).strip()),
-                              head=_head_html(sc.get("head")), body=_body_html(sc.get("sub")), footer=footer)
+                              head=_head_html(sc.get("head")), body=_body_html(sc.get("sub")), footer=footer,
+                              accent=accent, pillbg=pillbg)
     hp = os.path.join(work, f"ov{i}.html"); open(hp, "w", encoding="utf-8").write(doc)
     png = os.path.join(work, f"ov{i}.png")
     try:
@@ -223,8 +229,10 @@ def build(workdir, spec, do_render):
     ovd = os.path.join(workdir, "overlay"); os.makedirs(ovd, exist_ok=True)
     engine = spec.get("tts", "vbee"); voice = spec.get("voice", "vi-VN-NamMinhNeural")
     scenes = spec.get("scenes", [])
+    color = str(spec.get("color") or os.environ.get("BROLL_COLOR") or "cam").strip()
+    accent = COLORS.get(color, COLORS["cam"]); pillbg = _rgba(accent, 0.92)
     chrome = find_chrome()
-    print(f"[broll] chữ editorial: {'Chrome ' + os.path.basename(chrome) if chrome else 'KHÔNG có Chrome → fallback drawtext'}")
+    print(f"[broll] màu chữ: {color} ({accent}) · {'Chrome ' + os.path.basename(chrome) if chrome else 'KHÔNG có Chrome → fallback drawtext'}")
     srcs = []; parts = []
 
     for i, sc in enumerate(scenes, 1):
@@ -238,7 +246,7 @@ def build(workdir, spec, do_render):
             continue
         out = os.path.join(workdir, f"scene{i}.mp4")
         has_a = d > 0.3 and os.path.exists(mp3)
-        png = render_overlay(ovd, i, sc, chrome) if chrome else None
+        png = render_overlay(ovd, i, sc, chrome, accent, pillbg) if chrome else None
         if png:
             scene_overlay_cmd(bg, mp3, png, has_a, sdur, out)
         else:

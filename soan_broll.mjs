@@ -35,5 +35,6 @@ const m = raw.match(/\{[\s\S]*\}/);
 if (!m) { console.error('Không parse JSON:', raw.slice(0, 300)); process.exit(1); }
 const spec = JSON.parse(m[0]);
 if (!spec.scenes || !spec.scenes.length) { console.error('Thiếu scenes'); process.exit(1); }
+spec.color = (process.env.BROLL_COLOR || 'cam').trim();   // màu chữ user chọn (cam/vang/mint) → build.py inject accent
 writeFileSync('spec.json', JSON.stringify(spec, null, 2));
 console.log(`✓ spec.json (broll): ${spec.scenes.length} cảnh · query: ${spec.scenes.map((s) => s.query).join(' | ')}`);
