@@ -50,7 +50,7 @@ ${IMG_BLOCK}
 JSON dạng:
 {
  "palette": "<một trong: hot|launch|creative|biz|research — chọn theo LOẠI tin: hot=drama/an ninh, launch=ra mắt/model mới, creative=phim-ảnh-nghệ thuật AI, biz=thị trường/kinh doanh, research=nghiên cứu>",
- "caption": {"title":"<TIÊU ĐỀ chuẩn SEO cho Facebook & YouTube: TIẾNG VIỆT, 1 dòng, ĐẶT TỪ KHOÁ/tên chủ thể QUAN TRỌNG NHẤT LÊN ĐẦU (vd tên model/hãng/công nghệ), có yếu tố người-hay-tìm + hấp dẫn (con số/kết quả/'mới nhất'/'vừa ra mắt'…), 50-90 ký tự, KHÔNG hashtag, KHÔNG dấu ngoặc kép, KHÔNG viết HOA toàn bộ>", "desc":"<caption đăng: TỐI ĐA 2 câu ngắn gọn + 4-5 hashtag. TUYỆT ĐỐI KHÔNG nhồi toàn bộ nội dung/kịch bản vào đây>"},
+ "caption": {"title":"<TIÊU ĐỀ chuẩn SEO cho Facebook & YouTube: TIẾNG VIỆT, 1 dòng, ĐẶT TỪ KHOÁ/tên chủ thể QUAN TRỌNG NHẤT LÊN ĐẦU (vd tên model/hãng/công nghệ) để dễ tìm, RÕ RÀNG ĐÚNG BẢN CHẤT (nêu chủ thể + việc gì), giọng ĐIỀM ĐẠM — TUYỆT ĐỐI KHÔNG giật gân/clickbait/thổi phồng, 50-90 ký tự, KHÔNG hashtag, KHÔNG dấu ngoặc kép, KHÔNG viết HOA toàn bộ>", "desc":"<caption đăng: TỐI ĐA 2 câu ngắn gọn TRUNG LẬP (không câu tương tác giật gân) + 3-5 hashtag trung tính bám chủ đề. TUYỆT ĐỐI KHÔNG nhồi toàn bộ nội dung/kịch bản vào đây>"},
  "scenes": [
    {"id":"s1","inner":"<HTML cảnh HOOK>","vo":"<lời đọc cảnh 1>"},
    ... các cảnh giữa ...,
@@ -68,6 +68,14 @@ LUẬT viết "inner" (BẮT BUỘC, chỉ dùng các class này):
 - KHÔNG dùng class/thẻ khác. ${SHOTS.length ? 'ẢNH: CHỈ dùng qua thẻ .card đã cho ở trên (giữ nguyên src+style). BẮT BUỘC đặt thẻ .card BÊN TRONG <div class="mid">…</div> (là phần tử con cuối) — TUYỆT ĐỐI KHÔNG đặt sau thẻ </div> đóng .mid, nếu không ảnh sẽ rơi lên đỉnh đè tiêu đề.' : 'KHÔNG dùng ảnh, KHÔNG style inline.'}
 - "vo" = lời đọc tự nhiên tiếng Việt (1 câu/cảnh), KHÔNG chứa HTML.
 - An toàn nền tảng: KHÔNG hứa thu nhập/mốc thời gian/comment-bait/thổi phồng, KHÔNG ký tự < > trong text hiển thị (dùng "trên/dưới").
+- ⚖️ AN TOÀN TIN TỨC (BẮT BUỘC — tránh nền tảng gỡ/hạn chế):
+  1) TRUNG THỰC với bài gốc: chỉ nói thông tin CÓ trong bài, KHÔNG bịa/suy diễn/quy chụp, KHÔNG thêm số liệu-chi tiết không có.
+  2) KHÔNG giật tít sai sự thật; KHÔNG phóng đại ("chấn động/kinh hoàng/sốc") nếu bài gốc không vậy. Tiêu đề phải khớp nội dung.
+  3) Tin CHƯA kiểm chứng: dùng "theo nguồn tin/được cho là/nghi vấn" — KHÔNG khẳng định chắc chắn.
+  4) KHÔNG mô tả bạo lực/tai nạn/thương vong/tang thương chi tiết phản cảm; né hình ảnh máu me, thi thể.
+  5) Tin nhạy cảm (chính trị/tôn giáo/sắc tộc/lãnh thổ): đưa TRUNG LẬP, KHÔNG bình luận định hướng, KHÔNG kích động.
+  6) KHÔNG bôi nhọ/xúc phạm/kết tội cá nhân-tổ chức; nêu cáo buộc thì ghi rõ là "cáo buộc/đang điều tra", tôn trọng suy đoán vô tội.
+  7) 🔇 GIỌNG ĐIỀM ĐẠM, đưa tin KHÁCH QUAN — thà bớt thu hút còn hơn bị nền tảng cắm cờ. Áp dụng cho CẢ lời đọc (vo), tiêu đề cảnh (head), TIÊU ĐỀ SEO (caption.title), caption đăng (caption.desc) và HASHTAG: KHÔNG dùng từ giật gân/clickbait ("sốc", "chấn động", "kinh hoàng", "phải xem ngay", "sự thật khủng khiếp", "không thể tin nổi"), KHÔNG viết HOA cả cụm để hù, KHÔNG lạm dụng !/?. Hashtag: 3-5 cái TRUNG TÍNH bám chủ đề, KHÔNG hashtag giật gân/gây sợ hãi/câu tương tác.
 Chỉ in JSON.`;
 
 // ===== VERBATIM: dùng ĐÚNG NGUYÊN VĂN kịch bản Boss sửa (ARTICLE = kịch bản) — KHÔNG để Claude viết lại LỜI ĐỌC =====
