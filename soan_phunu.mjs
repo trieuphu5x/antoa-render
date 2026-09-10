@@ -16,11 +16,14 @@ BỐI CẢNH: """${ARTICLE.slice(0, 2000)}"""
 TỪ KHOÁ BÁM SÁT: ${BRANDKW}
 Hạt giống đa dạng (để video này khác các video khác): ${NONCE}
 
-JSON: { "num":"01", "scenes":[ {…}, … ] }  — 16-20 cảnh.
+JSON: { "channel":"<TÊN KÊNH ngắn, vd Khởi Sự>", "topic":"<chủ đề 1-3 từ tiếng Anh, vd online business>", "milestone":"<CHUYÊN MỤC/CỘT MỐC ngắn IN HOA, vd MORNING RITUAL>", "num":"01", "scenes":[ {…}, … ] }  — CHỈ 10-12 cảnh.
 
-CẢNH 1 luôn type "intro"; CẢNH cuối luôn type "outro"; áp chót nên là type "cta". Ở giữa TRỘN các kiểu cho nhịp điệu.
-TRIẾT LÝ ĐA DẠNG (đừng để video nào cũng giống nhau): dùng NHIỀU kiểu khác nhau (ít nhất 6 kiểu ngoài intro/outro); KHÔNG lặp 1 kiểu quá 3 lần; xen kẽ media (đổi side trái/phải), text (đổi align trái/giữa/phải), stat, quote, band (đổi pos trên/dưới), list, countup. Dùng hạt giống để đa dạng lựa chọn.
-Mỗi cảnh có "vo" = lời đọc tự nhiên 1-2 câu (tiếng Việt, ấm, KHÔNG chứa markup/kí tự < >).
+⭐ ƯU TIÊN HÌNH ẢNH: **ÍT NHẤT MỘT NỬA** số cảnh là type "media" (ảnh thật). Hạn chế cảnh chữ dày. Video kể bằng ẢNH là chính, chữ chỉ điểm xuyết.
+⭐ NGẮN GỌN (RẤT QUAN TRỌNG — đừng nhồi nhét): "disp" tối đa 2 dòng, mỗi dòng ≤ 4-5 từ (chỉ Ý CHÍNH). "lede" tối đa 1 câu NGẮN ≤ 12 từ (hoặc BỎ). "caps" (chú thích ảnh) ≤ 6 từ. Nhường không gian cho ảnh.
+
+CẢNH 1 luôn type "intro"; CẢNH cuối luôn type "outro"; áp chót nên là type "cta". Ở giữa ƯU TIÊN media, xen kẽ ít text/stat/quote cho nhịp điệu.
+TRIẾT LÝ ĐA DẠNG: xen kẽ media (đổi side trái/phải), text (đổi align), stat, quote — nhưng MEDIA chiếm đa số. Dùng hạt giống để đa dạng lựa chọn.
+Mỗi cảnh có "vo" = lời đọc tự nhiên 1-2 câu (tiếng Việt, ấm, NỐI mạch với cảnh trước/sau để đọc LIỀN MẠCH; KHÔNG markup/kí tự < >).
 
 KIỂU cảnh + trường:
 - intro:   {kick, disp:[3 dòng tiêu đề lớn], lede}
@@ -38,8 +41,12 @@ MARKUP trong text hiển thị (disp/lede/band/quote — KHÔNG dùng < >): *nh�
 An toàn: KHÔNG hứa thu nhập/mốc thời gian, KHÔNG comment-bait, KHÔNG kí tự < > trong text.
 Chỉ in JSON.`;
 
-const spec = await claudeJson({ key: KEY, model: MODEL, maxTokens: 4200, prompt: PROMPT, tries: 3, label: 'phunu' });
+const spec = await claudeJson({ key: KEY, model: MODEL, maxTokens: 3200, prompt: PROMPT, tries: 3, label: 'phunu' });
 if (!spec || !spec.scenes || !spec.scenes.length) { console.error('Thiếu scenes'); process.exit(1); }
+// Nhãn động: ưu tiên brand thật (env) → AI đề xuất → mặc định.
+spec.channel = (process.env.BRAND_LABEL || spec.channel || 'Kênh của bạn').toString().trim();
+spec.topic = (spec.topic || process.env.SLOGAN || 'online business').toString().trim();
+spec.milestone = (spec.milestone || (spec.scenes[0] && spec.scenes[0].kick) || '').toString().trim();
 
 // ===== NGUỒN ẢNH ĐỘNG (KHÔNG lưu — Chromium tải thẳng từ link lúc render) =====
 // Ưu tiên ẢNH RIÊNG (Drive) Tower gửi qua OWN_IMAGES (JSON []); thiếu → bù ẢNH FREE theo từ khoá (Pexels/Pixabay).

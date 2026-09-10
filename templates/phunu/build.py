@@ -19,7 +19,8 @@ import sys, os, json, re, html as _html, subprocess, asyncio
 HERE = os.path.dirname(os.path.abspath(__file__))
 ASSETS = os.path.join(HERE, "assets")
 FFPROBE = os.environ.get("FFPROBE", "ffprobe")
-LEAD, TAIL, MIN_D, OUTRO_D = 0.2, 0.9, 4.0, 8.0
+LEAD, TAIL, MIN_D, OUTRO_D = 0.1, 0.15, 2.0, 4.0   # giọng LIỀN MẠCH: gần như không quãng nghỉ giữa cảnh
+_CHANNEL = ""   # tên kênh (đặt trong build) — dùng cho outro brandmark
 
 
 def dur(p):
@@ -281,7 +282,7 @@ def r_cta(sc, sel):   # KIỂU 12 · Chốt / Kêu gọi hành động (có nút
 
 def r_outro(sc, sel):
     inner = (f'<div class="grp" style="left:96px;right:174px;top:720px;text-align:center">'
-             f'<div class="brandmark anim">{mk(sc.get("brand","✳ KHỞI SỰ"))}</div>'
+             f'<div class="brandmark anim">{mk(sc.get("brand") or ("✳ " + _CHANNEL if _CHANNEL else "✳ KHỞI SỰ"))}</div>'
              + (f'<div class="lede anim" style="margin-left:auto;margin-right:auto;max-width:700px;margin-top:26px">{mk(sc["lede"])}</div>' if sc.get("lede") else "")
              + '</div>')
     return inner, [f'enter("{sel}",AT,{{y:34,scale:0.97,stagger:0.2}});']
@@ -332,6 +333,12 @@ def build(workdir, spec):
     engine = spec.get("tts", "vbee")
     voice = spec.get("voice", "vi-VN-HoaiMyNeural")
     scenes = spec.get("scenes", [])
+    # NHÃN ĐỘNG: tên kênh (footer) · chủ đề (góc phải) · cột mốc (góc trái). Ưu tiên env brand thật, rồi spec (AI), rồi mặc định.
+    global _CHANNEL
+    channel = (spec.get("channel") or os.environ.get("BRAND_LABEL") or "Kênh của bạn").strip()
+    topic = (spec.get("topic") or os.environ.get("SLOGAN") or "").strip()
+    milestone = (spec.get("milestone") or (scenes[0].get("kick") if scenes else "") or "").strip()
+    _CHANNEL = channel
     # NGUỒN ẢNH: spec.images = list URL động (Drive/stock, KHÔNG lưu — Chromium tải lúc render). Rỗng → ảnh mẫu local (test).
     imgs = [str(u).strip() for u in (spec.get("images") or []) if str(u).strip()] or sorted(os.listdir(os.path.join(ASSETS, "img")))
 
@@ -398,7 +405,7 @@ def build(workdir, spec):
   <div class="layer paper clip" data-start="0" data-duration="{total}" data-track-index="0"></div>
   <div class="layer grain clip" data-start="0" data-duration="{total}" data-track-index="1"><svg><filter id="gr"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="1080" height="1920" filter="url(#gr)"/></svg></div>
   <div class="layer clip" data-start="0" data-duration="{total}" data-track-index="2"><div class="orn">&amp;</div></div>
-  <div class="layer frame clip" data-start="0" data-duration="{total}" data-track-index="3"><div class="rt"></div><div class="rb"></div><div class="mast">✳ KHỞI <b>SỰ</b></div><div class="mr">online business</div><div class="ft">Phụ nữ &amp; Kinh doanh Online</div></div>
+  <div class="layer frame clip" data-start="0" data-duration="{total}" data-track-index="3"><div class="rt"></div><div class="rb"></div><div class="mast">✳ {_html.escape(milestone or channel)}</div><div class="mr">{_html.escape(topic)}</div><div class="ft">{_html.escape(channel)}</div></div>
   {chr(10)+"  ".join(scene_html)}
   {chr(10)+"  ".join(audio_html)}
 </div>
