@@ -1,6 +1,6 @@
 {
-  "id": "broll", "name": "B-roll chữ chạy", "channelOrigin": "ANTOA (mới)",
-  "kind": "video-background-kinetic", "status": "ready", "builder": "python", "entry": "build.py",
-  "engine": "hyperframes@0.7.64", "aspect": "9:16", "specFormat": "broll", "tts": ["vbee", "edge"],
-  "desc": "Nền VIDEO stock 9:16 (Pexels/Pixabay khi có key; fallback gradient) + chữ chạy kinetic. Hợp sức khoẻ/tài chính/thể dục."
+  "id": "broll", "name": "Mẫu Broll Chạy Chữ 1", "channelOrigin": "ANTOA (mới)",
+  "kind": "video-background-editorial", "status": "ready", "builder": "python", "entry": "build.py",
+  "engine": "ffmpeg+chrome", "aspect": "9:16", "specFormat": "broll", "tts": ["vieneu", "vbee", "edge"],
+  "desc": "Nền VIDEO stock 9:16 quay thật (Pexels/Pixabay khi có key; fallback gradient) + CHỮ EDITORIAL phủ đè (Playfair nghiêng cam + Be Vietnam Pro, render Chrome→PNG→ffmpeg overlay). Thiếu Chrome → fallback drawtext."
 }
