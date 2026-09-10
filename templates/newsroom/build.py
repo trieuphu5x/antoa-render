@@ -185,13 +185,13 @@ def write_caption(video_dir, cap, spec):
         full += "\n\n" + tagline
     full = full.strip()
     data = {"title": title, "desc": desc, "hashtags": tags, "post_time": cap.get("post_time", ""),
-            "caption_full": full, "source": spec.get("source", "")}
+            "caption_full": full, "source": ""}   # BỎ nguồn (Boss chốt) — video/tiêu đề/caption đều KHÔNG dẫn nguồn báo
     with open(os.path.join(video_dir, "caption.json"), "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
     md = (f"# Caption — {os.path.basename(os.path.normpath(video_dir))}\n\n"
           f"**Dòng đầu / tiêu đề đăng:** {title}\n\n"
           f"**CAPTION ĐẦY ĐỦ (copy dán cả 3 nền):**\n```\n{full}\n```\n\n"
-          f"**Giờ đăng gợi ý:** {cap.get('post_time', '')}  ·  **Nguồn:** {spec.get('source', '')}\n")
+          f"**Giờ đăng gợi ý:** {cap.get('post_time', '')}\n")
     open(os.path.join(video_dir, "caption.md"), "w", encoding="utf-8").write(md)
 
 
@@ -300,8 +300,7 @@ def build(video_dir, spec):
         _credit_html = f'<div class="credit">🎵 Nhạc: {music_credit}</div>' if music_credit else ''
         chrome = (f'<div class="mast"><span class="dot"></span><span class="tag">{spec.get("mast_a","TIN")} <b>{spec.get("mast_b","KINH DOANH")}</b></span></div>'
                   + (f'<div class="mr">{_mr}</div>' if _mr else '')
-                  + f'<div class="src">Nguồn: {spec.get("source","")}</div>'
-                  + _credit_html
+                  + _credit_html   # BỎ HẲN dẫn nguồn báo trên video (Boss chốt — giảm rủi ro pháp lý cho user). Chỉ giữ credit NHẠC nếu track CC-BY.
                   + '<div class="pbar"></div><div class="pfill" id="pfill"></div>')
     html.append(f'<div class="layer clip" data-start="0" data-duration="{total}" data-track-index="2">{chrome}</div>')
     ti = 3
