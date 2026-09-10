@@ -1,0 +1,6 @@
+{
+  "id": "broll2", "name": "Mẫu Broll Chạy Chữ 2", "channelOrigin": "ANTOA (mới)",
+  "kind": "video-background-caption", "status": "ready", "builder": "python", "entry": "build.py",
+  "engine": "ffmpeg+chrome", "aspect": "9:16", "specFormat": "broll2", "tts": ["vieneu", "vbee", "edge"],
+  "desc": "Nền VIDEO stock 9:16 quay thật + CAPTION theo lời đọc (cùng font Be Vietnam Pro). 3 KIỂU: bar (thanh dọc) · italic (nghiêng+gạch chân) · highlight (nền màu). Render Chrome→PNG→ffmpeg overlay; thiếu Chrome → fallback drawtext."
+}

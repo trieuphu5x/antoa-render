@@ -38,6 +38,15 @@
       "entry": "build.py"
     },
     {
+      "id": "broll2",
+      "package": "broll2",
+      "name": "Mẫu Broll Chạy Chữ 2",
+      "kind": "video-background-caption",
+      "status": "ready",
+      "builder": "python",
+      "entry": "build.py"
+    },
+    {
       "id": "illustrated",
       "package": "illustrated",
       "name": "Mẫu Video Vẽ Hình AI",

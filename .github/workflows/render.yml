@@ -98,6 +98,7 @@ jobs:
           IMG_STYLE: ${{ github.event.client_payload.meta.imageStyle }}           # Mẫu Video Vẽ Hình AI: phong cách tranh (preset người dùng chọn)
           PALETTE: ${{ github.event.client_payload.meta.palette }}                # Mẫu Slide Tạp Chí: màu (kem-cam/navy-vang/xanh-ngoc/hong-dat/den-gold/xanh-duong-cam)
           BROLL_COLOR: ${{ github.event.client_payload.meta.brollColor }}         # Mẫu Broll Chạy Chữ 1: màu chữ (cam/vang/mint)
+          BROLL2_STYLE: ${{ github.event.client_payload.meta.broll2Style }}       # Mẫu Broll Chạy Chữ 2: kiểu caption (bar/italic/highlight)
         run: |
           if [ -z "$CLAUDE_API_KEY" ]; then echo "❌ Thiếu CLAUDE_API_KEY secret trên render-backend — không soạn được"; exit 1; fi
           case "$TEMPLATE" in
@@ -105,6 +106,7 @@ jobs:
             newsroom)    node soan_canh.mjs ;;
             phunu)       node soan_phunu.mjs ;;
             broll)       node soan_broll.mjs ;;
+            broll2)      node soan_broll2.mjs ;;
             illustrated) node soan_illustrated.mjs ;;
             *)           echo "❌ Mẫu '$TEMPLATE' chưa hỗ trợ soạn-cảnh"; exit 1 ;;
           esac
