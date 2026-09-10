@@ -19,9 +19,8 @@ const MAXTOK = IMG_MODE === 'article' ? 3800 : 2600;                            
 let SHOTS = [];
 try { if (existsSync('shots/manifest.json')) SHOTS = (JSON.parse(readFileSync('shots/manifest.json', 'utf8')).shots || []); } catch (e) { SHOTS = []; }
 const cardH = (s) => Math.max(80, Math.min(340, Math.round(770 * (s.h || 150) / (s.w || 770))));   // cao hiển thị (card rộng 770px)
-const cardTag = 'BÀI GỐC' + (SOURCE ? ' · ' + SOURCE.toUpperCase() : '');
-// Ảnh THẬT của bài → nhãn "BÀI GỐC · nguồn"; ảnh bù → "ẢNH MINH HOẠ" (trung thực, không nhận vơ của báo).
-const cardHtml = (file, h, kind) => `<div class="card anim"><div class="tab">${kind === 'stock' ? 'ẢNH MINH HOẠ' : cardTag}</div><img src="assets/img/${file}" style="width:770px;height:${h}px" /></div>`;
+// BỎ nhãn "BÀI GỐC · nguồn" TRÊN ảnh (Boss) — đã có dẫn nguồn góc trái-dưới (.credit) xuyên suốt video rồi.
+const cardHtml = (file, h, kind) => `<div class="card anim"><img src="assets/img/${file}" style="width:770px;height:${h}px" /></div>`;
 // 🩹 FIX "dán sai vị trí ảnh": ép MỌI thẻ .card nằm TRONG <div class="mid"> (haiku hay đặt card SAU </div> đóng mid →
 // card position:relative rơi lên đỉnh scene, ĐÈ masthead "TIN NÓNG"). Gỡ card ra rồi chèn lại vào cuối .mid → luôn ở vùng nội dung.
 function ensureCardInMid(inner) {
