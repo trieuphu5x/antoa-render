@@ -1,5 +1,6 @@
 // Soạn SPEC cho mẫu "broll" (nền video stock + chữ chạy) → spec.json cho templates/broll/build.py.
 import { writeFileSync } from 'node:fs';
+import { claudeJson } from './soan_util.mjs';
 const KEY = process.env.CLAUDE_API_KEY;
 const MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001';
 const TITLE = process.env.TITLE || '';
@@ -24,17 +25,8 @@ Mỗi cảnh:
 An toàn: KHÔNG hứa thu nhập/mốc thời gian/chữa bệnh tuyệt đối/comment-bait, KHÔNG kí tự < >. Giọng tích cực, đáng tin.
 Chỉ in JSON.`;
 
-const r = await fetch('https://api.anthropic.com/v1/messages', {
-  method: 'POST',
-  headers: { 'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-  body: JSON.stringify({ model: MODEL, max_tokens: 3000, messages: [{ role: 'user', content: brollPrompt({ title: TITLE, article: ARTICLE, kw: BRANDKW, nonce: NONCE }) }] }),
-});
-const j = await r.json();
-const raw = (j?.content || []).map((b) => b.text || '').join('');
-const m = raw.match(/\{[\s\S]*\}/);
-if (!m) { console.error('Không parse JSON:', raw.slice(0, 300)); process.exit(1); }
-const spec = JSON.parse(m[0]);
-if (!spec.scenes || !spec.scenes.length) { console.error('Thiếu scenes'); process.exit(1); }
+const spec = await claudeJson({ key: KEY, model: MODEL, maxTokens: 3000, prompt: brollPrompt({ title: TITLE, article: ARTICLE, kw: BRANDKW, nonce: NONCE }), tries: 3, label: 'broll' });
+if (!spec || !spec.scenes || !spec.scenes.length) { console.error('Thiếu scenes'); process.exit(1); }
 spec.color = (process.env.BROLL_COLOR || 'cam').trim();   // màu chữ user chọn (cam/vang/mint) → build.py inject accent
 writeFileSync('spec.json', JSON.stringify(spec, null, 2));
 console.log(`✓ spec.json (broll): ${spec.scenes.length} cảnh · query: ${spec.scenes.map((s) => s.query).join(' | ')}`);

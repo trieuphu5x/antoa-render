@@ -1,5 +1,6 @@
 // Soạn SPEC cho mẫu "phunu" (Phụ Nữ & Kinh Doanh Online) → spec.json cho templates/phunu/build.py.
 import { writeFileSync } from 'node:fs';
+import { claudeJson } from './soan_util.mjs';
 
 const KEY = process.env.CLAUDE_API_KEY;
 const MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001';
@@ -37,17 +38,8 @@ MARKUP trong text hiển thị (disp/lede/band/quote — KHÔNG dùng < >): *nh�
 An toàn: KHÔNG hứa thu nhập/mốc thời gian, KHÔNG comment-bait, KHÔNG kí tự < > trong text.
 Chỉ in JSON.`;
 
-const r = await fetch('https://api.anthropic.com/v1/messages', {
-  method: 'POST',
-  headers: { 'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-  body: JSON.stringify({ model: MODEL, max_tokens: 4200, messages: [{ role: 'user', content: PROMPT }] }),
-});
-const j = await r.json();
-const raw = (j?.content || []).map((b) => b.text || '').join('');
-const m = raw.match(/\{[\s\S]*\}/);
-if (!m) { console.error('Không parse được JSON:', raw.slice(0, 300)); process.exit(1); }
-const spec = JSON.parse(m[0]);
-if (!spec.scenes || !spec.scenes.length) { console.error('Thiếu scenes'); process.exit(1); }
+const spec = await claudeJson({ key: KEY, model: MODEL, maxTokens: 4200, prompt: PROMPT, tries: 3, label: 'phunu' });
+if (!spec || !spec.scenes || !spec.scenes.length) { console.error('Thiếu scenes'); process.exit(1); }
 
 // ===== NGUỒN ẢNH ĐỘNG (KHÔNG lưu — Chromium tải thẳng từ link lúc render) =====
 // Ưu tiên ẢNH RIÊNG (Drive) Tower gửi qua OWN_IMAGES (JSON []); thiếu → bù ẢNH FREE theo từ khoá (Pexels/Pixabay).

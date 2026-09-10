@@ -1,6 +1,7 @@
 // Soạn CONFIG cho mẫu "illustrated" (Mẫu Video Vẽ Hình AI) → spec.json cho templates/illustrated/build.py.
 // image_style = phong cách NGƯỜI DÙNG CHỌN (env IMG_STYLE) — KHÔNG để Claude tự chọn. Claude chỉ viết scenes[{say,image_prompt}] + cta.
 import { writeFileSync } from 'node:fs';
+import { claudeJson } from './soan_util.mjs';
 
 const KEY = process.env.CLAUDE_API_KEY;
 const MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001';
@@ -32,17 +33,8 @@ An toàn: KHÔNG hứa thu nhập/mốc thời gian, KHÔNG comment-bait, KHÔNG
 Chỉ in JSON.`;
 
 if (!KEY) { console.error('❌ Thiếu CLAUDE_API_KEY'); process.exit(1); }
-const r = await fetch('https://api.anthropic.com/v1/messages', {
-  method: 'POST',
-  headers: { 'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-  body: JSON.stringify({ model: MODEL, max_tokens: 3000, messages: [{ role: 'user', content: PROMPT }] }),
-});
-const j = await r.json();
-if (!r.ok) { console.error('❌ Claude lỗi', r.status, JSON.stringify(j?.error || j).slice(0, 200)); process.exit(1); }
-const raw = (j?.content || []).map((b) => b.text || '').join('');
-const m = raw.match(/\{[\s\S]*\}/);
-if (!m) { console.error('Không parse được JSON:', raw.slice(0, 300)); process.exit(1); }
-const out = JSON.parse(m[0]);
+const out = await claudeJson({ key: KEY, model: MODEL, maxTokens: 3000, prompt: PROMPT, tries: 3, label: 'illustrated' });
+if (!out) { console.error('❌ Claude không trả JSON hợp lệ'); process.exit(1); }
 const scenes = (out.scenes || []).filter((s) => s && s.say).slice(0, 6);
 if (!scenes.length) { console.error('Thiếu scenes'); process.exit(1); }
 
