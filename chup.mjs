@@ -83,28 +83,39 @@ async function run() {
         });
         const dl = async (u, file) => { try { const resp = await page.request.get(u, { timeout: 20000 }); if (resp.ok()) { writeFileSync(join(IMGDIR, file), await resp.body()); return true; } } catch (e) { /* bỏ ảnh lỗi */ } return false; };
         const nameFor = () => manifest.shots.length === 0 ? 'hl.png' : `shot${manifest.shots.length + 1}.png`;
-        // 1) ẢNH THẬT của bài (tối đa 4)
+        // 1) ẢNH THẬT của bài — TỐI ĐA 3 (Boss: bài nhiều ảnh → lấy 3 ảnh báo)
         for (const u of realUrls) {
-          if (manifest.shots.length >= 4) break;
+          if (manifest.shots.length >= 3) break;
           const file = nameFor();
           if (await dl(u, file)) manifest.shots.push({ file, kind: 'article', w: 1200, h: manifest.shots.length === 0 ? 630 : 900 });
         }
-        // 2) BÙ ẢNH MINH HOẠ nếu chưa đủ ~3 (Boss: đủ 3-4 dù bài ít/không ảnh) — gắn nhãn "ẢNH MINH HOẠ" (trung thực)
-        const need = Math.max(0, IMG_TARGET - manifest.shots.length);
-        if (need > 0) {
-          const stockUrls = await fetchStock(stockQuery(IMG_QUERY, URL), need);
-          for (const u of stockUrls) {
-            if (manifest.shots.length >= IMG_TARGET) break;
-            const file = nameFor();
-            if (await dl(u, file)) manifest.shots.push({ file, kind: 'stock', w: 1200, h: 900 });
-          }
+        // 2) THIẾU <3 → CHỤP CHÍNH BÀI BÁO (KHÔNG dùng ảnh minh hoạ nữa — hay lệch chủ đề).
+        //    Boss: bài chỉ 1 ảnh → 1 ảnh báo + 1 ảnh CHỤP TIÊU ĐỀ + 1 ảnh CHỤP TOÀN CẢNH bài (vùng <article>, KHÔNG dính giao diện báo).
+        const shootTitle = async () => {
+          try { const h1 = page.locator('h1').first(); await h1.scrollIntoViewIfNeeded({ timeout: 4000 });
+            const f = nameFor(); await h1.screenshot({ path: join(IMGDIR, f) }); const b = await h1.boundingBox();
+            manifest.shots.push({ file: f, kind: 'title', w: Math.round(b?.width || 770), h: Math.round(b?.height || 120) }); return true; } catch (e) { return false; }
+        };
+        const shootArticle = async () => {   // TOÀN CẢNH bài = chụp VÙNG <article> (không dính nav/quảng cáo/giao diện báo)
+          try {
+            const sels = ['article', '.fck_detail', '[itemprop="articleBody"]', '.article-body', '.detail-content', '.dt-news__content', '.singular-content', '.content-detail', 'main'];
+            let el = null; for (const s of sels) { const loc = page.locator(s).first(); if (await loc.count() > 0) { el = loc; break; } }
+            if (!el) return false;
+            await el.scrollIntoViewIfNeeded({ timeout: 4000 }); await page.waitForTimeout(300);
+            const b = await el.boundingBox(); if (!b || b.width < 200) return false;
+            const f = nameFor(); const h = Math.min(Math.round(b.height), 2200);   // giới hạn chiều cao (bài dài)
+            await page.screenshot({ path: join(IMGDIR, f), clip: { x: Math.max(0, b.x), y: Math.max(0, b.y), width: Math.round(b.width), height: h } });
+            manifest.shots.push({ file: f, kind: 'article', w: Math.round(b.width), h }); return true; } catch (e) { return false; }
+        };
+        if (manifest.shots.length && manifest.shots.length < 3) {
+          for (const fn of [shootTitle, shootArticle]) { if (manifest.shots.length >= 3) break; await fn(); }
         }
         if (manifest.shots.length) {
-          const nA = manifest.shots.filter((s) => s.kind === 'article').length, nS = manifest.shots.length - nA;
-          console.log(`chup: ${nA} ảnh bài + ${nS} ảnh minh hoạ → ${manifest.shots.length} ảnh`);
+          const nA = manifest.shots.filter((s) => s.kind === 'article').length, nT = manifest.shots.length - nA;
+          console.log(`chup: ${nA} ảnh bài + ${nT} ảnh chụp bài → ${manifest.shots.length} ảnh (KHÔNG dùng minh hoạ)`);
           return done();
         }
-        console.log('chup: không lấy được ảnh bài/minh hoạ → fallback chụp chữ');
+        console.log('chup: bài không có ảnh → fallback chụp chữ');
       } catch (e) { console.log('chup: ảnh bài lỗi —', e.message, '→ fallback chụp chữ'); }
     }
     // 1) TIÊU ĐỀ (hl.png) — ảnh ĐẦU TIÊN, sẽ đặt vào cảnh hook (0s) → làm thumbnail
