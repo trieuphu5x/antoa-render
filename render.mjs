@@ -127,5 +127,35 @@ function newestMp4(dir) {
 const found = newestMp4(WORK);
 if (!found) { console.error('[render] Không thấy MP4 sau render'); process.exit(1); }
 copyFileSync(found.path, OUT);
+
+// ---- 5b) TỐI ƯU MP4 TRƯỚC KHI ĐĂNG (fix lỗi Buffer/TikTok "file too large / connection timing out") ----
+// (1) +faststart: đưa moov atom RA ĐẦU file → dịch vụ (Buffer/TikTok/Make) tải-stream tuần tự được ngay,
+//     KHÔNG phải kéo trọn file mới đọc header → hết timeout. Đây là nguyên nhân #1.
+// (2) File to / codec lạ → re-encode H.264 high + AAC, cap bitrate 4M → nhẹ file (~15-25MB/85s), đăng ổn.
+//     File đã h264/aac + nhẹ → chỉ remux copy (+faststart) = TỨC THÌ, KHÔNG giảm chất.
+function optimizeForPost(file) {
+  const probe = (a) => { try { return execFileSync('ffprobe', a).toString().trim(); } catch { return ''; } };
+  const sizeMB = statSync(file).size / 1e6;
+  const vcodec = probe(['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=codec_name', '-of', 'default=nw=1:nk=1', file]);
+  const acodec = probe(['-v', 'error', '-select_streams', 'a:0', '-show_entries', 'stream=codec_name', '-of', 'default=nw=1:nk=1', file]);
+  const tmp = join(HERE, 'out_opt.mp4');
+  const needReenc = sizeMB > 24 || vcodec !== 'h264' || acodec !== 'aac';   // file to >24MB hoặc codec không chuẩn → dựng lại
+  const args = needReenc
+    ? ['-y', '-i', file,
+       '-vf', 'scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black',
+       '-c:v', 'libx264', '-profile:v', 'high', '-pix_fmt', 'yuv420p', '-preset', 'veryfast', '-crf', '24',
+       '-maxrate', '4M', '-bufsize', '8M', '-r', '30',
+       '-c:a', 'aac', '-b:a', '128k', '-ar', '44100', '-movflags', '+faststart', tmp]
+    : ['-y', '-i', file, '-c', 'copy', '-movflags', '+faststart', tmp];
+  try {
+    execFileSync('ffmpeg', args, { stdio: 'inherit' });
+    if (existsSync(tmp)) {
+      copyFileSync(tmp, file);
+      console.log(`[render] tối ưu đăng: ${vcodec || '?'}/${acodec || '?'} ${sizeMB.toFixed(1)}MB → ${(statSync(file).size / 1e6).toFixed(1)}MB (${needReenc ? 're-encode' : 'remux'} +faststart)`);
+    }
+  } catch (e) { console.log('[render] ⚠ tối ưu đăng lỗi, giữ bản gốc: ' + e.message); }
+}
+optimizeForPost(OUT);
+
 writeFileSync(join(HERE, 'duration.txt'), String(dur(OUT)));
 console.log(`[render] ✓ ${OUT} · ${dur(OUT)}s (từ ${found.path})`);
