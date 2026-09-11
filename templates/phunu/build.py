@@ -59,7 +59,7 @@ def dispsize(lines, default):
     return "d-sm"
 
 
-IMG_W, IMG_H = 334, 430
+IMG_W, IMG_H = 420, 540
 
 # 6 PALETTE MÀU (:root) — user chọn màu nào, dựng đúng màu đó. Mặc định kem-cam.
 COLORS = {
@@ -73,10 +73,11 @@ COLORS = {
 
 
 # ---------- renderers: trả (inner_html, [gsap_calls]) ; sel = "#sceneK" ----------
-def r_intro(sc, sel):
+def r_intro(sc, sel, top=400):
     lines = sc.get("disp", [])
-    body = "".join(disp_line(l, "d-lg") for l in lines)
-    inner = (f'<div class="grp" style="left:96px;top:400px;width:810px">'
+    size = dispsize(lines, "d-lg")   # tự co: dòng dài -> hạ cấp (tránh tràn), dòng ngắn giữ d-lg to đẹp
+    body = "".join(disp_line(l, size) for l in lines)
+    inner = (f'<div class="grp" style="left:96px;top:{top}px;width:810px">'
              + (f'<div class="kick anim">{mk(sc["kick"])}</div>' if sc.get("kick") else "")
              + body
              + '<div class="rule anim" style="margin-top:28px"></div>'
@@ -102,7 +103,7 @@ def r_text(sc, sel):
     elif align == "right":
         inner = f'<div class="grp" style="right:174px;top:470px;width:810px;text-align:right">{body}</div>'
     else:
-        inner = f'<div class="grp" style="left:96px;top:440px;width:810px">{body}</div>'
+        inner = f'<div class="grp" style="left:96px;top:540px;width:810px">{body}</div>'
     vx = {"center": "{y:38,scale:0.96,stagger:0.13}", "right": "{x:30,stagger:0.12}"}.get(align, "{x:-30,stagger:0.11}")
     return inner, [f'enter("{sel}",AT,{vx});']
 
@@ -116,15 +117,16 @@ def r_media(sc, sel, mid, img):
     if sc.get("lede"):
         txt.append(f'<div class="lede anim">{mk(sc["lede"])}</div>')
     txtbody = "".join(txt)
+    src = img if str(img).startswith("http") else f"assets/img/{img}"   # ảnh URL động (Drive/stock) HOẶC ảnh mẫu local
     card = (f'<div class="mcard" id="{mid}" style="{"left:96px" if side=="left" else "right:174px"};top:560px">'
-            f'<img src="assets/img/{img}" style="width:{IMG_W}px;height:{IMG_H}px" />'
+            f'<img src="{src}" style="width:{IMG_W}px;height:{IMG_H}px" />'
             + (f'<div class="mcap">▣ {mk(sc["cap"])}</div>' if sc.get("cap") else "")
             + '</div>')
-    if side == "left":   # ảnh trái, chữ phải
-        grp = f'<div class="grp" style="right:174px;top:470px;width:400px;text-align:right">{txtbody}</div>'
+    if side == "left":   # ảnh trái, chữ phải — canh giữa theo chiều dọc với ảnh
+        grp = f'<div class="grp" style="right:174px;top:640px;width:340px;text-align:right">{txtbody}</div>'
         gs = [f'enter("{sel}",AT,{{x:40,stagger:0.11}});', f'card("#{mid}",AT+0.5);']
     else:                # chữ trái, ảnh phải
-        grp = f'<div class="grp" style="left:96px;top:440px;width:420px">{txtbody}</div>'
+        grp = f'<div class="grp" style="left:96px;top:640px;width:340px">{txtbody}</div>'
         gs = [f'enter("{sel}",AT,{{x:-40,stagger:0.11}});', f'card("#{mid}",AT+0.5);']
     return card + grp, gs
 
@@ -160,7 +162,7 @@ def r_image(sc, sel, iid, imgs):
 
     if style == "hero":
         kick = f'<div class="kick onpaper anim" style="color:var(--gold)">{mk(sc["kick"])}</div>' if sc.get("kick") else ""
-        disp = "".join(f'<div class="disp {dispsize(sc.get("disp", []), "d-md")} onpaper anim">{mk(l)}</div>' for l in sc.get("disp", []))
+        disp = "".join(f'<div class="disp {dispsize(sc.get("disp", []), "d-sm")} onpaper anim">{mk(l)}</div>' for l in sc.get("disp", []))
         inner = (f'<div class="hero"><img id="{iid}" src="{IMG(0)}"/><div class="scrim"></div>'
                  f'<div class="ov">{kick}{disp}</div></div>')
         return inner, [f'enter("{S}",AT); kb("{S} .hero img",AT,DUR,1.0,1.12);']
@@ -174,7 +176,7 @@ def r_image(sc, sel, iid, imgs):
         cap = sc.get("caps", [])
         c0 = f'<div class="cap">▣ {mk(cap[0])}</div>' if len(cap) > 0 else ""
         c1 = f'<div class="cap">▣ {mk(cap[1])}</div>' if len(cap) > 1 else ""
-        inner = (f'<div class="grp" style="left:96px;top:520px;width:760px">{_heading(sc, "d-md")}</div>'
+        inner = (f'<div class="grp" style="left:96px;top:520px;width:760px">{_heading(sc, "d-sm")}</div>'
                  f'<div class="pc" id="{iid}a" style="left:150px;top:880px;transform:rotate(-7deg)"><img src="{IMG(0)}" style="width:350px;height:430px"/>{c0}</div>'
                  f'<div class="pc" id="{iid}b" style="left:470px;top:960px;transform:rotate(6deg)"><img src="{IMG(1)}" style="width:350px;height:430px"/>{c1}</div>')
         return inner, [f'enter("{S}",AT); pop("#{iid}a",AT+0.05); pop("#{iid}b",AT+0.2);']
@@ -194,11 +196,11 @@ def r_image(sc, sel, iid, imgs):
 
     if style == "split":   # cắt chéo + chữ nửa dưới
         inner = (f'<div class="split" id="{iid}" style="left:96px;top:410px;width:810px;height:720px"><img src="{IMG(0)}"/></div>'
-                 f'<div class="grp" style="left:96px;top:1180px;width:810px">{_heading(sc, "d-md")}</div>')
+                 f'<div class="grp" style="left:96px;top:1180px;width:810px">{_heading(sc, "d-sm")}</div>')
         return inner, [f'enter("{S}",AT); reveal("#{iid}",AT); kb("#{iid} img",AT,DUR,1.0,1.1);']
 
     if style == "circles":   # 2 ảnh tròn lệch nhịp
-        inner = (f'<div class="grp" style="left:96px;top:430px;width:760px">{_heading(sc, "d-md")}</div>'
+        inner = (f'<div class="grp" style="left:96px;top:430px;width:760px">{_heading(sc, "d-sm")}</div>'
                  f'<div class="circ" id="{iid}a" style="left:96px;top:700px;width:430px;height:430px"><img src="{IMG(0)}"/></div>'
                  f'<div class="circ" id="{iid}b" style="left:476px;top:1000px;width:380px;height:380px"><img src="{IMG(1)}"/></div>')
         return inner, [f'enter("{S}",AT); pop("#{iid}a",AT+0.05); pop("#{iid}b",AT+0.35);']
@@ -382,7 +384,7 @@ def build(workdir, spec):
         elif typ == "countup": inner, gs = r_countup(sc, sel, f"num{i}")
         elif typ == "cta": inner, gs = r_cta(sc, sel)
         elif typ == "outro": inner, gs = r_outro(sc, sel)
-        else: inner, gs = r_text(sc, sel)
+        else: inner, gs = r_intro(sc, sel, top=560)   # cảnh CHỮ (không ảnh) → kiểu INTRO, dịch xuống cho cân đối (Boss)
         scene_html.append(f'<div class="scene clip" id="scene{i}" data-start="{sc["start"]}" data-duration="{sc["sdur"]}" data-track-index="{track}">{inner}</div>')
         at = round(sc["start"] + 0.25, 3)
         gsap += [g.replace("AT", str(at)).replace("DUR", str(durtok)) for g in gs]
