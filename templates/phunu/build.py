@@ -61,6 +61,12 @@ def dispsize(lines, default):
 
 IMG_W, IMG_H = 420, 540
 
+
+def statsize(val):
+    """Cỡ SỐ LỚN tự co theo số ký tự — tránh 'vỡ hàng' khi nhiều chữ số (vd 5-10, 24/7). Boss chốt: bỏ 340px cố định."""
+    n = len(str(val or "").strip())
+    return 220 if n <= 2 else 176 if n == 3 else 138 if n == 4 else 110
+
 # 6 PALETTE MÀU (:root) — user chọn màu nào, dựng đúng màu đó. Mặc định kem-cam.
 COLORS = {
     "kem-cam": "--paper:#EFE9DC; --paperhi:#F5F0E6; --paperlo:#E7DECB; --ink:#22233F; --ink2:#5C5F79; --ember:#E2552F; --gold:#E0A43B; --card:#FBF8F1; --onmedia:#F4EFE4;",
@@ -73,11 +79,12 @@ COLORS = {
 
 
 # ---------- renderers: trả (inner_html, [gsap_calls]) ; sel = "#sceneK" ----------
-def r_intro(sc, sel, top=400):
+def r_intro(sc, sel):
     lines = sc.get("disp", [])
     size = dispsize(lines, "d-lg")   # tự co: dòng dài -> hạ cấp (tránh tràn), dòng ngắn giữ d-lg to đẹp
+    # CANH GIỮA DỌC trong safe zone (giữa ≈935px) — cụm không còn cao/trống dưới (Boss)
     body = "".join(disp_line(l, size) for l in lines)
-    inner = (f'<div class="grp" style="left:96px;top:{top}px;width:810px">'
+    inner = (f'<div class="grp" style="left:96px;top:935px;transform:translateY(-50%);width:810px">'
              + (f'<div class="kick anim">{mk(sc["kick"])}</div>' if sc.get("kick") else "")
              + body
              + '<div class="rule anim" style="margin-top:28px"></div>'
@@ -217,9 +224,10 @@ def r_image(sc, sel, iid, imgs):
 def r_stat(sc, sel, sid):   # KIỂU 10 · Số liệu lớn (điểm nhấn)
     lines = sc.get("disp", [])
     sub = f'<div class="disp d-sm anim" style="margin-top:14px">{mk(lines[0])}</div>' if lines else ""
-    inner = (f'<div class="grp" style="left:96px;top:470px;width:810px"><div class="kick anim">{mk(sc.get("kick", ""))}</div></div>'
-             f'<div style="position:absolute;left:96px;top:640px;width:810px">'
-             f'<div class="stat anim" id="{sid}" style="font-size:340px">{mk(sc.get("big", "80"))}<span style="font-size:170px">{mk(sc.get("suffix", ""))}</span></div>'
+    _bsz = statsize(sc.get("big", "80"))   # SỐ tự co theo độ dài (tránh vỡ hàng)
+    inner = (f'<div class="grp" style="left:96px;top:935px;transform:translateY(-50%);width:810px">'
+             f'<div class="kick anim">{mk(sc.get("kick", ""))}</div>'
+             f'<div class="stat anim" id="{sid}" style="font-size:{_bsz}px;margin-top:18px">{mk(sc.get("big", "80"))}<span style="font-size:{round(_bsz*0.55)}px">{mk(sc.get("suffix", ""))}</span></div>'
              + sub
              + (f'<div class="lede anim" style="margin-top:22px;width:760px">{mk(sc["lede"])}</div>' if sc.get("lede") else "")
              + '</div>')
@@ -227,7 +235,7 @@ def r_stat(sc, sel, sid):   # KIỂU 10 · Số liệu lớn (điểm nhấn)
 
 
 def r_quote(sc, sel):   # KIỂU 11 · Câu trích dẫn
-    inner = (f'<div class="grp" style="left:96px;top:560px;width:810px">'
+    inner = (f'<div class="grp" style="left:96px;top:935px;transform:translateY(-50%);width:810px">'
              f'<div class="qmark anim">“</div>'
              f'<div class="quote anim" style="margin-top:6px">{mk(sc.get("quote", ""))}</div>'
              + (f'<div class="qby anim" style="margin-top:44px">— {mk(sc["by"])}</div>' if sc.get("by") else "")
@@ -239,8 +247,10 @@ def r_band(sc, sel, bid):   # KIỂU 09 · Băng chữ nhấn mạnh (tiêu đ�
     lines = sc.get("disp", [])
     size = dispsize(lines, "d-md")
     head = "".join([f'<div class="kick anim">{mk(sc["kick"])}</div>' if sc.get("kick") else ""] + [disp_line(l, size) for l in lines])
-    inner = (f'<div class="grp" style="left:96px;top:480px;width:810px">{head}</div>'
-             f'<div class="band" id="{bid}" style="top:900px"><div class="bt">{mk(sc.get("band", ""))}</div></div>')
+    inner = (f'<div class="grp" style="left:96px;top:935px;transform:translateY(-50%);width:810px">'
+             f'{head}'
+             f'<div class="band" id="{bid}" style="position:relative;left:auto;right:auto;margin-top:56px"><div class="bt">{mk(sc.get("band", ""))}</div></div>'
+             + '</div>')
     return inner, [f'enter("{sel}",AT); pop("#{bid}",AT+0.25);']
 
 
@@ -248,7 +258,7 @@ def r_list(sc, sel):
     lines = sc.get("disp", [])
     size = dispsize(lines, "d-sm")
     rows = "".join(f'<div class="listrow"><span class="n">{i+1:02d}</span> {mk(it)}</div>' for i, it in enumerate(sc.get("items", [])))
-    inner = (f'<div class="grp" style="left:96px;top:400px;width:810px">'
+    inner = (f'<div class="grp" style="left:96px;top:935px;transform:translateY(-50%);width:810px">'
              + ("".join([f'<div class="kick anim">{mk(sc["kick"])}</div>'] if sc.get("kick") else []))
              + "".join(disp_line(l, size) for l in lines)
              + f'<div class="anim" style="margin-top:40px">{rows}</div>'
@@ -259,10 +269,11 @@ def r_list(sc, sel):
 
 def r_countup(sc, sel, nid):
     to = int(sc.get("to", 90)); suf = sc.get("suffix", "%")
-    inner = (f'<div style="position:absolute;left:0;right:0;top:500px;text-align:center"><div class="stat s-xl"><span id="{nid}">0</span>{suf}</div></div>'
-             f'<div class="grp" style="left:150px;right:174px;top:1120px;text-align:center">'
-             + (f'<div class="lede anim">{mk(sc["lede"])}</div>' if sc.get("lede") else "")
-             + (f'<div class="kick anim" style="margin-top:28px">{mk(sc["kick"])}</div>' if sc.get("kick") else "")
+    _csz = statsize(str(to) + str(suf))   # SỐ đếm tự co theo độ dài (tránh vỡ hàng)
+    inner = (f'<div class="grp" style="left:96px;right:174px;top:935px;transform:translateY(-50%);text-align:center">'   # gộp số + chữ, canh giữa dọc (Boss)
+             f'<div class="stat" style="font-size:{_csz}px"><span id="{nid}">0</span>{suf}</div>'
+             + (f'<div class="lede anim" style="margin-top:30px">{mk(sc["lede"])}</div>' if sc.get("lede") else "")
+             + (f'<div class="kick anim" style="margin-top:24px">{mk(sc["kick"])}</div>' if sc.get("kick") else "")
              + '</div>')
     gs = [f'tl.from("{sel} .stat",{{opacity:0,scale:0.6,duration:0.7,ease:"back.out(1.6)"}},AT);',
           f'var C{nid}={{v:0}};tl.to(C{nid},{{v:{to},duration:1.6,ease:"power2.out",onUpdate:function(){{document.getElementById("{nid}").textContent=Math.round(C{nid}.v);}}}},AT+0.1);',
@@ -273,7 +284,7 @@ def r_countup(sc, sel, nid):
 def r_cta(sc, sel):   # KIỂU 12 · Chốt / Kêu gọi hành động (có nút pill)
     lines = sc.get("disp", [])
     size = dispsize(lines, "d-md")
-    inner = (f'<div class="grp" style="left:96px;top:560px;width:810px">'
+    inner = (f'<div class="grp" style="left:96px;top:935px;transform:translateY(-50%);width:810px">'
              + (f'<div class="kick anim">{mk(sc["kick"])}</div>' if sc.get("kick") else "")
              + "".join(disp_line(l, size) for l in lines)
              + (f'<div class="lede anim" style="margin-top:24px;width:780px">{mk(sc["lede"])}</div>' if sc.get("lede") else "")
@@ -384,7 +395,7 @@ def build(workdir, spec):
         elif typ == "countup": inner, gs = r_countup(sc, sel, f"num{i}")
         elif typ == "cta": inner, gs = r_cta(sc, sel)
         elif typ == "outro": inner, gs = r_outro(sc, sel)
-        else: inner, gs = r_intro(sc, sel, top=560)   # cảnh CHỮ (không ảnh) → kiểu INTRO, dịch xuống cho cân đối (Boss)
+        else: inner, gs = r_intro(sc, sel)   # cảnh CHỮ (không ảnh) → kiểu INTRO (canh giữa dọc)
         scene_html.append(f'<div class="scene clip" id="scene{i}" data-start="{sc["start"]}" data-duration="{sc["sdur"]}" data-track-index="{track}">{inner}</div>')
         at = round(sc["start"] + 0.25, 3)
         gsap += [g.replace("AT", str(at)).replace("DUR", str(durtok)) for g in gs]

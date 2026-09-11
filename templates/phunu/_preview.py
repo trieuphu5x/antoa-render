@@ -38,24 +38,24 @@ def doc(inner):
 </div></body></html>'''
 
 
-# Bộ cảnh đại diện: 2 cảnh CHỮ (kiểu intro) + nhiều KIỂU ẢNH (cỡ chữ d-sm như Thói quen 2)
+# Bộ cảnh kiểm tra 2 fix: intro/text CANH GIỮA + số lớn TỰ CO (5-10, 24/7)
 SCENES = [
     ("1_intro", B.r_intro({"kick": "MORNING", "disp": ["*5 thói quen sáng*", "của người", "bán hàng online", "thành công"],
                            "lede": "Những phút đầu tiên quyết định cả ngày kinh doanh của bạn."}, "#s")[0]),
     ("2_text", B.r_intro({"kick": "FOCUS", "disp": ["Thói quen 3:", "*Xem lại đơn hàng*", "*& tin nhắn khách*"],
-                          "lede": "Kiểm tra nhanh, lên kế hoạch ngay."}, "#s", top=560)[0]),   # CHỮ (không ảnh) → kiểu intro, dịch xuống
-    ("3_hero", B.r_image({"style": "hero", "kick": "MORNING", "disp": ["Thói quen 1:", "*Thức dậy sớm*", "trước thị trường"]},
-                         "#s", "im3", ["img02.jpg"])[0]),
-    ("4_card", B.r_media({"side": "left", "kick": "MORNING", "disp": ["Thói quen 2:", "*Uống nước & ngồi yên*", "5-10 phút đầu"],
-                          "lede": "Làm sạch cơ thể và tâm trí."}, "#s", "m4", "img03.jpg")[0]),
-    ("5_film", B.r_image({"style": "film", "kick": "WORK", "disp": ["Thói quen 4:", "*Tối ưu AI & tự động hoá*"],
-                          "caps": ["Dashboard tự động", "Bán hàng mọi lúc"]}, "#s", "im5", ["img04.jpg", "img05.jpg"])[0]),
-    ("6_duo", B.r_image({"style": "duo", "kick": "MINDSET", "disp": ["Thói quen 5:", "*Nghỉ đúng lúc*"],
-                         "lede": "Bền sức mới đi đường dài."}, "#s", "im6", ["img06.jpg"])[0]),
-    ("7_arch", B.r_image({"style": "arch", "kick": "GROWTH", "disp": ["Thói quen 6:", "*Học mỗi ngày*"],
-                          "lede": "Mỗi sáng một điều mới."}, "#s", "im7", ["img07.jpg"])[0]),
-    ("8_circles", B.r_image({"style": "circles", "kick": "ENERGY", "disp": ["Thói quen 7:", "*Vận động nhẹ*"]},
-                            "#s", "im8", ["img08.jpg", "img09.jpg"])[0]),
+                          "lede": "Kiểm tra nhanh, lên kế hoạch ngay."}, "#s")[0]),   # CHỮ → canh giữa
+    ("3_stat_range", B.r_stat({"kick": "YÊN TĨNH", "big": "5-10", "suffix": " phút", "disp": ["Sáng sớm mỗi ngày"],
+                               "lede": "Làm sạch tâm trí, tiếp nhận năng lượng mới."}, "#s", "st3")[0]),
+    ("4_stat_247", B.r_stat({"kick": "TỰ ĐỘNG", "big": "24/7", "suffix": "", "disp": ["Bán hàng không ngừng"],
+                             "lede": "AI làm việc cả khi bạn ngủ."}, "#s", "st4")[0]),
+    ("5_stat80", B.r_stat({"kick": "HIỆU QUẢ", "big": "80", "suffix": "%", "disp": ["Tiết kiệm thời gian"],
+                           "lede": "Nhờ quy trình buổi sáng."}, "#s", "st5")[0]),
+    ("6_countup", B.r_countup({"kick": "MỖI NGÀY", "to": 90, "suffix": "%",
+                               "lede": "Người bán duy trì thói quen sáng."}, "#s", "cu6")[0]),
+    ("7_hero", B.r_image({"style": "hero", "kick": "MORNING", "disp": ["Thói quen 1:", "*Thức dậy sớm*", "trước thị trường"]},
+                         "#s", "im7", ["img02.jpg"])[0]),
+    ("8_card", B.r_media({"side": "left", "kick": "MORNING", "disp": ["Thói quen 2:", "*Uống nước & ngồi yên*"],
+                          "lede": "Làm sạch cơ thể và tâm trí."}, "#s", "m8", "img03.jpg")[0]),
 ]
 
 for name, inner in SCENES:
