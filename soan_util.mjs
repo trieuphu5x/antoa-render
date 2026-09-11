@@ -50,16 +50,18 @@ CÁC CÂU:\n${lines.map((l, i) => `${i + 1}. ${l}`).join('\n')}`;
 
 // CAPTION dùng chung: từ nội dung → {title (SEO), desc (caption + 3-5 hashtag)}. Chạy trên GH Actions (Claude ổn).
 export async function captionFor(text, { key, model, title = '', brandkw = '' } = {}) {
-  const fb = { title: String(title || '').slice(0, 90), desc: '' };
+  const clip3 = (s) => String(s || '').split(/[,;/|\n]/)[0].trim().split(/\s+/).slice(0, 3).join(' ');   // 1 CỤM ≤3 từ (bỏ danh sách/dấu phẩy)
+  const fb = { title: String(title || '').slice(0, 90), desc: '', topic: '', milestone: '' };
   if (!key) return fb;
-  const prompt = `Từ NỘI DUNG video dưới đây, viết phần ĐĂNG BÀI tiếng Việt. Trả DUY NHẤT JSON {"title":"...","desc":"...","topic":"..."}.
+  const prompt = `Từ NỘI DUNG video dưới đây, viết phần ĐĂNG BÀI tiếng Việt. Trả DUY NHẤT JSON {"title":"...","desc":"...","topic":"...","milestone":"..."}.
 - "title": TIÊU ĐỀ SEO 1 dòng — đặt ý/từ khoá QUAN TRỌNG lên đầu, hấp dẫn TỰ NHIÊN (KHÔNG giật gân), 40-90 ký tự, KHÔNG hashtag, KHÔNG dấu ngoặc kép, KHÔNG viết HOA toàn bộ.
 - "desc": caption đăng 1-2 câu ngắn + 3-5 hashtag TRUNG TÍNH bám chủ đề.
-- "topic": 2-3 TỪ TIẾNG ANH viết thường MÔ TẢ ĐÚNG chủ đề nội dung này (vd "life reflection", "personal growth", "online business", "tech news") — hiển thị nhỏ ở góc video, PHẢI khớp nội dung.
+- "topic": ĐÚNG 1 CỤM 2-3 TỪ TIẾNG ANH viết thường (KHÔNG danh sách, KHÔNG dấu phẩy) — mô tả NGÁCH/CHỦ ĐỀ video này, LINH ĐỘNG theo nội dung (vd "online business", "tech news", "healthy cooking", "travel vietnam", "life reflection").
+- "milestone": chuyên mục/cột mốc NGẮN 1-3 TỪ IN HOA tiếng Việt KHỚP nội dung, LINH ĐỘNG theo ngách (vd "MẸO HAY", "ĐIỂM TIN", "BÀI HỌC", "REVIEW", "CÔNG THỨC", "CẨM NANG").
 An toàn nền tảng: KHÔNG hứa thu nhập/mốc thời gian/comment-bait/thổi phồng/chữa bệnh, KHÔNG ký tự < >.${brandkw ? '\nTừ khoá bám: ' + brandkw : ''}
 NỘI DUNG: """${String(text || '').slice(0, 1800)}"""`;
   const o = await claudeJson({ key, model, maxTokens: 500, prompt, tries: 2, label: 'caption' });
-  if (o && (o.title || o.desc)) return { title: String(o.title || title || '').trim().slice(0, 100), desc: String(o.desc || '').trim(), topic: String(o.topic || '').trim().toLowerCase().slice(0, 40) };
+  if (o && (o.title || o.desc)) return { title: String(o.title || title || '').trim().slice(0, 100), desc: String(o.desc || '').trim(), topic: clip3(o.topic).toLowerCase(), milestone: clip3(o.milestone).toUpperCase() };
   return fb;
 }
 

@@ -59,10 +59,10 @@ if (VERBATIM) {
 if (!spec || !spec.scenes || !spec.scenes.length) { console.error('Thiếu scenes'); process.exit(1); }
 // Nhãn động: ưu tiên brand thật (env) → AI đề xuất → mặc định.
 spec.channel = (process.env.BRAND_LABEL || spec.channel || 'Kênh của bạn').toString().trim();
-spec.milestone = (spec.milestone || (spec.scenes[0] && spec.scenes[0].kick) || '').toString().trim();
-// TIÊU ĐỀ SEO + caption + hashtag + TOPIC (góc phải video) — sinh TỪ NỘI DUNG (phunu scenes không tự có).
+// TIÊU ĐỀ SEO + caption + hashtag + TOPIC (góc phải) + CHUYÊN MỤC (góc trái) — LINH ĐỘNG theo nội dung/ngách (phunu scenes không tự có).
 const _cap = await captionFor(ARTICLE || TITLE, { key: KEY, model: MODEL, title: TITLE, brandkw: BRANDKW });
-spec.topic = (spec.topic || _cap.topic || process.env.SLOGAN || '').toString().trim();   // BỎ default "online business" — theo chủ đề nội dung / slogan kênh
+spec.topic = (spec.topic || _cap.topic || process.env.SLOGAN || '').toString().trim();        // ô ② góc phải: chủ đề ≤3 từ (không default cứng)
+spec.milestone = (spec.milestone || _cap.milestone || (spec.scenes[0] && spec.scenes[0].kick) || '').toString().trim();   // ô ① góc trái: chuyên mục AI sinh (linh động theo ngách)
 spec.caption = { title: _cap.title, desc: _cap.desc };
 
 // ===== NGUỒN ẢNH ĐỘNG (KHÔNG lưu — Chromium tải thẳng từ link lúc render) =====
