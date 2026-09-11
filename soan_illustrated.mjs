@@ -1,7 +1,7 @@
 // Soạn CONFIG cho mẫu "illustrated" (Mẫu Video Vẽ Hình AI) → spec.json cho templates/illustrated/build.py.
 // image_style = phong cách NGƯỜI DÙNG CHỌN (env IMG_STYLE) — KHÔNG để Claude tự chọn. Claude chỉ viết scenes[{say,image_prompt}] + cta.
 import { writeFileSync } from 'node:fs';
-import { claudeJson, verbatimScenes } from './soan_util.mjs';
+import { claudeJson, verbatimScenes, captionFor } from './soan_util.mjs';
 
 const VERBATIM = process.env.VERBATIM === '1';   // 1 = kịch bản DÁN THỦ CÔNG → giữ NGUYÊN lời đọc (say)
 const KEY = process.env.CLAUDE_API_KEY;
@@ -38,8 +38,9 @@ let scenes, ctaSay, capTitle, capDesc;
 if (VERBATIM) {
   // KỊCH BẢN DÁN THỦ CÔNG → say GIỮ NGUYÊN 100%; ảnh minh hoạ AI vẽ theo ý chính (head).
   const vs = await verbatimScenes(ARTICLE, { key: KEY, model: MODEL, title: TITLE, max: 8 });
-  scenes = vs.map((s) => ({ say: s.vo, image_prompt: `Warm cinematic editorial illustration, scene about: ${s.head || s.vo}. Consistent recurring character, soft emotional mood, no text.` }));
-  ctaSay = 'Theo dõi để không bỏ lỡ.'; capTitle = TITLE; capDesc = '';
+  scenes = vs.map((s) => ({ say: s.vo, image_prompt: `Warm cinematic editorial illustration, scene about: ${(s.head || s.vo).replace(/\*/g, '')}. Consistent recurring character, soft emotional mood, no text.` }));
+  const cap = await captionFor(ARTICLE || TITLE, { key: KEY, model: MODEL, title: TITLE, brandkw: BRANDKW });
+  ctaSay = 'Theo dõi để không bỏ lỡ.'; capTitle = cap.title || TITLE; capDesc = cap.desc || '';
   console.error(`✓ VERBATIM illustrated: ${scenes.length} câu giữ NGUYÊN lời đọc`);
 } else {
   const out = await claudeJson({ key: KEY, model: MODEL, maxTokens: 3000, prompt: PROMPT, tries: 3, label: 'illustrated' });

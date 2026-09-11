@@ -29,7 +29,7 @@ export async function verbatimScenes(scriptText, { key, model, title = '', max =
   if (key) {
     try {
       const vp = `Cho ${lines.length} câu LỜI ĐỌC video dọc 9:16 (đúng thứ tự). Với MỖI câu tạo phần HÌNH gọn & chuyên nghiệp:
-- "head": ý chính RẤT NGẮN 3-7 từ (chữ hiển thị to) — TUYỆT ĐỐI KHÔNG chép cả câu.
+- "head": ý chính RẤT NGẮN 3-7 từ, BỌC 1-2 từ QUAN TRỌNG bằng *...* để nhấn MÀU (vd "Thức dậy *giữa đêm*") — TUYỆT ĐỐI KHÔNG chép cả câu.
 - "lede": 1 câu diễn giải ngắn ≤ 14 từ, hoặc để "".
 KHÔNG trả lời đọc, KHÔNG đổi câu. Trả DUY NHẤT JSON {"v":[{"head":"...","lede":"..."}]} đúng ${lines.length} phần tử, đúng thứ tự.
 CÁC CÂU:\n${lines.map((l, i) => `${i + 1}. ${l}`).join('\n')}`;
@@ -40,10 +40,26 @@ CÁC CÂU:\n${lines.map((l, i) => `${i + 1}. ${l}`).join('\n')}`;
   const words = (s) => String(s).trim().split(/\s+/);
   return lines.map((vo, i) => {
     const v = vis[i] || {}; const w = words(vo);
-    const head = String(v.head || w.slice(0, 6).join(' ')).trim().replace(/[.,!?…:;]+$/, '');
+    let head = String(v.head || w.slice(0, 6).join(' ')).trim().replace(/[.,!?…:;]+$/, '');
+    // PHỐI 2 MÀU: nếu head chưa có *...*, tự nhấn NỬA SAU bằng *...* (ember/vàng) — khớp thiết kế mẫu.
+    if (!head.includes('*')) { const hw = head.split(/\s+/); if (hw.length >= 3) { const k = Math.ceil(hw.length / 2); head = `${hw.slice(0, k).join(' ')} *${hw.slice(k).join(' ')}*`; } }
     const lede = String(v.lede || (v.head ? '' : (w.length > 6 ? w.slice(6, 20).join(' ') : ''))).trim();
     return { vo, head, lede };   // vo = NGUYÊN VĂN 100%
   });
+}
+
+// CAPTION dùng chung: từ nội dung → {title (SEO), desc (caption + 3-5 hashtag)}. Chạy trên GH Actions (Claude ổn).
+export async function captionFor(text, { key, model, title = '', brandkw = '' } = {}) {
+  const fb = { title: String(title || '').slice(0, 90), desc: '' };
+  if (!key) return fb;
+  const prompt = `Từ NỘI DUNG video dưới đây, viết phần ĐĂNG BÀI tiếng Việt. Trả DUY NHẤT JSON {"title":"...","desc":"..."}.
+- "title": TIÊU ĐỀ SEO 1 dòng — đặt ý/từ khoá QUAN TRỌNG lên đầu, hấp dẫn TỰ NHIÊN (KHÔNG giật gân), 40-90 ký tự, KHÔNG hashtag, KHÔNG dấu ngoặc kép, KHÔNG viết HOA toàn bộ.
+- "desc": caption đăng 1-2 câu ngắn + 3-5 hashtag TRUNG TÍNH bám chủ đề.
+An toàn nền tảng: KHÔNG hứa thu nhập/mốc thời gian/comment-bait/thổi phồng/chữa bệnh, KHÔNG ký tự < >.${brandkw ? '\nTừ khoá bám: ' + brandkw : ''}
+NỘI DUNG: """${String(text || '').slice(0, 1800)}"""`;
+  const o = await claudeJson({ key, model, maxTokens: 500, prompt, tries: 2, label: 'caption' });
+  if (o && (o.title || o.desc)) return { title: String(o.title || title || '').trim().slice(0, 100), desc: String(o.desc || '').trim() };
+  return fb;
 }
 
 export async function claudeJson({ key, model, maxTokens = 3500, prompt, tries = 3, label = '' }) {

@@ -1,6 +1,6 @@
 // Soạn SPEC cho mẫu "broll" (nền video stock + chữ chạy) → spec.json cho templates/broll/build.py.
 import { writeFileSync } from 'node:fs';
-import { claudeJson, verbatimScenes } from './soan_util.mjs';
+import { claudeJson, verbatimScenes, captionFor } from './soan_util.mjs';
 const KEY = process.env.CLAUDE_API_KEY;
 const MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001';
 const TITLE = process.env.TITLE || '';
@@ -36,5 +36,6 @@ if (VERBATIM) {
 }
 if (!spec || !spec.scenes || !spec.scenes.length) { console.error('Thiếu scenes'); process.exit(1); }
 spec.color = (process.env.BROLL_COLOR || 'cam').trim();   // màu chữ user chọn (cam/vang/mint) → build.py inject accent
+if (!spec.caption || !spec.caption.title) spec.caption = await captionFor(ARTICLE || TITLE, { key: KEY, model: MODEL, title: TITLE, brandkw: BRANDKW });   // tiêu đề SEO + caption + hashtag
 writeFileSync('spec.json', JSON.stringify(spec, null, 2));
 console.log(`✓ spec.json (broll): ${spec.scenes.length} cảnh · query: ${spec.scenes.map((s) => s.query).join(' | ')}`);

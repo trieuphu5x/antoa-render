@@ -1,6 +1,6 @@
 // Soạn SPEC cho mẫu "broll2" (Mẫu Broll Chạy Chữ 2 — nền video stock + CAPTION theo lời đọc) → spec.json cho templates/broll2/build.py.
 import { writeFileSync } from 'node:fs';
-import { claudeJson, verbatimScenes } from './soan_util.mjs';
+import { claudeJson, verbatimScenes, captionFor } from './soan_util.mjs';
 const KEY = process.env.CLAUDE_API_KEY;
 const MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001';
 const TITLE = process.env.TITLE || '';
@@ -27,12 +27,13 @@ Chỉ in JSON.`;
 let spec;
 if (VERBATIM) {
   const vs = await verbatimScenes(ARTICLE, { key: KEY, model: MODEL, title: TITLE, max: 14 });
-  spec = { scenes: vs.map((s) => ({ query: s.head || TITLE, cap: s.head, vo: s.vo })) };
+  spec = { scenes: vs.map((s) => ({ query: (s.head || TITLE).replace(/\*/g, ''), cap: (s.head || '').replace(/\*/g, ''), vo: s.vo })) };   // cap không dùng *…* → bỏ dấu nhấn
   console.error(`✓ VERBATIM broll2: ${vs.length} câu giữ NGUYÊN lời đọc`);
 } else {
   spec = await claudeJson({ key: KEY, model: MODEL, maxTokens: 3000, prompt: broll2Prompt({ title: TITLE, article: ARTICLE, kw: BRANDKW, nonce: NONCE }), tries: 3, label: 'broll2' });
 }
 if (!spec || !spec.scenes || !spec.scenes.length) { console.error('Thiếu scenes'); process.exit(1); }
 spec.style = (process.env.BROLL2_STYLE || 'bar').trim();   // kiểu user chọn: bar | italic | highlight
+if (!spec.caption || !spec.caption.title) spec.caption = await captionFor(ARTICLE || TITLE, { key: KEY, model: MODEL, title: TITLE, brandkw: BRANDKW });   // tiêu đề SEO + caption + hashtag
 writeFileSync('spec.json', JSON.stringify(spec, null, 2));
 console.log(`✓ spec.json (broll2): ${spec.scenes.length} cảnh · kiểu ${spec.style} · query: ${spec.scenes.map((s) => s.query).join(' | ')}`);

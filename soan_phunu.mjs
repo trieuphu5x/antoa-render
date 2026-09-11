@@ -1,6 +1,6 @@
 // Soạn SPEC cho mẫu "phunu" (Phụ Nữ & Kinh Doanh Online) → spec.json cho templates/phunu/build.py.
 import { writeFileSync } from 'node:fs';
-import { claudeJson, verbatimScenes } from './soan_util.mjs';
+import { claudeJson, verbatimScenes, captionFor } from './soan_util.mjs';
 
 const KEY = process.env.CLAUDE_API_KEY;
 const MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001';
@@ -61,6 +61,8 @@ if (!spec || !spec.scenes || !spec.scenes.length) { console.error('Thiếu scene
 spec.channel = (process.env.BRAND_LABEL || spec.channel || 'Kênh của bạn').toString().trim();
 spec.topic = (spec.topic || process.env.SLOGAN || 'online business').toString().trim();
 spec.milestone = (spec.milestone || (spec.scenes[0] && spec.scenes[0].kick) || '').toString().trim();
+// TIÊU ĐỀ SEO + caption + hashtag (phunu không tự sinh trong scenes) — sinh từ nội dung/chủ đề.
+if (!spec.caption || !spec.caption.title) spec.caption = await captionFor(ARTICLE || TITLE, { key: KEY, model: MODEL, title: TITLE, brandkw: BRANDKW });
 
 // ===== NGUỒN ẢNH ĐỘNG (KHÔNG lưu — Chromium tải thẳng từ link lúc render) =====
 // Ưu tiên ẢNH RIÊNG (Drive) Tower gửi qua OWN_IMAGES (JSON []); thiếu → bù ẢNH FREE theo từ khoá (Pexels/Pixabay).
