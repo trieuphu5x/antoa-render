@@ -17,6 +17,35 @@ export function parseJsonLoose(raw) {
   return null;
 }
 
+// ===== VERBATIM DÙNG CHUNG: kịch bản DÁN THỦ CÔNG → GIỮ NGUYÊN 100% lời đọc, KHÔNG sửa/biên tập.
+// Tách kịch bản thành từng câu = 1 cảnh (vo giữ nguyên). Claude CHỈ cô đọng HÌNH (head ngắn + lede) — KHÔNG đổi lời đọc.
+// Trả [{vo, head, lede}]. Mỗi soan map sang định dạng cảnh của mẫu mình. (Boss: dán thủ công là kịch bản đã chuẩn.)
+export async function verbatimScenes(scriptText, { key, model, title = '', max = 16 } = {}) {
+  let lines = String(scriptText || '').split(/\r?\n+/).map((x) => x.replace(/^\s*[-•*–]\s*/, '').trim()).filter((x) => x.length > 1);
+  if (lines.length < 3) lines = String(scriptText || '').replace(/\s+/g, ' ').split(/(?<=[.!?…])\s+/).map((x) => x.trim()).filter((x) => x.length > 1);
+  lines = lines.slice(0, max);                                  // trần an toàn số cảnh (render.mjs còn cắt theo thời lượng)
+  if (!lines.length) lines = [String(title || 'Nội dung').trim()];
+  let vis = [];
+  if (key) {
+    try {
+      const vp = `Cho ${lines.length} câu LỜI ĐỌC video dọc 9:16 (đúng thứ tự). Với MỖI câu tạo phần HÌNH gọn & chuyên nghiệp:
+- "head": ý chính RẤT NGẮN 3-7 từ (chữ hiển thị to) — TUYỆT ĐỐI KHÔNG chép cả câu.
+- "lede": 1 câu diễn giải ngắn ≤ 14 từ, hoặc để "".
+KHÔNG trả lời đọc, KHÔNG đổi câu. Trả DUY NHẤT JSON {"v":[{"head":"...","lede":"..."}]} đúng ${lines.length} phần tử, đúng thứ tự.
+CÁC CÂU:\n${lines.map((l, i) => `${i + 1}. ${l}`).join('\n')}`;
+      const rr = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' }, body: JSON.stringify({ model, max_tokens: 2400, messages: [{ role: 'user', content: vp }] }) });
+      if (rr.ok) { const jj = await rr.json(); const raw = (jj?.content || []).map((b) => b.text || '').join(''); const o = parseJsonLoose(raw); if (o && Array.isArray(o.v)) vis = o.v; }
+    } catch (e) { /* Claude lỗi → fallback tách câu */ }
+  }
+  const words = (s) => String(s).trim().split(/\s+/);
+  return lines.map((vo, i) => {
+    const v = vis[i] || {}; const w = words(vo);
+    const head = String(v.head || w.slice(0, 6).join(' ')).trim().replace(/[.,!?…:;]+$/, '');
+    const lede = String(v.lede || (v.head ? '' : (w.length > 6 ? w.slice(6, 20).join(' ') : ''))).trim();
+    return { vo, head, lede };   // vo = NGUYÊN VĂN 100%
+  });
+}
+
 export async function claudeJson({ key, model, maxTokens = 3500, prompt, tries = 3, label = '' }) {
   if (!key) { console.error('❌ Thiếu CLAUDE_API_KEY'); return null; }
   let lastRaw = '';

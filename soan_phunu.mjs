@@ -1,11 +1,12 @@
 // Soạn SPEC cho mẫu "phunu" (Phụ Nữ & Kinh Doanh Online) → spec.json cho templates/phunu/build.py.
 import { writeFileSync } from 'node:fs';
-import { claudeJson } from './soan_util.mjs';
+import { claudeJson, verbatimScenes } from './soan_util.mjs';
 
 const KEY = process.env.CLAUDE_API_KEY;
 const MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001';
 const TITLE = process.env.TITLE || '';
 const ARTICLE = process.env.ARTICLE || '';
+const VERBATIM = process.env.VERBATIM === '1';   // 1 = kịch bản DÁN THỦ CÔNG → giữ NGUYÊN 100% lời đọc (chữ slide vẫn cô đọng)
 const BRANDKW = process.env.BRANDKW || 'bán hàng online, khởi nghiệp, phụ nữ kinh doanh';
 const NONCE = process.env.GITHUB_RUN_ID || String(Math.floor(Math.random() * 1e9));
 
@@ -41,7 +42,20 @@ MARKUP trong text hiển thị (disp/lede/band/quote — KHÔNG dùng < >): *nh�
 An toàn: KHÔNG hứa thu nhập/mốc thời gian, KHÔNG comment-bait, KHÔNG kí tự < > trong text.
 Chỉ in JSON.`;
 
-const spec = await claudeJson({ key: KEY, model: MODEL, maxTokens: 3200, prompt: PROMPT, tries: 3, label: 'phunu' });
+let spec;
+if (VERBATIM) {
+  // KỊCH BẢN DÁN THỦ CÔNG → giữ NGUYÊN lời đọc; chỉ cô đọng chữ slide (head ngắn + lede). Xen kẽ ảnh/chữ.
+  const vs = await verbatimScenes(ARTICLE, { key: KEY, model: MODEL, title: TITLE, max: 16 });
+  const scenes = vs.map((s, i) => (i === 0)
+    ? { type: 'intro', disp: [s.head], lede: s.lede, vo: s.vo }
+    : ((i % 2 === 1) ? { type: 'media', disp: [s.head], lede: s.lede, vo: s.vo }
+                     : { type: 'text', disp: [s.head], lede: s.lede, vo: s.vo }));
+  scenes.push({ type: 'outro', vo: '' });
+  spec = { scenes };
+  console.error(`✓ VERBATIM phunu: ${vs.length} câu giữ NGUYÊN lời đọc + cô đọng slide`);
+} else {
+  spec = await claudeJson({ key: KEY, model: MODEL, maxTokens: 3200, prompt: PROMPT, tries: 3, label: 'phunu' });
+}
 if (!spec || !spec.scenes || !spec.scenes.length) { console.error('Thiếu scenes'); process.exit(1); }
 // Nhãn động: ưu tiên brand thật (env) → AI đề xuất → mặc định.
 spec.channel = (process.env.BRAND_LABEL || spec.channel || 'Kênh của bạn').toString().trim();

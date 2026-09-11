@@ -1,10 +1,11 @@
 // Soạn SPEC cho mẫu "broll" (nền video stock + chữ chạy) → spec.json cho templates/broll/build.py.
 import { writeFileSync } from 'node:fs';
-import { claudeJson } from './soan_util.mjs';
+import { claudeJson, verbatimScenes } from './soan_util.mjs';
 const KEY = process.env.CLAUDE_API_KEY;
 const MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001';
 const TITLE = process.env.TITLE || '';
 const ARTICLE = process.env.ARTICLE || '';
+const VERBATIM = process.env.VERBATIM === '1';   // 1 = kịch bản DÁN THỦ CÔNG → giữ NGUYÊN lời đọc
 const BRANDKW = process.env.BRANDKW || 'sức khoẻ, tài chính, thể dục';
 const NONCE = process.env.GITHUB_RUN_ID || String(Math.floor(Math.random() * 1e9));
 
@@ -25,7 +26,14 @@ Mỗi cảnh:
 An toàn: KHÔNG hứa thu nhập/mốc thời gian/chữa bệnh tuyệt đối/comment-bait, KHÔNG kí tự < >. Giọng tích cực, đáng tin.
 Chỉ in JSON.`;
 
-const spec = await claudeJson({ key: KEY, model: MODEL, maxTokens: 3000, prompt: brollPrompt({ title: TITLE, article: ARTICLE, kw: BRANDKW, nonce: NONCE }), tries: 3, label: 'broll' });
+let spec;
+if (VERBATIM) {
+  const vs = await verbatimScenes(ARTICLE, { key: KEY, model: MODEL, title: TITLE, max: 14 });
+  spec = { num: '01', scenes: vs.map((s) => ({ query: s.head || TITLE, kick: '', head: [s.head], sub: s.lede, vo: s.vo })) };
+  console.error(`✓ VERBATIM broll: ${vs.length} câu giữ NGUYÊN lời đọc`);
+} else {
+  spec = await claudeJson({ key: KEY, model: MODEL, maxTokens: 3000, prompt: brollPrompt({ title: TITLE, article: ARTICLE, kw: BRANDKW, nonce: NONCE }), tries: 3, label: 'broll' });
+}
 if (!spec || !spec.scenes || !spec.scenes.length) { console.error('Thiếu scenes'); process.exit(1); }
 spec.color = (process.env.BROLL_COLOR || 'cam').trim();   // màu chữ user chọn (cam/vang/mint) → build.py inject accent
 writeFileSync('spec.json', JSON.stringify(spec, null, 2));

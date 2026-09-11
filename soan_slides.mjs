@@ -1,11 +1,13 @@
 // Soạn SPEC cho mẫu "slides" (Agent Thực Chiến) → spec.json cho templates/slides/build.py.
 // TRIẾT LÝ (Boss chốt): mỗi CÂU → CHỌN kiểu slide HỢP nội dung câu đó (KHÔNG random/ép câu vào kiểu). Nội dung đa dạng → video tự nhiên nhiều kiểu. Nonce chỉ để 2 video CÙNG chủ đề đỡ giống nhau.
 import { writeFileSync } from 'node:fs';
+import { verbatimScenes } from './soan_util.mjs';
 
 const KEY = process.env.CLAUDE_API_KEY;
 const MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001';
 const TITLE = process.env.TITLE || '';
 const ARTICLE = process.env.ARTICLE || '';
+const VERBATIM = process.env.VERBATIM === '1';   // 1 = kịch bản DÁN THỦ CÔNG → giữ NGUYÊN 100% (mỗi câu = 1 slide)
 const BRANDKW = process.env.BRANDKW || 'AI Agent, tự động hoá kinh doanh';
 const BRAND_LABEL = (process.env.BRAND_LABEL || '').trim() || 'ANTOA';
 const NONCE = process.env.GITHUB_RUN_ID || String(Math.floor(Math.random() * 1e9));
@@ -65,16 +67,24 @@ JSON: { "num":"01", "caption":{"title":"<TIÊU ĐỀ SEO tiếng Việt 1 dòng:
 ${SLIDES_CATALOG}
 KHÔNG kí tự < > trong args. Chỉ in JSON.`;
 
-const r = await fetch('https://api.anthropic.com/v1/messages', {
-  method: 'POST',
-  headers: { 'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-  body: JSON.stringify({ model: MODEL, max_tokens: 3200, messages: [{ role: 'user', content: slidesPrompt({ title: TITLE, article: ARTICLE, kw: BRANDKW, nonce: NONCE }) }] }),
-});
-const j = await r.json();
-const raw = (j?.content || []).map((b) => b.text || '').join('');
-const m = raw.match(/\{[\s\S]*\}/);
-if (!m) { console.error('Không parse được JSON:', raw.slice(0, 300)); process.exit(1); }
-const spec = JSON.parse(m[0]);
+let spec;
+if (VERBATIM) {
+  // KỊCH BẢN DÁN THỦ CÔNG → mỗi câu = 1 slide, lời đọc GIỮ NGUYÊN 100%. slides rỗng → build.py tự làm TEXT slide (luôn đọc được).
+  const vs = await verbatimScenes(ARTICLE, { key: KEY, model: MODEL, title: TITLE, max: 16 });
+  spec = { num: '01', caption: { title: TITLE, desc: '' }, script: vs.map((s) => s.vo), slides: [] };
+  console.error(`✓ VERBATIM slides: ${vs.length} câu giữ NGUYÊN lời đọc`);
+} else {
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+    body: JSON.stringify({ model: MODEL, max_tokens: 3200, messages: [{ role: 'user', content: slidesPrompt({ title: TITLE, article: ARTICLE, kw: BRANDKW, nonce: NONCE }) }] }),
+  });
+  const j = await r.json();
+  const raw = (j?.content || []).map((b) => b.text || '').join('');
+  const m = raw.match(/\{[\s\S]*\}/);
+  if (!m) { console.error('Không parse được JSON:', raw.slice(0, 300)); process.exit(1); }
+  spec = JSON.parse(m[0]);
+}
 if (!spec.script || !spec.script.length) { console.error('Thiếu script'); process.exit(1); }
 
 // #2 CHỐNG SLIDE VỠ: loại dòng slide args sai định dạng (rỗng/"/ /"/thiếu ">>") → câu đó tự thành TEXT slide (luôn đọc được).

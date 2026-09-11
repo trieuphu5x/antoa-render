@@ -1,8 +1,9 @@
 // Soạn CONFIG cho mẫu "illustrated" (Mẫu Video Vẽ Hình AI) → spec.json cho templates/illustrated/build.py.
 // image_style = phong cách NGƯỜI DÙNG CHỌN (env IMG_STYLE) — KHÔNG để Claude tự chọn. Claude chỉ viết scenes[{say,image_prompt}] + cta.
 import { writeFileSync } from 'node:fs';
-import { claudeJson } from './soan_util.mjs';
+import { claudeJson, verbatimScenes } from './soan_util.mjs';
 
+const VERBATIM = process.env.VERBATIM === '1';   // 1 = kịch bản DÁN THỦ CÔNG → giữ NGUYÊN lời đọc (say)
 const KEY = process.env.CLAUDE_API_KEY;
 const MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001';
 const TITLE = process.env.TITLE || '';
@@ -33,9 +34,20 @@ An toàn: KHÔNG hứa thu nhập/mốc thời gian, KHÔNG comment-bait, KHÔNG
 Chỉ in JSON.`;
 
 if (!KEY) { console.error('❌ Thiếu CLAUDE_API_KEY'); process.exit(1); }
-const out = await claudeJson({ key: KEY, model: MODEL, maxTokens: 3000, prompt: PROMPT, tries: 3, label: 'illustrated' });
-if (!out) { console.error('❌ Claude không trả JSON hợp lệ'); process.exit(1); }
-const scenes = (out.scenes || []).filter((s) => s && s.say).slice(0, 6);
+let scenes, ctaSay, capTitle, capDesc;
+if (VERBATIM) {
+  // KỊCH BẢN DÁN THỦ CÔNG → say GIỮ NGUYÊN 100%; ảnh minh hoạ AI vẽ theo ý chính (head).
+  const vs = await verbatimScenes(ARTICLE, { key: KEY, model: MODEL, title: TITLE, max: 8 });
+  scenes = vs.map((s) => ({ say: s.vo, image_prompt: `Warm cinematic editorial illustration, scene about: ${s.head || s.vo}. Consistent recurring character, soft emotional mood, no text.` }));
+  ctaSay = 'Theo dõi để không bỏ lỡ.'; capTitle = TITLE; capDesc = '';
+  console.error(`✓ VERBATIM illustrated: ${scenes.length} câu giữ NGUYÊN lời đọc`);
+} else {
+  const out = await claudeJson({ key: KEY, model: MODEL, maxTokens: 3000, prompt: PROMPT, tries: 3, label: 'illustrated' });
+  if (!out) { console.error('❌ Claude không trả JSON hợp lệ'); process.exit(1); }
+  scenes = (out.scenes || []).filter((s) => s && s.say).slice(0, 6);
+  ctaSay = (out.cta && out.cta.say) || 'Theo dõi để không bỏ lỡ.';
+  capTitle = (out.caption && out.caption.title) || TITLE; capDesc = (out.caption && out.caption.desc) || '';
+}
 if (!scenes.length) { console.error('Thiếu scenes'); process.exit(1); }
 
 // Config đầy đủ cho build.py + render.mjs (caption.txt/script.txt).
@@ -44,9 +56,9 @@ const spec = {
   image_model: IMG_MODEL,
   fps: 30,
   scenes,
-  cta: { say: (out.cta && out.cta.say) || 'Theo dõi để không bỏ lỡ.', brand: BRAND_LABEL, tag: SLOGAN },
-  caption: { title: (out.caption && out.caption.title) || TITLE, desc: (out.caption && out.caption.desc) || '' },
-  script: [...scenes.map((s) => s.say), (out.cta && out.cta.say) || ''].filter(Boolean),   // cho "Sửa kịch bản"
+  cta: { say: ctaSay, brand: BRAND_LABEL, tag: SLOGAN },
+  caption: { title: capTitle, desc: capDesc },
+  script: [...scenes.map((s) => s.say), ctaSay].filter(Boolean),   // cho "Sửa kịch bản"
   style: { musicVolume: 0.16 },   // nhạc nền auto-duck; build.py random 1 bài trong pool assets/music mỗi video
 };
 writeFileSync('spec.json', JSON.stringify(spec, null, 2));
