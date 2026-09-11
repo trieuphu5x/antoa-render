@@ -49,9 +49,27 @@ if (isNews && (!spec || !spec.scenes || !spec.scenes.length)) {
 }
 if (!spec) { console.error(`[render] Thiếu SPEC cho mẫu "${TEMPLATE}" — Tower/soạn-cảnh chưa cấp.`); process.exit(1); }
 
-// CAP VIDEO NGẮN ≤ 3 phút (chốt chặn số cảnh/câu).
-if (Array.isArray(spec.scenes) && spec.scenes.length > 24) spec.scenes = spec.scenes.slice(0, 24);
-if (Array.isArray(spec.script) && spec.script.length > 22) spec.script = spec.script.slice(0, 22);
+// ===== TRẦN CỨNG THỜI LƯỢNG (van an toàn MỌI mẫu) — ước lượng từ lời đọc, cắt cảnh vượt trần, GIỮ outro =====
+// Kịch bản THỦ CÔNG vượt trần đã bị CHẶN từ Tower (không tới đây). Đây là chốt chặn cuối cho AI-sinh lỡ dài.
+const MAX_DUR = Math.max(60, Number(process.env.MAX_DUR_SEC) || 210);   // mặc định 3.5 phút
+const CPS = 14;   // ký tự/giây tiếng Việt (ước lượng thời lượng lời đọc)
+if (Array.isArray(spec.scenes) && spec.scenes.length) {
+  const last = spec.scenes[spec.scenes.length - 1];
+  const outro = (last && (last.type === 'outro' || /outro|sO$/.test(String(last.id || '')))) ? last : null;
+  const body = outro ? spec.scenes.slice(0, -1) : spec.scenes;
+  let acc = outro ? 4 : 0; const kept = [];                              // chừa ~4s cho outro
+  for (const sc of body) {
+    const d = Math.max(2, String(sc.vo || sc.script || '').length / CPS + 0.3);
+    if (acc + d > MAX_DUR) break;
+    acc += d; kept.push(sc);
+  }
+  if (kept.length < body.length) console.log(`[render] ⚠ TRẦN ${MAX_DUR}s: giữ ${kept.length}/${body.length} cảnh (~${Math.round(acc)}s), cắt phần dư`);
+  spec.scenes = outro ? [...kept, outro] : kept;
+}
+if (Array.isArray(spec.script)) {                                        // slides: mảng câu (~8s/câu)
+  const CAP_LINES = Math.floor(MAX_DUR / 8);
+  if (spec.script.length > CAP_LINES) { console.log(`[render] ⚠ TRẦN: slides ${spec.script.length}→${CAP_LINES} câu`); spec.script = spec.script.slice(0, CAP_LINES); }
+}
 
 // ---- 3) giọng đọc → nạp vào spec + env cho builder ----
 if (ENGINE === 'vbee') { process.env.VBEE_VOICE = CODE; spec.tts = 'vbee'; }   // vbee_tts.py đọc creds từ env
