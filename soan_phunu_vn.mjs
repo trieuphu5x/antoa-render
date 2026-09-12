@@ -14,6 +14,21 @@ const VERBATIM = process.env.VERBATIM === '1';   // 1 = kịch bản DÁN THỦ 
 const BRANDKW = process.env.BRANDKW || 'giải trí, showbiz, sao việt, du lịch, điểm đến';
 const NONCE = process.env.GITHUB_RUN_ID || String(Math.floor(Math.random() * 1e9));
 
+// 🎨 TỰ KHỚP MÀU theo CHỦ ĐỀ/CẢM XÚC nội dung (6 màu build.py). User chọn tay (env PALETTE) → tôn trọng; auto → tự khớp.
+function pickPalette(text) {
+  const s = String(text || '').toLowerCase();
+  // DU LỊCH — biển/thiên nhiên/đảo → xanh ngọc; thành phố/điểm đến tươi → xanh dương-cam; ẩm thực/ấm → kem-cam
+  if (/biển|bien|đảo|dao|beach|resort|vịnh|vinh|thác|thac|núi|nui|rừng|rung|thiên nhiên|thien nhien|hồ |ho /.test(s)) return 'xanh-ngoc';
+  if (/ẩm thực|am thuc|món ăn|mon an|đặc sản|dac san|food|quán|quan|nhà hàng|nha hang|cà phê|ca phe/.test(s)) return 'kem-cam';
+  if (/du lịch|du lich|điểm đến|diem den|check.?in|phượt|phuot|travel|khám phá|kham pha|tour|nghỉ dưỡng|nghi duong/.test(s)) return 'xanh-duong-cam';
+  // SHOWBIZ buồn/nghiêm túc/tiêu cực → navy-vàng (trầm)
+  if (/chia tay|ly hôn|ly hon|qua đời|qua doi|tang lễ|tang le|đau buồn|dau buon|scandal|kiện|kien|tranh cãi|tranh cai|xin lỗi|xin loi|phốt|phot|tố|to cao|bóc phốt|drama|lùm xùm|lum xum|bệnh|benh/.test(s)) return 'navy-vang';
+  // SHOWBIZ tình cảm/hạnh phúc → hồng đất (nhẹ nhàng)
+  if (/cưới|cuoi|đám cưới|dam cuoi|hạnh phúc|hanh phuc|em bé|em be|con đầu lòng|con dau long|tình yêu|tinh yeu|hẹn hò|hen ho|yêu|kỷ niệm|ky niem|cầu hôn|cau hon|đính hôn|dinh hon/.test(s)) return 'hong-dat';
+  // MẶC ĐỊNH showbiz = đen-gold (glam thảm đỏ)
+  return 'den-gold';
+}
+
 const PROMPT = `Bạn là biên tập viên video editorial TẠP CHÍ (9:16, phong cách tạp chí ảnh sang trọng) — chuyên mảng GIẢI TRÍ/SHOWBIZ và DU LỊCH/ĐIỂM ĐẾN. Soạn KỊCH BẢN cho tin dưới đây, trả về DUY NHẤT một JSON hợp lệ (không markdown).
 
 CHỦ ĐỀ: "${TITLE}"
@@ -140,7 +155,9 @@ if (images.length < 2) {
   console.log(`  bù stock: ${bu.length} (tổng ${images.length})`);
 }
 if (images.length) spec.images = images;
-spec.palette = (process.env.PALETTE || 'den-gold').trim();   // showbiz mặc định den-gold sang trọng (user đổi được)
+// MÀU: user chọn tay (env PALETTE) → dùng đúng; auto → TỰ KHỚP theo chủ đề/cảm xúc nội dung.
+spec.palette = (process.env.PALETTE || '').trim() || pickPalette(`${TITLE} ${ARTICLE}`);
+console.log(`  palette: ${spec.palette} ${process.env.PALETTE ? '(user chọn)' : '(auto-khớp chủ đề)'}`);
 
 writeFileSync('spec.json', JSON.stringify(spec, null, 2));
 console.log(`✓ spec.json (phunu-vn): ${spec.scenes.length} cảnh · ${(spec.images || []).length} ảnh (ưu tiên ảnh bài báo)`);
