@@ -105,6 +105,7 @@ jobs:
             slides)      node soan_slides.mjs ;;
             newsroom)    node soan_canh.mjs ;;
             phunu)       node soan_phunu.mjs ;;
+            phunu-vn)    node soan_phunu_vn.mjs ;;
             broll)       node soan_broll.mjs ;;
             broll2)      node soan_broll2.mjs ;;
             illustrated) node soan_illustrated.mjs ;;

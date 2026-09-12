@@ -29,6 +29,15 @@
       "entry": "build.py"
     },
     {
+      "id": "phunu-vn",
+      "package": "phunu",
+      "name": "Mẫu Slide Tạp Chí (Tin VN)",
+      "kind": "talking-editorial-vnnews",
+      "status": "ready",
+      "builder": "python",
+      "entry": "build.py"
+    },
+    {
       "id": "broll",
       "package": "broll",
       "name": "Mẫu Broll Chạy Chữ 1",
