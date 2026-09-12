@@ -356,8 +356,15 @@ def build(workdir, spec):
     topic = (spec.get("topic") or os.environ.get("SLOGAN") or "").strip()
     milestone = (spec.get("milestone") or (scenes[0].get("kick") if scenes else "") or "").strip()
     _CHANNEL = channel
-    # NGUỒN ẢNH: spec.images = list URL động (Drive/stock, KHÔNG lưu — Chromium tải lúc render). Rỗng → ảnh mẫu local (test).
-    imgs = [str(u).strip() for u in (spec.get("images") or []) if str(u).strip()] or sorted(os.listdir(os.path.join(ASSETS, "img")))
+    # NGUỒN ẢNH: spec.images = ảnh THẬT bài báo (dedup). Rỗng → ảnh mẫu local (chỉ test).
+    imgs = [str(u).strip() for u in (spec.get("images") or []) if str(u).strip()]
+    _seen = set(); imgs = [x for x in imgs if not (x in _seen or _seen.add(x))]   # DEDUP giữ thứ tự (ảnh[0]=og:image chủ thể)
+    if not imgs:
+        imgs = sorted(os.listdir(os.path.join(ASSETS, "img")))
+    nimg = len(imgs)
+    # KHỚP KHUNG THEO SỐ ẢNH THẬT (Boss chốt): chỉ dùng kiểu cần ≤ số ảnh có → KHÔNG lặp/chèn ảnh lạc.
+    # Ít ảnh → chỉ kiểu 1 ảnh (hero/duo/arch/split). Đủ 2 → thêm film/circles. Đủ 4 → thêm grid/filmstrip.
+    AVAIL = [s for s in IMG_STYLES if IMG_NEED[s] <= nimg] or ["hero"]
 
     # 1) TTS + timing
     t = 0.0; laid = []
@@ -379,10 +386,10 @@ def build(workdir, spec):
         i = sc["i"]; sel = f"#scene{i}"; typ = sc.get("type", "text")
         durtok = round(max(1.0, sc["sdur"] - 0.4), 3)   # DUR cho kb (span cảnh)
         if typ == "intro": inner, gs = r_intro(sc, sel)
-        elif typ in ("media", "image"):   # cảnh ẢNH → 1 trong 8 KIỂU DUYỆT (xoay vòng nếu không chỉ định style)
+        elif typ in ("media", "image"):   # cảnh ẢNH → chọn kiểu VỪA số ảnh (không chèn ảnh lạc/lặp)
             style = sc.get("style", "auto")
-            if style not in IMG_NEED:
-                style = IMG_STYLES[irot % len(IMG_STYLES)]; irot += 1
+            if style not in IMG_NEED or IMG_NEED[style] > nimg:   # không chỉ định HOẶC kiểu cần nhiều ảnh hơn có → tự chọn kiểu vừa
+                style = AVAIL[irot % len(AVAIL)]; irot += 1
             need = IMG_NEED[style]
             simgs = list(sc.get("imgs") or ([sc["img"]] if sc.get("img") and sc.get("img") != "auto" else []))
             while len(simgs) < need:
