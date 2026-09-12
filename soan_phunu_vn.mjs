@@ -1,4 +1,5 @@
 // Soạn SPEC cho mẫu "phunu-vn" = BIẾN THỂ "Mẫu Slide Tạp Chí" DÀNH RIÊNG cho TIN TỨC VN.
+// 🎯 DÀNH CHO CHỦ ĐỀ GIẢI TRÍ & DU LỊCH (ngách nhiều ảnh đẹp — tạp chí phát huy tối đa).
 // KHÁC bản gốc soan_phunu.mjs DUY NHẤT ở NGUỒN ẢNH: lấy ẢNH THẬT TỪ BÀI BÁO (chup.mjs → shots/manifest.json)
 // thay vì stock/Drive. Dùng chung templates/phunu/build.py + style.css (cùng 12 kiểu, 6 màu).
 // Bản gốc soan_phunu.mjs (stock free / Drive) GIỮ NGUYÊN — đây là biến thể thứ 3 theo nguồn ảnh.
@@ -10,24 +11,28 @@ const MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001';
 const TITLE = process.env.TITLE || '';
 const ARTICLE = process.env.ARTICLE || '';
 const VERBATIM = process.env.VERBATIM === '1';   // 1 = kịch bản DÁN THỦ CÔNG → giữ NGUYÊN 100% lời đọc
-const BRANDKW = process.env.BRANDKW || 'showbiz, sao việt, giải trí';
+const BRANDKW = process.env.BRANDKW || 'giải trí, showbiz, sao việt, du lịch, điểm đến';
 const NONCE = process.env.GITHUB_RUN_ID || String(Math.floor(Math.random() * 1e9));
 
-const PROMPT = `Bạn là biên tập viên video editorial tạp chí giải trí/showbiz (9:16, phong cách tạp chí ảnh sang trọng). Soạn KỊCH BẢN cho tin dưới đây, trả về DUY NHẤT một JSON hợp lệ (không markdown).
+const PROMPT = `Bạn là biên tập viên video editorial TẠP CHÍ (9:16, phong cách tạp chí ảnh sang trọng) — chuyên mảng GIẢI TRÍ/SHOWBIZ và DU LỊCH/ĐIỂM ĐẾN. Soạn KỊCH BẢN cho tin dưới đây, trả về DUY NHẤT một JSON hợp lệ (không markdown).
 
 CHỦ ĐỀ: "${TITLE}"
 BỐI CẢNH: """${ARTICLE.slice(0, 2000)}"""
 TỪ KHOÁ BÁM SÁT: ${BRANDKW}
 Hạt giống đa dạng: ${NONCE}
 
-JSON: { "channel":"<TÊN KÊNH ngắn>", "topic":"<chủ đề 2-3 từ TIẾNG ANH viết thường khớp nội dung, vd showbiz vietnam / celebrity news>", "milestone":"<CHUYÊN MỤC ngắn IN HOA, vd HÓNG NHANH / SAO & SỰ KIỆN>", "num":"01", "scenes":[ {…}, … ] }  — CHỈ 10-12 cảnh.
+TỰ NHẬN DIỆN NGÁCH theo nội dung:
+- Nếu là GIẢI TRÍ/SHOWBIZ (sao, phim, nhạc, sự kiện): giọng hóng nhẹ nhàng, chuyên mục kiểu HÓNG NHANH / SAO & SỰ KIỆN / HẬU TRƯỜNG.
+- Nếu là DU LỊCH/ĐIỂM ĐẾN (cảnh đẹp, ẩm thực, trải nghiệm): giọng gợi cảm hứng, chuyên mục kiểu ĐIỂM ĐẾN / CẨM NANG / TRẢI NGHIỆM / ẨM THỰC.
 
-⭐ ƯU TIÊN HÌNH ẢNH: **ÍT NHẤT MỘT NỬA** số cảnh là type "media" (ảnh thật từ bài báo). Video kể bằng ẢNH sao là chính.
+JSON: { "channel":"<TÊN KÊNH ngắn>", "topic":"<chủ đề 2-3 từ TIẾNG ANH viết thường khớp nội dung, vd celebrity news / vietnam travel / food destination>", "milestone":"<CHUYÊN MỤC ngắn IN HOA khớp ngách>", "num":"01", "scenes":[ {…}, … ] }  — CHỈ 10-12 cảnh.
+
+⭐ ƯU TIÊN HÌNH ẢNH: **ÍT NHẤT MỘT NỬA** số cảnh là type "media" (ảnh thật từ bài báo). Video kể bằng ẢNH là chính.
 ⭐ NGẮN GỌN: "disp" tối đa 2 dòng, mỗi dòng ≤ 4-5 từ. "lede" ≤ 12 từ hoặc bỏ. "caps" (chú thích ảnh) ≤ 6 từ.
-⚖️ AN TOÀN NỀN TẢNG (showbiz — RẤT QUAN TRỌNG): KHÔNG khẳng định chắc nịch chuyện chưa kiểm chứng; dùng "rộ tin / nghe đồn / dân mạng xôn xao / theo nguồn tin". KHÔNG bôi nhọ/xúc phạm/quy kết đời tư. KHÔNG hứa hẹn, KHÔNG comment-bait, KHÔNG kí tự < >.
+⚖️ AN TOÀN NỀN TẢNG: KHÔNG hứa hẹn, KHÔNG comment-bait, KHÔNG kí tự < >. RIÊNG tin showbiz/về NGƯỜI: KHÔNG khẳng định chắc nịch chuyện chưa kiểm chứng — dùng "rộ tin / nghe đồn / dân mạng xôn xao / theo nguồn tin"; KHÔNG bôi nhọ/xúc phạm/quy kết đời tư.
 
 CẢNH 1 luôn "intro"; cuối luôn "outro"; áp chót nên "cta". Giữa ƯU TIÊN media, xen text/quote cho nhịp.
-Mỗi cảnh có "vo" = lời đọc tự nhiên 1-2 câu tiếng Việt, NỐI mạch, giọng hóng nhẹ nhàng có kiểm chứng.
+Mỗi cảnh có "vo" = lời đọc tự nhiên 1-2 câu tiếng Việt, NỐI mạch (showbiz: hóng có kiểm chứng · du lịch: gợi cảm hứng).
 
 KIỂU cảnh + trường (GIỐNG mẫu tạp chí gốc):
 - intro:   {kick, disp:[3 dòng tiêu đề lớn], lede}
@@ -104,7 +109,10 @@ spec.caption = { title: _cap.title, desc: _cap.desc };
 let images = articleImages();
 console.log(`  ảnh bài báo (shots): ${images.length}`);
 if (images.length < 2) {
-  const q = /giải trí|showbiz|sao|phim|nhạc|star|celeb/i.test(`${TITLE} ${BRANDKW}`) ? 'vietnamese celebrity entertainment stage' : 'entertainment concert crowd stage';
+  const kwAll = `${TITLE} ${BRANDKW}`;
+  const q = /du lịch|du lich|điểm đến|diem den|travel|biển|beach|resort|ẩm thực|am thuc|food|cảnh|check.?in/i.test(kwAll)
+    ? 'vietnam travel destination scenery landscape'
+    : (/giải trí|showbiz|sao|phim|nhạc|star|celeb/i.test(kwAll) ? 'vietnamese celebrity entertainment stage' : 'entertainment concert crowd stage');
   const bu = await fetchStock(q, 8 - images.length);
   images = [...images, ...bu];
   console.log(`  bù stock: ${bu.length} (tổng ${images.length})`);
