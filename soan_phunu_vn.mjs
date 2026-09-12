@@ -32,18 +32,19 @@ JSON: { "channel":"<TÊN KÊNH ngắn>", "topic":"<chủ đề 2-3 từ TIẾNG 
 ⚖️ AN TOÀN NỀN TẢNG: KHÔNG hứa hẹn, KHÔNG comment-bait, KHÔNG kí tự < >. RIÊNG tin showbiz/về NGƯỜI: KHÔNG khẳng định chắc nịch chuyện chưa kiểm chứng — dùng "rộ tin / nghe đồn / dân mạng xôn xao / theo nguồn tin"; KHÔNG bôi nhọ/xúc phạm/quy kết đời tư.
 
 CẢNH 1 luôn "intro"; cuối luôn "outro"; áp chót nên "cta". Giữa ƯU TIÊN media, xen text/quote cho nhịp.
-Mỗi cảnh có "vo" = lời đọc tự nhiên 1-2 câu tiếng Việt, NỐI mạch (showbiz: hóng có kiểm chứng · du lịch: gợi cảm hứng).
 
-KIỂU cảnh + trường (GIỐNG mẫu tạp chí gốc):
-- intro:   {kick, disp:[3 dòng tiêu đề lớn], lede}
-- text:    {align:"left"|"center"|"right", kick, kickInk?:true, rule?:true, disp:[2-3 dòng], lede}
-- media:   {kick, disp:[2-3 dòng], lede, caps:["chú thích ảnh 1","chú thích ảnh 2"]}  (cảnh ẢNH — hệ thống tự gắn ảnh bài báo)
-- stat:    {kick, big:"số ngắn", suffix:"đơn vị", disp:["1 dòng phụ"], lede}
-- quote:   {quote:"câu trích ngắn (dùng *…* nhấn)", by:"nguồn dẫn ngắn"}
-- band:    {kick, disp:[1-2 dòng], band:"1 câu chốt trong dải màu (*…* nhấn)"}
-- list:    {kick, disp:[1-2 dòng], items:["mục 1","mục 2","mục 3"], lede}
-- cta:     {kick, disp:["1-2 dòng chốt"], lede, pill:"chữ ngắn nút CTA"}
-- outro:   {brand:"✳ TÊN KÊNH", lede:"1 câu kêu gọi theo dõi mềm"}
+⭐⭐ BẮT BUỘC: MỖI cảnh (TRỪ outro) PHẢI có trường "vo" = 1-2 câu LỜI ĐỌC tự nhiên tiếng Việt KỂ nội dung tin, NỐI mạch cảnh trước–sau (showbiz: hóng có kiểm chứng · du lịch: gợi cảm hứng). THIẾU "vo" = VIDEO BỊ CÂM → tuyệt đối KHÔNG bỏ trống. "vo" là lời KỂ (đầy đủ, đọc lên nghe tự nhiên), KHÁC với "disp"/"lede" (chữ cô đọng trên slide).
+
+KIỂU cảnh + trường (mỗi cảnh LUÔN kèm "vo"):
+- intro:   {kick, disp:[3 dòng tiêu đề lớn], lede, vo}
+- text:    {align:"left"|"center"|"right", kick, kickInk?:true, rule?:true, disp:[2-3 dòng], lede, vo}
+- media:   {kick, disp:[2-3 dòng], lede, caps:["chú thích ảnh 1","chú thích ảnh 2"], vo}  (cảnh ẢNH — hệ thống tự gắn ảnh bài báo)
+- stat:    {kick, big:"số ngắn", suffix:"đơn vị", disp:["1 dòng phụ"], lede, vo}
+- quote:   {quote:"câu trích ngắn (dùng *…* nhấn)", by:"nguồn dẫn ngắn", vo}
+- band:    {kick, disp:[1-2 dòng], band:"1 câu chốt trong dải màu (*…* nhấn)", vo}
+- list:    {kick, disp:[1-2 dòng], items:["mục 1","mục 2","mục 3"], lede, vo}
+- cta:     {kick, disp:["1-2 dòng chốt"], lede, pill:"chữ ngắn nút CTA", vo}
+- outro:   {}  (KHÔNG cần trường — hệ thống tự điền tên kênh + slogan)
 
 MARKUP (disp/lede/band/quote — KHÔNG < >): *nhấn màu* · **đậm** · _nghiêng_ · \\n xuống dòng.
 Chỉ in JSON.`;
@@ -98,6 +99,27 @@ if (VERBATIM) {
   spec = await claudeJson({ key: KEY, model: MODEL, maxTokens: 3200, prompt: PROMPT, tries: 3, label: 'phunu-vn' });
 }
 if (!spec || !spec.scenes || !spec.scenes.length) { console.error('Thiếu scenes'); process.exit(1); }
+
+// 🔊 CHỐNG CÂM: đảm bảo MỖI cảnh (trừ outro) có vo. Claude đôi khi bỏ trống vo → không TTS → video câm.
+// Rỗng → dựng vo từ chữ hiển thị (disp/lede/quote/band) để LUÔN có lời đọc.
+const _strip = (s) => String(s || '').replace(/\*\*|[*_]/g, '').replace(/\\n/g, ' ').replace(/\s+/g, ' ').trim();
+let _voFilled = 0;
+for (const sc of spec.scenes) {
+  if (sc.type === 'outro') continue;
+  if (String(sc.vo || '').trim()) continue;
+  const disp = Array.isArray(sc.disp) ? sc.disp.map(_strip).filter(Boolean).join(', ') : _strip(sc.disp);
+  sc.vo = [disp, _strip(sc.lede), _strip(sc.quote), _strip(sc.band)].filter(Boolean).join('. ').slice(0, 220) || _strip(sc.kick) || _strip(sc.big);
+  if (String(sc.vo || '').trim()) _voFilled++;
+}
+if (_voFilled) console.error(`⚠ ${_voFilled} cảnh thiếu vo → tự dựng từ chữ slide (chống câm)`);
+
+// 🏁 OUTRO: dùng SLOGAN của workflow làm lời chốt (hiện + đọc) — Boss chốt, KHÔNG dùng text Claude tự sinh.
+const _slogan = (process.env.SLOGAN || '').toString().trim();
+const _outro = spec.scenes.find((s) => s.type === 'outro') || spec.scenes[spec.scenes.length - 1];
+if (_outro) {
+  if (_slogan) { _outro.lede = _slogan; _outro.vo = _slogan; }
+  _outro.brand = _outro.brand || ('✳ ' + (process.env.BRAND_LABEL || spec.channel || '').toString().trim().toUpperCase());
+}
 
 spec.channel = (process.env.BRAND_LABEL || spec.channel || 'Kênh của bạn').toString().trim();
 const _cap = await captionFor(ARTICLE || TITLE, { key: KEY, model: MODEL, title: TITLE, brandkw: BRANDKW });
