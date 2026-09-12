@@ -294,9 +294,13 @@ def r_cta(sc, sel):   # KIỂU 12 · Chốt / Kêu gọi hành động (có nút
 
 
 def r_outro(sc, sel):
-    inner = (f'<div class="grp" style="left:96px;right:174px;top:720px;text-align:center">'
-             f'<div class="brandmark anim">{mk(sc.get("brand") or ("✳ " + _CHANNEL if _CHANNEL else "✳ KHỞI SỰ"))}</div>'
-             + (f'<div class="lede anim" style="margin-left:auto;margin-right:auto;max-width:700px;margin-top:26px">{mk(sc["lede"])}</div>' if sc.get("lede") else "")
+    raw = str(sc.get("brand") or ("✳ " + _CHANNEL if _CHANNEL else "✳ KHỞI SỰ"))
+    n = len(re.sub(r"<[^>]+>|[*_]", "", raw).strip())
+    # AUTO-CO tên kênh cuối video → nhỏ hơn bản cũ (~40%) + nowrap để tên 4 từ KHÔNG xuống dòng.
+    bsize = 56 if n <= 16 else 50 if n <= 21 else 44 if n <= 27 else 38 if n <= 34 else 32
+    inner = (f'<div class="grp" style="left:80px;right:80px;top:730px;text-align:center">'
+             f'<div class="brandmark anim" style="font-size:{bsize}px;white-space:nowrap">{mk(raw)}</div>'
+             + (f'<div class="lede anim" style="margin-left:auto;margin-right:auto;max-width:760px;margin-top:20px">{mk(sc["lede"])}</div>' if sc.get("lede") else "")
              + '</div>')
     return inner, [f'enter("{sel}",AT,{{y:34,scale:0.97,stagger:0.2}});']
 

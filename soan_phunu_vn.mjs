@@ -12,24 +12,26 @@ const TITLE = process.env.TITLE || '';
 const ARTICLE = process.env.ARTICLE || '';
 const VERBATIM = process.env.VERBATIM === '1';   // 1 = kịch bản DÁN THỦ CÔNG → giữ NGUYÊN 100% lời đọc
 const BRANDKW = process.env.BRANDKW || 'giải trí, showbiz, sao việt, du lịch, điểm đến';
+const BRAND_LABEL = (process.env.BRAND_LABEL || '').toString().trim();   // TÊN KÊNH thật (để CTA/vo dùng đúng, KHÔNG lấy tên mẫu)
 const NONCE = process.env.GITHUB_RUN_ID || String(Math.floor(Math.random() * 1e9));
 
 // 🎨 TỰ KHỚP MÀU theo CHỦ ĐỀ/CẢM XÚC nội dung (6 màu build.py). User chọn tay (env PALETTE) → tôn trọng; auto → tự khớp.
 function pickPalette(text) {
   const s = String(text || '').toLowerCase();
-  // DU LỊCH — biển/thiên nhiên/đảo → xanh ngọc; thành phố/điểm đến tươi → xanh dương-cam; ẩm thực/ấm → kem-cam
+  // 1) CẢM XÚC BUỒN/TANG/TIÊU CỰC → navy-vàng (trầm). ƯU TIÊN CAO NHẤT — override topic (vd sao qua đời dù bài nhắc địa danh).
+  if (/qua đời|qua doi|tử vong|tu vong|ra đi|đột ngột|dot ngot|tang lễ|tang le|đau buồn|dau buon|chia tay|ly hôn|ly hon|scandal|kiện|kien|tranh cãi|tranh cai|xin lỗi|xin loi|phốt|phot|tố cáo|to cao|bóc phốt|boc phot|drama|lùm xùm|lum xum|bệnh nặng|benh nang|tai nạn|tai nan|bắt giữ|bat giu|điều tra|dieu tra/.test(s)) return 'navy-vang';
+  // 2) TÌNH CẢM/HẠNH PHÚC (cưới, em bé, yêu) → hồng đất (nhẹ nhàng)
+  if (/cưới|cuoi|đám cưới|dam cuoi|hạnh phúc|hanh phuc|em bé|em be|con đầu lòng|con dau long|tình yêu|tinh yeu|hẹn hò|hen ho|kỷ niệm|ky niem|cầu hôn|cau hon|đính hôn|dinh hon/.test(s)) return 'hong-dat';
+  // 3) DU LỊCH — biển/thiên nhiên → xanh ngọc; ẩm thực → kem-cam; điểm đến chung → xanh dương-cam
   if (/biển|bien|đảo|dao|beach|resort|vịnh|vinh|thác|thac|núi|nui|rừng|rung|thiên nhiên|thien nhien|hồ |ho /.test(s)) return 'xanh-ngoc';
-  if (/ẩm thực|am thuc|món ăn|mon an|đặc sản|dac san|food|quán|quan|nhà hàng|nha hang|cà phê|ca phe/.test(s)) return 'kem-cam';
-  if (/du lịch|du lich|điểm đến|diem den|check.?in|phượt|phuot|travel|khám phá|kham pha|tour|nghỉ dưỡng|nghi duong/.test(s)) return 'xanh-duong-cam';
-  // SHOWBIZ buồn/nghiêm túc/tiêu cực → navy-vàng (trầm)
-  if (/chia tay|ly hôn|ly hon|qua đời|qua doi|tang lễ|tang le|đau buồn|dau buon|scandal|kiện|kien|tranh cãi|tranh cai|xin lỗi|xin loi|phốt|phot|tố|to cao|bóc phốt|drama|lùm xùm|lum xum|bệnh|benh/.test(s)) return 'navy-vang';
-  // SHOWBIZ tình cảm/hạnh phúc → hồng đất (nhẹ nhàng)
-  if (/cưới|cuoi|đám cưới|dam cuoi|hạnh phúc|hanh phuc|em bé|em be|con đầu lòng|con dau long|tình yêu|tinh yeu|hẹn hò|hen ho|yêu|kỷ niệm|ky niem|cầu hôn|cau hon|đính hôn|dinh hon/.test(s)) return 'hong-dat';
+  if (/ẩm thực|am thuc|món ăn|mon an|đặc sản|dac san|food|quán ăn|quan an|nhà hàng|nha hang|cà phê|ca phe/.test(s)) return 'kem-cam';
+  if (/du lịch|du lich|điểm đến|diem den|check.?in|phượt|phuot|travel|khám phá|kham pha|\btour\b|nghỉ dưỡng|nghi duong/.test(s)) return 'xanh-duong-cam';
   // MẶC ĐỊNH showbiz = đen-gold (glam thảm đỏ)
   return 'den-gold';
 }
 
-const PROMPT = `Bạn là biên tập viên video editorial TẠP CHÍ (9:16, phong cách tạp chí ảnh sang trọng) — chuyên mảng GIẢI TRÍ/SHOWBIZ và DU LỊCH/ĐIỂM ĐẾN. Soạn KỊCH BẢN cho tin dưới đây, trả về DUY NHẤT một JSON hợp lệ (không markdown).
+const PROMPT = `Bạn là biên tập viên video 9:16 phong cách editorial (bố cục sang, ảnh đẹp) — chuyên mảng GIẢI TRÍ/SHOWBIZ và DU LỊCH/ĐIỂM ĐẾN. Soạn KỊCH BẢN cho tin dưới đây, trả về DUY NHẤT một JSON hợp lệ (không markdown).
+${BRAND_LABEL ? `\n⚠️ TÊN KÊNH: "${BRAND_LABEL}". Mọi CTA/lời kêu gọi (disp/lede/vo cảnh cta + vo cảnh cuối) PHẢI dùng ĐÚNG tên kênh này (hoặc nói "kênh"), vd "Theo dõi ${BRAND_LABEL} để…". TUYỆT ĐỐI KHÔNG dùng từ "tạp chí"/"TẠP CHÍ" làm tên kênh — đó chỉ là phong cách trình bày, KHÔNG phải tên kênh.\n` : '\n⚠️ CTA dùng chung chung "theo dõi kênh", KHÔNG bịa tên kênh, KHÔNG dùng từ "tạp chí" làm tên kênh.\n'}
 
 CHỦ ĐỀ: "${TITLE}"
 BỐI CẢNH: """${ARTICLE.slice(0, 2000)}"""
@@ -156,7 +158,7 @@ if (images.length < 2) {
 }
 if (images.length) spec.images = images;
 // MÀU: user chọn tay (env PALETTE) → dùng đúng; auto → TỰ KHỚP theo chủ đề/cảm xúc nội dung.
-spec.palette = (process.env.PALETTE || '').trim() || pickPalette(`${TITLE} ${ARTICLE}`);
+spec.palette = (process.env.PALETTE || '').trim() || pickPalette(`${TITLE}. ${String(ARTICLE).slice(0, 140)}`);   // khớp theo TIÊU ĐỀ + hook (không cả thân bài → tránh dính từ sâu)
 console.log(`  palette: ${spec.palette} ${process.env.PALETTE ? '(user chọn)' : '(auto-khớp chủ đề)'}`);
 
 writeFileSync('spec.json', JSON.stringify(spec, null, 2));

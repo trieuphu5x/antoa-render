@@ -35,7 +35,7 @@
       .band .bt{font-family:"Playfair Display",serif;font-weight:700;font-size:48px;line-height:1.22}.band .bt .em{color:var(--gold)}
       .listrow{display:flex;align-items:baseline;gap:24px;font-family:"Playfair Display",serif;font-weight:700;font-size:54px;color:var(--ink);margin-bottom:16px;line-height:1.1}
       .listrow .n{font-family:"JetBrains Mono",monospace;font-size:32px;color:var(--ember);font-weight:500}
-      .brandmark{font-family:"Playfair Display",serif;font-weight:900;font-size:90px;color:var(--ink);line-height:1.1}.brandmark .st{color:var(--ember)}
+      .brandmark{font-family:"Playfair Display",serif;font-weight:900;font-size:56px;color:var(--ink);line-height:1.1}.brandmark .st{color:var(--ember)}
       /* CARD ẢNH (chèn ảnh của Boss) */
       .mcard{position:absolute;padding:13px;background:var(--card);border:1px solid rgba(34,35,63,.16);border-radius:15px;box-shadow:0 22px 54px rgba(34,35,63,.20)}
       .mcard img{display:block;border-radius:9px;object-fit:cover}
