@@ -55,7 +55,7 @@ export async function captionFor(text, { key, model, title = '', brandkw = '' } 
   if (!key) return fb;
   const prompt = `Từ NỘI DUNG video dưới đây, viết phần ĐĂNG BÀI tiếng Việt. Trả DUY NHẤT JSON {"title":"...","desc":"...","topic":"...","milestone":"..."}.
 - "title": TIÊU ĐỀ SEO 1 dòng — đặt ý/từ khoá QUAN TRỌNG lên đầu, hấp dẫn TỰ NHIÊN (KHÔNG giật gân), 40-90 ký tự, KHÔNG hashtag, KHÔNG dấu ngoặc kép, KHÔNG viết HOA toàn bộ.
-- "desc": caption đăng 1-2 câu ngắn + 3-5 hashtag TRUNG TÍNH bám chủ đề.
+- "desc": caption đăng 1-2 câu ngắn, XUỐNG DÒNG, rồi 4-6 hashtag CHẤT LƯỢNG ở cuối. Hashtag phải GHÉP LIỀN CÓ NGHĨA bằng CamelCase (vd #TinTứcShowbiz #SaoViệt #DuLịchViệtNam + tên riêng/chủ thể trong bài như #TênNhânVật #TênĐịaĐiểm). TUYỆT ĐỐI KHÔNG tách từ lẻ vô nghĩa (KHÔNG "#tin #điểm #sự"), KHÔNG hashtag tiếng Anh chung chung (#gossip).
 - "topic": ĐÚNG 1 CỤM 2-3 TỪ TIẾNG ANH viết thường (KHÔNG danh sách, KHÔNG dấu phẩy) — mô tả NGÁCH/CHỦ ĐỀ video này, LINH ĐỘNG theo nội dung (vd "online business", "tech news", "healthy cooking", "travel vietnam", "life reflection").
 - "milestone": chuyên mục/cột mốc NGẮN 1-3 TỪ IN HOA tiếng Việt KHỚP nội dung, LINH ĐỘNG theo ngách (vd "MẸO HAY", "ĐIỂM TIN", "BÀI HỌC", "REVIEW", "CÔNG THỨC", "CẨM NANG").
 An toàn nền tảng: KHÔNG hứa thu nhập/mốc thời gian/comment-bait/thổi phồng/chữa bệnh, KHÔNG ký tự < >.${brandkw ? '\nTừ khoá bám: ' + brandkw : ''}
