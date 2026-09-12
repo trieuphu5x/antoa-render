@@ -338,7 +338,24 @@ def build(workdir, spec):
     os.makedirs(os.path.join(workdir, "assets"), exist_ok=True)
     # link assets (ảnh + css) vào workdir để HyperFrames đọc tương đối
     subprocess.run(["cp", "-R", os.path.join(ASSETS, "img"), os.path.join(workdir, "assets", "img")])
-    subprocess.run(["cp", os.path.join(ASSETS, "bgm.mp3"), os.path.join(workdir, "audio", "bgm.mp3")])
+    # NHẠC NỀN auto-KHỚP CHỦ ĐỀ theo palette — Tạp Chí giải trí/du lịch: mỗi mood một chất nhạc (thư viện free, không ghi nguồn).
+    MUSIC_BY_PAL = {
+        "navy-vang":      "buon.mp3",     # buồn/tang/scandal/drama → trầm lắng, piano
+        "hong-dat":       "tinhcam.mp3",  # cưới/tình cảm/hạnh phúc → ấm áp ngọt ngào
+        "xanh-ngoc":      "dulich.mp3",   # du lịch biển/thiên nhiên → nhẹ nhàng bay bổng
+        "xanh-duong-cam": "dulich.mp3",   # du lịch điểm đến chung → nhẹ nhàng bay bổng
+        "kem-cam":        "amthuc.mp3",   # ẩm thực/đặc sản → tươi sáng vui vẻ
+        "den-gold":       "showbiz.mp3",  # mặc định showbiz/giải trí → hiện đại sôi động
+    }
+    _mood = str(spec.get("music_mood") or "").strip()   # cho phép ép mood; rỗng → theo palette
+    _track = (_mood + ".mp3") if _mood else MUSIC_BY_PAL.get(str(spec.get("palette", "den-gold")), "showbiz.mp3")
+    _bgm = os.path.join(ASSETS, "music", _track)
+    if not os.path.exists(_bgm):
+        _bgm = os.path.join(ASSETS, "music", "showbiz.mp3")
+        if not os.path.exists(_bgm):
+            _bgm = os.path.join(ASSETS, "bgm.mp3")   # fallback bản cũ nếu thiếu thư viện
+    print("[phunu] nhạc nền:", os.path.basename(_bgm), "(palette=" + str(spec.get("palette", "?")) + ")")
+    subprocess.run(["cp", _bgm, os.path.join(workdir, "audio", "bgm.mp3")])
     for f in ("hyperframes.json", "package.json"):
         d = os.path.join(workdir, f)
         if not os.path.exists(d):
