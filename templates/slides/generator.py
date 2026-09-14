@@ -93,8 +93,13 @@ def parse_slides(path):
         no = parts[0].strip()
         if not no.isdigit(): continue
         typ = parts[1].strip()
-        pill = parts[2].strip() if len(parts) > 2 else ""
-        args = "|".join(parts[3:]).strip() if len(parts) > 3 else ""
+        # pill TUỲ CHỌN: đủ 4 field → pill=parts[2], args=parts[3:]; nếu Claude BỎ pill (3 field) → pill="", args=parts[2]. Khớp validSlide (soan).
+        if len(parts) > 3:
+            pill = parts[2].strip(); args = "|".join(parts[3:]).strip()
+        elif len(parts) == 3:
+            pill = ""; args = parts[2].strip()
+        else:
+            pill = ""; args = ""
         spec[int(no)] = (typ, pill, args)
     return spec
 

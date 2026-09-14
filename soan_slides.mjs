@@ -64,6 +64,10 @@ JSON: { "num":"01", "caption":{"title":"<TIÊU ĐỀ SEO tiếng Việt 1 dòng:
 - ĐỊNH DẠNG args CHÍNH XÁC 100%: field " :: ", item " | ", lõi/kết-quả " >> ". Mỗi ô có CHỮ THẬT (không rỗng, không "/", không dấu suông). VD ORBIT = "Doanh nghiệp >> Agent bán | Agent chăm | Agent phân tích" (BẮT BUỘC " >> " tách lõi khỏi vệ tinh); HUB/FORMULA/PROSCONS BẮT BUỘC " >> "; CALLOUT/STAT/TAKEAWAY/DEFINITION đủ 2 vế qua " :: ".
 - KHÔNG CHẮC kiểu phức tạp? → CHỌN KIỂU ĐƠN GIẢN CHẮC ĐÚNG (BIGTEXT/STAT/TAKEAWAY/CALLOUT/CHECKLIST/QUOTE) — VẪN là hình, ĐỪNG bỏ về text. Chỉ để trống khi câu thật sự không có ý gì để minh hoạ.
 
+- ⚠️ MỖI dòng slides BẮT BUỘC ĐỦ 4 PHẦN ngăn bằng " | ": "sceneNo | TYPE | pill | args" — LUÔN có pill (nhãn 1-3 từ), KHÔNG bao giờ bỏ trống/gộp pill vào args. VÍ DỤ ĐÚNG:
+  "2 | CHECKLIST | Việc cần làm | Lập danh sách sáng | Chọn 3 việc chính | Tập trung sâu 25 phút"
+  "5 | STAT | Hiệu suất | 25 :: phút mỗi phiên :: Pomodoro"
+  "9 | CALLOUT | Lưu ý | Tắt thông báo điện thoại :: khi cần tập trung cao độ"
 ${SLIDES_CATALOG}
 KHÔNG kí tự < > trong args. Chỉ in JSON.`;
 
@@ -89,18 +93,39 @@ if (!spec.script || !spec.script.length) { console.error('Thiếu script'); proc
 
 // #2 CHỐNG SLIDE VỠ: loại dòng slide args sai định dạng (rỗng/"/ /"/thiếu ">>") → câu đó tự thành TEXT slide (luôn đọc được).
 const ARROW = new Set(['FORMULA', 'HUB', 'ORBIT', 'PROSCONS']);
+// args = phần sau pill; NHƯNG nếu Claude BỎ pill (chỉ 3 field) → coi phần 3 là args (khôi phục slide bị loại oan). Khớp generator.py.
+const argsOf = (parts) => (parts.length > 3 ? parts.slice(3).join('|') : (parts[2] || '')).trim();
 const validSlide = (line) => {
   const parts = String(line || '').split('|');
-  if (parts.length < 2) return false;
+  if (parts.length < 3) return false;
+  if (!/^\d+$/.test((parts[0] || '').trim())) return false;                       // sceneNo phải là số (generator bỏ dòng không số)
   const typ = (parts[1] || '').trim().toUpperCase();
-  const args = parts.slice(3).join('|').trim();
+  const args = argsOf(parts);
   if (((args.match(/[\p{L}\p{N}]/gu) || []).length) < 3) return false;           // rỗng/rác kiểu "/ /"
   if (ARROW.has(typ)) { const [l, r2] = args.split('>>'); if (!r2 || !(l || '').trim() || !(r2 || '').trim()) return false; }  // thiếu lõi/vệ-tinh
   return true;
 };
 const before = (spec.slides || []).length;
 spec.slides = (spec.slides || []).filter(validSlide);
-const dropped = before - spec.slides.length;
+let dropped = before - spec.slides.length;
+
+// #3 ÉP PHỦ HÌNH ≥70% (chống "biển chữ"): câu CHƯA có slide → tự gán slide từ chính câu (BIGTEXT/TAKEAWAY/CALLOUT xoay vòng) → luôn đạt mục tiêu dù Claude làm ít/sai.
+{
+  const covered = new Set((spec.slides || []).map((l) => parseInt(String(l).split('|')[0], 10)).filter((n) => n > 0));
+  const target = Math.max(1, Math.ceil((spec.script || []).length * 0.7));
+  const FILL = ['BIGTEXT', 'TAKEAWAY', 'CALLOUT'];
+  let _rot = 0, _added = 0;
+  for (let i = 0; i < (spec.script || []).length && spec.slides.length < target; i++) {
+    const no = i + 1;
+    if (covered.has(no)) continue;
+    const w = String(spec.script[i] || '').replace(/[<>|*]/g, ' ').replace(/\s+/g, ' ').trim().split(/\s+/).filter(Boolean);
+    if (w.length < 3) continue;   // câu quá ngắn → để text slide
+    const k = Math.ceil(w.length / 2);
+    spec.slides.push(`${no} | ${FILL[_rot++ % FILL.length]} |  | ${w.slice(0, k).join(' ')} :: ${w.slice(k).join(' ')}`);
+    covered.add(no); _added++;
+  }
+  if (_added) console.error(`⚠ ÉP phủ hình: +${_added} slide cho câu trống → ${spec.slides.length}/${(spec.script || []).length} (${Math.round(spec.slides.length / Math.max(1, spec.script.length) * 100)}%)`);
+}
 
 // #1 CAPTION giao đi (Telegram/Make/Buffer) = tiêu đề SEO + ≤3 câu + hashtag (như News).
 // Nhét vào spec.caption ĐỂ render.mjs cũng dựng đúng caption.txt (nó tự build từ spec.caption sau bước này).
