@@ -27,25 +27,40 @@ JSON: { "scenes":[ {"say","image_prompt"}, … ], "cta":{"say"}, "caption":{"tit
 QUY TẮC:
 - 4–6 scenes. Mỗi scene:
   • "say": 1 câu thoại tiếng Việt tự nhiên, ấm, 8–20 từ (KHÔNG kí tự < >). Nối lại thành 1 câu chuyện mạch lạc.
-  • "image_prompt": mô tả cảnh bằng TIẾNG ANH cho AI vẽ (chủ thể, hành động, bối cảnh, cảm xúc). GIỮ NHÂN VẬT NHẤT QUÁN (mô tả cùng nhân vật ở mọi cảnh: cùng giới tính/tuổi/trang phục). KHÔNG mô tả phong cách (phong cách đã cố định riêng). KHÔNG có chữ trong ảnh ("no text").
+  • "image_prompt": mô tả HÀNH ĐỘNG + BỐI CẢNH + CẢM XÚC của cảnh bằng TIẾNG ANH cho AI vẽ. KHÔNG tả ngoại hình nhân vật (hệ thống tự thêm 1 nhân vật CỐ ĐỊNH để nhất quán mọi cảnh). KHÔNG mô tả phong cách (đã cố định riêng). KHÔNG có chữ trong ảnh ("no text").
 - "cta.say": 1 câu chốt/kêu gọi mềm tiếng Việt (không hứa hẹn, không comment-bait).
 - "caption": {"title": tiêu đề đăng ngắn, "desc": 1–2 câu mô tả + 3–5 hashtag tiếng Việt}.
 An toàn: KHÔNG hứa thu nhập/mốc thời gian, KHÔNG comment-bait, KHÔNG kí tự < >.
 Chỉ in JSON.`;
 
 if (!KEY) { console.error('❌ Thiếu CLAUDE_API_KEY'); process.exit(1); }
+
+// NHÂN VẬT NHẤT QUÁN: gpt-image-1 gọi ĐỘC LẬP từng ảnh (không nhớ nhau) → phải TẢ CÙNG 1 nhân vật trong MỌI prompt.
+// Sinh 1 "character bible" (1 câu tả ngoại hình cố định) rồi gắn vào mọi image_prompt. Rỗng → fallback câu chung.
+async function characterBible() {
+  try {
+    const r = await claudeJson({ key: KEY, model: MODEL, maxTokens: 160, tries: 2, label: 'char',
+      prompt: `Chủ đề: "${TITLE}". Bối cảnh: """${ARTICLE.slice(0, 500)}""". Tả 1 NHÂN VẬT CHÍNH xuyên suốt câu chuyện bằng TIẾNG ANH, 1 câu ngắn gọn: giới tính, độ tuổi, kiểu/màu tóc, trang phục (màu), 1 nét đặc trưng. CHỈ tả ngoại hình cố định, KHÔNG bối cảnh/hành động. Trả JSON: {"character":"..."}` });
+    return String((r && r.character) || '').replace(/[<>]/g, '').trim();
+  } catch (e) { return ''; }
+}
+const CHAR = await characterBible();
+const CHAR_TAG = CHAR ? ` Main character, SAME person in every scene: ${CHAR}` : ' One consistent recurring main character, same person in every scene.';
+console.error(`✓ nhân vật nhất quán: ${CHAR || '(fallback chung)'}`);
+
 let scenes, ctaSay, capTitle, capDesc;
 if (VERBATIM) {
   // KỊCH BẢN DÁN THỦ CÔNG → say GIỮ NGUYÊN 100%; ảnh minh hoạ AI vẽ theo ý chính (head).
   const vs = await verbatimScenes(ARTICLE, { key: KEY, model: MODEL, title: TITLE, max: 8 });
-  scenes = vs.map((s) => ({ say: s.vo, image_prompt: `Warm cinematic editorial illustration, scene about: ${(s.head || s.vo).replace(/\*/g, '')}. Consistent recurring character, soft emotional mood, no text.` }));
+  scenes = vs.map((s) => ({ say: s.vo, image_prompt: `Editorial illustration. Scene: ${(s.head || s.vo).replace(/\*/g, '')}. Soft emotional mood, no text.${CHAR_TAG}` }));
   const cap = await captionFor(ARTICLE || TITLE, { key: KEY, model: MODEL, title: TITLE, brandkw: BRANDKW });
   ctaSay = 'Theo dõi để không bỏ lỡ.'; capTitle = cap.title || TITLE; capDesc = cap.desc || '';
   console.error(`✓ VERBATIM illustrated: ${scenes.length} câu giữ NGUYÊN lời đọc`);
 } else {
   const out = await claudeJson({ key: KEY, model: MODEL, maxTokens: 3000, prompt: PROMPT, tries: 3, label: 'illustrated' });
   if (!out) { console.error('❌ Claude không trả JSON hợp lệ'); process.exit(1); }
-  scenes = (out.scenes || []).filter((s) => s && s.say).slice(0, 6);
+  scenes = (out.scenes || []).filter((s) => s && s.say).slice(0, 6)
+    .map((s) => ({ ...s, image_prompt: `${String(s.image_prompt || s.say).replace(/[<>]/g, '').trim()}${CHAR_TAG}` }));   // gắn nhân vật cố định vào mọi cảnh
   ctaSay = (out.cta && out.cta.say) || 'Theo dõi để không bỏ lỡ.';
   capTitle = (out.caption && out.caption.title) || TITLE; capDesc = (out.caption && out.caption.desc) || '';
 }
