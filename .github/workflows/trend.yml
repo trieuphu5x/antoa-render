@@ -1,0 +1,73 @@
+name: ANTOA Trend (săn velocity + phối + chấm)
+
+# CF Worker (Tower) chỉ đạo qua repository_dispatch; runner Mỹ làm việc (Claude không 403 + Supadata transcript + velocity YT/TikTok).
+#  - trend-auto: săn VELOCITY (YouTube 2 bước ≤7 ngày + TikTok Apify) → chống trùng → top velocity → transcript → PHỐI 1-5' → AI CHẤM (cổng an toàn) → callback.
+# workflow_dispatch = Boss bấm tay TEST (artifact trend.json để xem trước khi bật auto). Nhẹ (chỉ node + fetch, KHÔNG ffmpeg/chromium).
+on:
+  repository_dispatch:
+    types: [trend-auto]
+  workflow_dispatch:
+    inputs:
+      keywords:
+        description: "từ khoá, cách nhau dấu phẩy"
+        default: "AI Agent, AI thay nhân viên, tự động hoá kinh doanh"
+      brandName:
+        default: "Agent Thực Chiến"
+      niche:
+        default: "ứng dụng AI Agent vào kinh doanh sản phẩm số và công việc"
+      region:
+        default: "vn"
+
+jobs:
+  trend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLAUDE_KEY: ${{ secrets.CLAUDE_API_KEY }}
+      CLAUDE_MODEL: ${{ secrets.CLAUDE_MODEL }}
+      YT_KEY: ${{ secrets.YT_KEY }}
+      SUPADATA_KEY: ${{ secrets.SUPADATA_KEY }}
+      APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+      BRAND_NAME: ${{ github.event.client_payload.meta.brandName || github.event.inputs.brandName }}
+      NICHE: ${{ github.event.client_payload.meta.niche || github.event.inputs.niche }}
+      PERSONA: ${{ github.event.client_payload.meta.persona }}
+      SLOGAN: ${{ github.event.client_payload.meta.slogan }}
+      REGION: ${{ github.event.client_payload.meta.region || github.event.inputs.region }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+
+      - name: SĂN VELOCITY + PHỐI + CHẤM (auto)
+        env:
+          PER_KEYWORD: "5"
+          MIN_SCORE: "7"
+          PRODUCED_TITLES: ${{ github.event.client_payload.producedTitles && toJSON(github.event.client_payload.producedTitles) || '[]' }}
+          SEEN_URLS: ${{ github.event.client_payload.seenUrls && toJSON(github.event.client_payload.seenUrls) || '[]' }}
+          KW_JSON: ${{ github.event.client_payload.keywords && toJSON(github.event.client_payload.keywords) || '' }}
+          KW_CSV: ${{ github.event.inputs.keywords }}
+        run: |
+          if [ -n "$KW_JSON" ]; then export KEYWORDS="$KW_JSON";
+          else export KEYWORDS=$(python3 -c "import json,os;print(json.dumps([s.strip() for s in os.environ.get('KW_CSV','').split(',') if s.strip()]))"); fi
+          echo "KEYWORDS=$KEYWORDS"
+          node trend_auto.mjs
+
+      - name: Callback về Tower
+        if: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.callback != '' }}
+        run: |
+          jq -n --slurpfile r trend.json \
+            --arg jobId "${{ github.event.client_payload.jobId }}" \
+            --arg brandId "${{ github.event.client_payload.brandId }}" \
+            --arg workflowId "${{ github.event.client_payload.workflowId }}" \
+            --arg secret "${{ secrets.RENDER_CALLBACK_SECRET }}" \
+            '{kind:"trend-auto", jobId:$jobId, brandId:$brandId, workflowId:$workflowId, secret:$secret, result:$r[0], script:($r[0].script // ""), hasTranscript:($r[0].hasTranscript // false)}' \
+          | curl -sS -X POST "${{ github.event.client_payload.callback }}" -H 'content-type: application/json' -d @-
+
+      - name: Xuất kết quả (test tay)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: trend-out
+          path: trend.json
+          if-no-files-found: ignore
+          retention-days: 7

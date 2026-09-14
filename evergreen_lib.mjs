@@ -112,7 +112,7 @@ export function POST_PROMPT(p) {
     'Chỉ trả về các câu kịch bản, mỗi câu 1 dòng.';
 }
 
-async function callClaude(system, user, maxTokens) {
+export async function callClaude(system, user, maxTokens) {
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST', headers: { 'x-api-key': CLAUDE_KEY(), 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
     body: JSON.stringify({ model: MODEL(), max_tokens: maxTokens, system, messages: [{ role: 'user', content: user }] })
