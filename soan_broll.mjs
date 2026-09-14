@@ -9,6 +9,25 @@ const VERBATIM = process.env.VERBATIM === '1';   // 1 = kịch bản DÁN THỦ 
 const BRANDKW = process.env.BRANDKW || 'sức khoẻ, tài chính, thể dục';
 const NONCE = process.env.GITHUB_RUN_ID || String(Math.floor(Math.random() * 1e9));
 
+// ÉP head thành ĐÚNG 2 DÒNG (dòng 1 chữ TRẮNG + dòng 2 TÔ MÀU accent) — LINH HỒN 2 màu của mẫu broll.
+// Tôn trọng mảng 2 dòng có sẵn; chuỗi/1 dòng → tách ở ranh giới TỪ sao cho 2 dòng cân bằng ký tự nhất.
+function splitHead(h) {
+  if (Array.isArray(h)) {
+    const lines = h.map((x) => String(x || '').replace(/\*/g, '').trim()).filter(Boolean);
+    if (lines.length >= 2) return lines.slice(0, 2);
+    h = lines[0] || '';
+  }
+  const s = String(h || '').replace(/\*/g, '').trim();
+  const words = s.split(/\s+/).filter(Boolean);
+  if (words.length < 2) return s ? [s] : [''];
+  let best = 1, bestDiff = Infinity;
+  for (let i = 1; i < words.length; i++) {
+    const diff = Math.abs(words.slice(0, i).join(' ').length - words.slice(i).join(' ').length);
+    if (diff < bestDiff) { bestDiff = diff; best = i; }
+  }
+  return [words.slice(0, best).join(' '), words.slice(best).join(' ')];
+}
+
 export const brollPrompt = ({ title, article, kw, nonce }) => `Bạn là biên tập video 9:16 kiểu "b-roll + chữ chạy" (nền là clip video stock, chữ lớn động phía trên). Soạn KỊCH BẢN cho chủ đề, trả về DUY NHẤT JSON hợp lệ (không markdown).
 
 CHỦ ĐỀ: "${title}"
@@ -20,7 +39,7 @@ JSON: { "num":"01", "scenes":[ {"query","kick","head","sub","vo"}, ... ] } — 6
 Mỗi cảnh:
 - "query": 2-4 TỪ KHOÁ TIẾNG ANH để tìm clip nền hợp cảnh (vd "morning running park", "stock market chart", "healthy salad bowl"). ĐA DẠNG query giữa các cảnh để nền không trùng.
 - "kick": nhãn ngắn (1-2 từ).
-- "head": 1-2 DÒNG chữ lớn, cực ngắn & mạnh (mỗi dòng ≤ 4-5 từ). Dùng *…* để nhấn 1 cụm màu vàng.
+- "head": MẢNG ĐÚNG 2 DÒNG chữ lớn CỰC NGẮN — ["dòng 1: 1-3 từ (chữ trắng)", "dòng 2: 1-3 từ (sẽ TÔ MÀU nhấn)"]. Dòng 2 là cụm ĐẮT/gợi cảm nhất. TỔNG cả 2 dòng ≤ 6 từ. TUYỆT ĐỐI KHÔNG viết cả câu dài. VD: ["Chạm vào","đại dương"] · ["Ngân sách","rõ ràng"] · ["Săn mây","trên đỉnh trời"].
 - "sub": 1 câu phụ ngắn (có thể **đậm** vài từ).
 - "vo": lời đọc tiếng Việt tự nhiên 1-2 câu (KHÔNG markup, KHÔNG < >).
 An toàn: KHÔNG hứa thu nhập/mốc thời gian/chữa bệnh tuyệt đối/comment-bait, KHÔNG kí tự < >. Giọng tích cực, đáng tin.
@@ -35,6 +54,7 @@ if (VERBATIM) {
   spec = await claudeJson({ key: KEY, model: MODEL, maxTokens: 3000, prompt: brollPrompt({ title: TITLE, article: ARTICLE, kw: BRANDKW, nonce: NONCE }), tries: 3, label: 'broll' });
 }
 if (!spec || !spec.scenes || !spec.scenes.length) { console.error('Thiếu scenes'); process.exit(1); }
+spec.scenes = spec.scenes.map((s) => ({ ...s, head: splitHead(s.head) }));   // ÉP mọi head về 2 dòng (trắng + accent) — cả đường Claude soạn lẫn verbatim
 // MÀU auto-KHỚP chủ đề khi user chọn "Tự khớp" (BROLL_COLOR rỗng/auto): mint=sức khoẻ/công nghệ/thiên nhiên · vang=tài chính/thành công/động lực · cam=đời sống/du lịch (mặc định).
 function pickBrollColor(text) {
   const s = (text || '').toLowerCase();
