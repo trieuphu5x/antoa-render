@@ -34,6 +34,16 @@ if (VERBATIM) {
 }
 if (!spec || !spec.scenes || !spec.scenes.length) { console.error('Thiếu scenes'); process.exit(1); }
 spec.style = (process.env.BROLL2_STYLE || 'bar').trim();   // kiểu user chọn: bar | italic | highlight
+// MÀU accent auto-KHỚP chủ đề khi user chọn "Tự khớp" (BROLL2_ACCENT rỗng/auto): mint=sức khoẻ/công nghệ/thiên nhiên · vang=tài chính/thành công/động lực · cam=đời sống (mặc định). build.py đọc spec.color → accent + nhạc.
+function pickBroll2Color(text) {
+  const s = (text || '').toLowerCase();
+  if (/sức khoẻ|suc khoe|thể dục|the duc|yoga|thiền|thien|thiên nhiên|thien nhien|công nghệ|cong nghe|tech|khoa học|khoa hoc|hiện đại|hien dai|thư giãn|thu gian|sông|biển|bien|nước|môi trường|moi truong/.test(s)) return 'mint';
+  if (/tài chính|tai chinh|tiền|tien|đầu tư|dau tu|thành công|thanh cong|kinh doanh|khởi nghiệp|khoi nghiep|năng lượng|nang luong|bứt phá|but pha|mục tiêu|muc tieu|động lực|dong luc|chiến thắng|chien thang/.test(s)) return 'vang';
+  return 'cam';
+}
+const _ac = (process.env.BROLL2_ACCENT || '').trim().toLowerCase();
+spec.color = (_ac && _ac !== 'auto') ? _ac : pickBroll2Color(`${TITLE}. ${String(ARTICLE).slice(0, 200)}`);   // màu accent cứng → dùng; "auto"/rỗng → tự khớp chủ đề
+console.error(`✓ màu broll2: ${spec.color} ${(_ac && _ac !== 'auto') ? '(user chọn)' : '(auto-khớp)'}`);
 if (!spec.caption || !spec.caption.title) spec.caption = await captionFor(ARTICLE || TITLE, { key: KEY, model: MODEL, title: TITLE, brandkw: BRANDKW });   // tiêu đề SEO + caption + hashtag
 writeFileSync('spec.json', JSON.stringify(spec, null, 2));
 console.log(`✓ spec.json (broll2): ${spec.scenes.length} cảnh · kiểu ${spec.style} · query: ${spec.scenes.map((s) => s.query).join(' | ')}`);

@@ -161,7 +161,8 @@ def build(workdir, spec, do_render):
     scenes = spec.get("scenes", [])
     style = str(spec.get("style") or os.environ.get("BROLL2_STYLE") or "bar").strip()
     if style not in STYLES: style = "bar"
-    accent = COLORS.get(str(spec.get("color") or os.environ.get("BROLL2_ACCENT") or "cam").strip(), COLORS["cam"])
+    color = str(spec.get("color") or os.environ.get("BROLL2_ACCENT") or "cam").strip()
+    accent = COLORS.get(color, COLORS["cam"])
     chrome = find_chrome()
     print(f"[broll2] kiểu: {style} · màu {accent} · {'Chrome ' + os.path.basename(chrome) if chrome else 'KHÔNG có Chrome → fallback drawtext'}")
     srcs = []; parts = []
@@ -192,7 +193,11 @@ def build(workdir, spec, do_render):
         subprocess.run([FFMPEG, "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", listf,
                         "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", body], check=True)
         out = os.path.join(workdir, "out.mp4")
-        bgm = os.path.join(ASSETS, "bgm.mp3")
+        # NHẠC NỀN theo MÀU-mood (cam=tươi sáng · vang=động lực · mint=hiện đại) — thư viện free, fallback bgm.mp3 cũ.
+        bgm = os.path.join(ASSETS, "music", color + ".mp3")
+        if not os.path.exists(bgm):
+            bgm = os.path.join(ASSETS, "bgm.mp3")
+        print(f"[broll2] nhạc nền: {os.path.basename(os.path.dirname(bgm))}/{os.path.basename(bgm)}")
         if os.path.exists(bgm):
             subprocess.run([FFMPEG, "-y", "-loglevel", "error", "-i", body, "-stream_loop", "-1", "-i", bgm,
                             "-filter_complex", "[1:a]volume=0.12[m];[0:a][m]amix=inputs=2:duration=first:dropout_transition=0,alimiter=limit=0.95[a]",
