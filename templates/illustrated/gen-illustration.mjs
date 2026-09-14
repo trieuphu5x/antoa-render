@@ -18,11 +18,15 @@ if (model.startsWith("gpt-image") || model.startsWith("dall")) {
   const size = aspect==="16:9" ? (dalle?"1792x1024":"1536x1024")
              : aspect==="1:1" ? "1024x1024"
              : (dalle?"1024x1792":"1024x1536");
+  // CHẤT LƯỢNG (chi phí): high ~$0.25 · medium ~$0.06 · low ~$0.016 /ảnh. Rỗng/auto = để OpenAI tự chọn (thường high).
+  const q = (process.env.IMG_QUALITY || "").trim().toLowerCase();
+  const quality = (!dalle && ["low","medium","high","auto"].includes(q)) ? q : undefined;
+  const reqBody = quality ? { model, prompt, size, n:1, quality } : { model, prompt, size, n:1 };
   let j;   // RETRY 429 (rate limit gpt-image-1 = 5 ảnh/phút) + 5xx: chờ theo "try again in Xs" rồi thử lại (tối đa 6 lần).
   for (let attempt = 1; attempt <= 6; attempt++) {
     const res = await fetch("https://api.openai.com/v1/images/generations", {
       method:"POST", headers:{ "Content-Type":"application/json", "Authorization":`Bearer ${KEY}` },
-      body: JSON.stringify({ model, prompt, size, n:1 }),
+      body: JSON.stringify(reqBody),
     });
     j = await res.json().catch(() => ({}));
     if (res.ok) break;

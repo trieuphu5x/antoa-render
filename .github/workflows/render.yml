@@ -125,7 +125,8 @@ jobs:
           VBEE_TOKEN: ${{ secrets.VBEE_TOKEN }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}          # Mẫu Video Vẽ Hình AI: sinh ảnh gpt-image-1 (~$0.05/ảnh)
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}          # Mẫu Video Vẽ Hình AI: sinh ảnh gpt-image-1 — THỰC TẾ high ~$0.25/ảnh (1024x1536); medium ~$0.06; low ~$0.016
+          IMG_QUALITY: ${{ github.event.client_payload.meta.imageQuality }}     # chất lượng gpt-image-1: low|medium|high|auto (rỗng = mặc định OpenAI ~ high)
           SFX_DIR: ${{ github.workspace }}/templates/illustrated/assets/sfx     # 3 SFX accent (fairy-dust/swoosh/ta-da) — kho SAB, đã commit
           MUSIC_DIR: ${{ github.workspace }}/templates/illustrated/assets/music # nhạc nền ấm áp piano (bgm.mp3) auto-duck — đã commit
         run: node render.mjs
