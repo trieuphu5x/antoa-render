@@ -18,12 +18,25 @@ if (model.startsWith("gpt-image") || model.startsWith("dall")) {
   const size = aspect==="16:9" ? (dalle?"1792x1024":"1536x1024")
              : aspect==="1:1" ? "1024x1024"
              : (dalle?"1024x1792":"1024x1536");
-  const res = await fetch("https://api.openai.com/v1/images/generations", {
-    method:"POST", headers:{ "Content-Type":"application/json", "Authorization":`Bearer ${KEY}` },
-    body: JSON.stringify({ model, prompt, size, n:1 }),
-  });
-  const j = await res.json();
-  if (!res.ok) { console.error("HTTP", res.status, JSON.stringify(j.error?.message||j).slice(0,220)); process.exit(1); }
+  let j;   // RETRY 429 (rate limit gpt-image-1 = 5 ảnh/phút) + 5xx: chờ theo "try again in Xs" rồi thử lại (tối đa 6 lần).
+  for (let attempt = 1; attempt <= 6; attempt++) {
+    const res = await fetch("https://api.openai.com/v1/images/generations", {
+      method:"POST", headers:{ "Content-Type":"application/json", "Authorization":`Bearer ${KEY}` },
+      body: JSON.stringify({ model, prompt, size, n:1 }),
+    });
+    j = await res.json().catch(() => ({}));
+    if (res.ok) break;
+    const msg = String(j.error?.message || JSON.stringify(j)).slice(0,220);
+    if ((res.status === 429 || res.status >= 500) && attempt < 6) {
+      const m = /try again in ([\d.]+)s/i.exec(msg);
+      let wait = m ? Math.ceil(parseFloat(m[1]) * 1000) + 2000 : attempt * 10000;
+      wait = Math.min(70000, Math.max(wait, 8000));
+      console.error(`HTTP ${res.status} rate-limit (thử ${attempt}/6) — chờ ${Math.round(wait/1000)}s`);
+      await new Promise((r) => setTimeout(r, wait));
+      continue;
+    }
+    console.error("HTTP", res.status, msg); process.exit(1);
+  }
   b64 = j.data?.[0]?.b64_json;
   if (!b64 && j.data?.[0]?.url) { const r=await fetch(j.data[0].url); b64=Buffer.from(await r.arrayBuffer()).toString("base64"); }
 } else {
