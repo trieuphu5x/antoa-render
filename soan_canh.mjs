@@ -107,12 +107,18 @@ ${lines.map((l, i) => `${i + 1}. ${l}`).join('\n')}`;
     } catch (e) { console.log('verbatim: Claude cô đọng hình lỗi → fallback tách câu'); }
   }
   const words = (s) => String(s).trim().split(/\s+/);
+  // PHỐI 2 MÀU head (LINH HỒN mẫu): chưa có *…* thì tự nhấn NỬA SAU, rồi đổi *x* → <span class="emr">x</span> (escape phần còn lại).
+  const hiHead = (h) => {
+    let s = String(h || '').trim();
+    if (!s.includes('*')) { const hw = s.split(/\s+/); if (hw.length >= 3) { const k = Math.ceil(hw.length / 2); s = `${hw.slice(0, k).join(' ')} *${hw.slice(k).join(' ')}*`; } }
+    return s.split(/(\*[^*]+\*)/).map((p) => (p.startsWith('*') && p.endsWith('*') && p.length > 2) ? `<span class="emr">${esc(p.slice(1, -1))}</span>` : esc(p)).join('');
+  };
   const scenes = lines.map((vo, i) => {
     const v = vis[i] || {};
     const w = words(vo);
     const head = String(v.head || w.slice(0, 6).join(' ')).trim().replace(/[.,!?…:;]+$/, '');
     const lede = String(v.lede || (v.head ? '' : (w.length > 6 ? w.slice(6).join(' ') : ''))).trim();
-    const inner = `<div class="mid"><div class="kick anim">${KICK[i % KICK.length]}</div><div class="head h-md anim">${esc(head)}</div>${lede ? `<div class="lede anim">${esc(lede)}</div>` : ''}</div>`;
+    const inner = `<div class="mid"><div class="kick anim">${KICK[i % KICK.length]}</div><div class="head h-md anim">${hiHead(head)}</div>${lede ? `<div class="lede anim">${esc(lede)}</div>` : ''}</div>`;
     return { id: `s${i + 1}`, inner, vo };   // vo NGUYÊN VĂN 100%
   });
   const desc = lines.slice(0, 2).join(' ').slice(0, 180);

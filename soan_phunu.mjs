@@ -57,6 +57,22 @@ if (VERBATIM) {
   spec = await claudeJson({ key: KEY, model: MODEL, maxTokens: 3200, prompt: PROMPT, tries: 3, label: 'phunu' });
 }
 if (!spec || !spec.scenes || !spec.scenes.length) { console.error('Thiếu scenes'); process.exit(1); }
+
+// 🔊 CHỐNG CÂM: đảm bảo MỖI cảnh (trừ outro) có vo. Claude đôi khi bỏ trống vo → không TTS → video câm.
+// Rỗng → dựng vo từ chữ hiển thị (disp/lede/quote/band) để LUÔN có lời đọc. (port từ soan_phunu_vn)
+{
+  const _strip = (s) => String(s || '').replace(/\*\*|[*_]/g, '').replace(/\\n/g, ' ').replace(/\s+/g, ' ').trim();
+  let _voFilled = 0;
+  for (const sc of spec.scenes) {
+    if (sc.type === 'outro') continue;
+    if (String(sc.vo || '').trim()) continue;
+    const disp = Array.isArray(sc.disp) ? sc.disp.map(_strip).filter(Boolean).join(', ') : _strip(sc.disp);
+    sc.vo = [disp, _strip(sc.lede), _strip(sc.quote), _strip(sc.band)].filter(Boolean).join('. ').slice(0, 220) || _strip(sc.kick) || _strip(sc.big);
+    if (String(sc.vo || '').trim()) _voFilled++;
+  }
+  if (_voFilled) console.error(`⚠ ${_voFilled} cảnh thiếu vo → tự dựng từ chữ slide (chống câm)`);
+}
+
 // Nhãn động: ưu tiên brand thật (env) → AI đề xuất → mặc định.
 spec.channel = (process.env.BRAND_LABEL || spec.channel || 'Kênh của bạn').toString().trim();
 // TIÊU ĐỀ SEO + caption + hashtag + TOPIC (góc phải) + CHUYÊN MỤC (góc trái) — LINH ĐỘNG theo nội dung/ngách (phunu scenes không tự có).
