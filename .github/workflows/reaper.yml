@@ -1,0 +1,35 @@
+name: ANTOA Reaper (dọn R2 + DB)
+
+# Dọn rác tự động: xoá FILE R2 3 ngày sau đăng + xoá SẠCH (file+record) sau 15 ngày.
+# Chạy 2 LẦN/NGÀY (00h & 12h giờ VN = 17h & 05h UTC). Mỗi lần vài giây rồi tắt — KHÔNG chạy cả ngày.
+# GitHub free có thể trễ vài phút; dọn rác không gấp nên chấp nhận được.
+on:
+  schedule:
+    - cron: '0 17 * * *'   # 00:00 giờ VN (UTC+7)
+    - cron: '0 5 * * *'    # 12:00 giờ VN
+  workflow_dispatch: {}     # chạy tay để test
+
+jobs:
+  reap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Cài @libsql/client (đọc Turso)
+        run: npm i --no-save @libsql/client@^0.14
+      - name: Dọn R2 + DB
+        env:
+          TURSO_URL: ${{ secrets.TURSO_URL }}
+          TURSO_TOKEN: ${{ secrets.TURSO_TOKEN }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          AWS_EC2_METADATA_DISABLED: 'true'
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required   # aws-cli v2 + R2: tránh SignatureDoesNotMatch
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+        run: node reaper.mjs
