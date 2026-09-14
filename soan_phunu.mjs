@@ -123,7 +123,19 @@ if (images.length === 0) {   // KHÔNG có ảnh riêng/đã lưu → lấy STOC
   console.log(`  ảnh có sẵn (Drive/đã lưu): ${images.length}`);
 }
 if (images.length) spec.images = images;
-spec.palette = (process.env.PALETTE || 'kem-cam').trim();   // 6 màu: user chọn → dựng đúng màu
+// PALETTE auto-KHỚP chủ đề khi user chọn "Tự khớp" (PALETTE rỗng/auto) — port từ phunu-vn. Cứng thì dùng đúng màu.
+function pickPalette(text) {
+  const s = String(text || '').toLowerCase();
+  if (/qua đời|qua doi|tử vong|tu vong|ra đi|đột ngột|dot ngot|tang lễ|tang le|đau buồn|dau buon|chia tay|ly hôn|ly hon|scandal|kiện|kien|tranh cãi|tranh cai|xin lỗi|xin loi|phốt|phot|tố cáo|to cao|bóc phốt|boc phot|drama|lùm xùm|lum xum|bệnh nặng|benh nang|tai nạn|tai nan|bắt giữ|bat giu|điều tra|dieu tra/.test(s)) return 'navy-vang';
+  if (/cưới|cuoi|đám cưới|dam cuoi|hạnh phúc|hanh phuc|em bé|em be|con đầu lòng|con dau long|tình yêu|tinh yeu|hẹn hò|hen ho|kỷ niệm|ky niem|cầu hôn|cau hon|đính hôn|dinh hon/.test(s)) return 'hong-dat';
+  if (/biển|bien|đảo|dao|beach|resort|vịnh|vinh|thác|thac|núi|nui|rừng|rung|thiên nhiên|thien nhien|hồ |ho /.test(s)) return 'xanh-ngoc';
+  if (/ẩm thực|am thuc|món ăn|mon an|đặc sản|dac san|food|quán ăn|quan an|nhà hàng|nha hang|cà phê|ca phe/.test(s)) return 'kem-cam';
+  if (/du lịch|du lich|điểm đến|diem den|check.?in|phượt|phuot|travel|khám phá|kham pha|\btour\b|nghỉ dưỡng|nghi duong/.test(s)) return 'xanh-duong-cam';
+  return 'den-gold';
+}
+const _pal = (process.env.PALETTE || '').trim().toLowerCase();
+spec.palette = (_pal && _pal !== 'auto') ? _pal : pickPalette(`${TITLE}. ${String(ARTICLE).slice(0, 140)}`);   // user chọn màu cứng → dùng; "auto"/rỗng → tự khớp chủ đề
+console.error(`✓ palette phunu: ${spec.palette} ${(_pal && _pal !== 'auto') ? '(user chọn)' : '(auto-khớp)'}`);
 
 writeFileSync('spec.json', JSON.stringify(spec, null, 2));
 console.log(`✓ spec.json (phunu): ${spec.scenes.length} cảnh · ${(spec.images || []).length} ảnh động`);
