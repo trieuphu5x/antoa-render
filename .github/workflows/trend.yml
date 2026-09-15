@@ -1,13 +1,19 @@
 name: ANTOA Trend (săn velocity + phối + chấm)
 
 # CF Worker (Tower) chỉ đạo qua repository_dispatch; runner Mỹ làm việc (Claude không 403 + Supadata transcript + velocity YT/TikTok).
-#  - trend-auto: săn VELOCITY (YouTube 2 bước ≤7 ngày + TikTok Apify) → chống trùng → top velocity → transcript → PHỐI 1-5' → AI CHẤM (cổng an toàn) → callback.
-# workflow_dispatch = Boss bấm tay TEST (artifact trend.json để xem trước khi bật auto). Nhẹ (chỉ node + fetch, KHÔNG ffmpeg/chromium).
+#  - trend-hunt: săn VELOCITY (YouTube 2 bước ≤7 ngày + TikTok Apify) → candidates (KHÔNG Claude, cho nút "Săn tin ngay" xem trước).
+#  - trend-auto: săn → chống trùng → top velocity → transcript → PHỐI 1-5' → AI CHẤM (cổng an toàn) → callback tạo content.
+# workflow_dispatch = Boss bấm tay TEST (artifact để xem trước khi bật auto). Nhẹ (chỉ node + fetch, KHÔNG ffmpeg/chromium).
 on:
   repository_dispatch:
-    types: [trend-auto]
+    types: [trend-hunt, trend-auto]
   workflow_dispatch:
     inputs:
+      action:
+        description: "hunt / auto"
+        type: choice
+        options: [hunt, auto]
+        default: hunt
       keywords:
         description: "từ khoá, cách nhau dấu phẩy"
         default: "AI Agent, AI thay nhân viên, tự động hoá kinh doanh"
@@ -38,7 +44,41 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: "22" }
 
-      - name: SĂN VELOCITY + PHỐI + CHẤM (auto)
+      - name: Chuẩn hoá ACTION (repository_dispatch → bỏ tiền tố trend-)
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            echo "ACTION=${{ github.event.action }}" | sed 's/trend-//' >> "$GITHUB_ENV"
+          else
+            echo "ACTION=${{ github.event.inputs.action }}" >> "$GITHUB_ENV"
+          fi
+
+      # ===================== SĂN (hunt) =====================
+      # KEYWORDS resolve NGAY trong run step (export shell var — chịu được toJSON đa dòng; KHÔNG vòng qua GITHUB_ENV vì đa dòng làm hỏng env file).
+      - name: SĂN VELOCITY (hunt)
+        if: ${{ env.ACTION == 'hunt' }}
+        env:
+          PER_KEYWORD: "5"
+          LIMIT: ${{ github.event.client_payload.limit || '10' }}
+          KW_JSON: ${{ github.event.client_payload.keywords && toJSON(github.event.client_payload.keywords) || '' }}
+          KW_CSV: ${{ github.event.inputs.keywords }}
+        run: |
+          if [ -n "$KW_JSON" ]; then export KEYWORDS="$KW_JSON";
+          else export KEYWORDS=$(python3 -c "import json,os;print(json.dumps([s.strip() for s in os.environ.get('KW_CSV','').split(',') if s.strip()]))"); fi
+          node trend_hunt.mjs
+
+      - name: Callback SĂN về Tower
+        if: ${{ env.ACTION == 'hunt' && github.event_name == 'repository_dispatch' && github.event.client_payload.callback != '' }}
+        run: |
+          jq -n --slurpfile r candidates.json \
+            --arg jobId "${{ github.event.client_payload.jobId }}" \
+            --arg brandId "${{ github.event.client_payload.brandId }}" \
+            --arg secret "${{ secrets.RENDER_CALLBACK_SECRET }}" \
+            '{kind:"trend-hunt", jobId:$jobId, brandId:$brandId, secret:$secret, result:$r[0]}' \
+          | curl -sS -X POST "${{ github.event.client_payload.callback }}" -H 'content-type: application/json' -d @-
+
+      # ===================== SẢN XUẤT AUTO =====================
+      - name: SĂN + PHỐI + CHẤM (auto)
+        if: ${{ env.ACTION == 'auto' }}
         env:
           PER_KEYWORD: "5"
           MIN_SCORE: "7"
@@ -49,11 +89,10 @@ jobs:
         run: |
           if [ -n "$KW_JSON" ]; then export KEYWORDS="$KW_JSON";
           else export KEYWORDS=$(python3 -c "import json,os;print(json.dumps([s.strip() for s in os.environ.get('KW_CSV','').split(',') if s.strip()]))"); fi
-          echo "KEYWORDS=$KEYWORDS"
           node trend_auto.mjs
 
-      - name: Callback về Tower
-        if: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.callback != '' }}
+      - name: Callback AUTO về Tower
+        if: ${{ env.ACTION == 'auto' && github.event_name == 'repository_dispatch' && github.event.client_payload.callback != '' }}
         run: |
           jq -n --slurpfile r trend.json \
             --arg jobId "${{ github.event.client_payload.jobId }}" \
@@ -68,6 +107,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: trend-out
-          path: trend.json
+          path: |
+            candidates.json
+            trend.json
           if-no-files-found: ignore
           retention-days: 7
