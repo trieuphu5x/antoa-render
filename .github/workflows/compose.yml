@@ -25,6 +25,7 @@ jobs:
           TITLE: ${{ github.event.client_payload.title }}
           ARTICLE: ${{ github.event.client_payload.script }}
           BRANDKW: ${{ github.event.client_payload.meta.brandkw || 'AI Agent, tự động hoá kinh doanh, AI thực chiến' }}
+          BRAND_PERSONA: ${{ github.event.client_payload.meta.persona }}
           BRAND_LABEL: ${{ github.event.client_payload.meta.brandLabel }}
           SLOGAN: ${{ github.event.client_payload.meta.slogan }}
           SOURCE: ${{ github.event.client_payload.meta.source }}

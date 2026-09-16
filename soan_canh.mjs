@@ -7,6 +7,7 @@ const MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001';
 const TITLE = process.env.TITLE || '';
 const ARTICLE = process.env.ARTICLE || '';
 const BRANDKW = process.env.BRANDKW || 'AI Agent, tự động hoá';
+const PERSONA = (process.env.BRAND_PERSONA || '').trim();   // giọng thương hiệu của dự án (News/vnnews) — nhất quán với Evergreen/Trend
 const BRAND_LABEL = (process.env.BRAND_LABEL || '').trim() || 'ANTOA';                       // tên hiện cuối video (theo workflow)
 const SLOGAN = (process.env.SLOGAN || '').trim() || 'Theo dõi để cập nhật mỗi ngày.';        // slogan cuối video (theo workflow)
 const SOURCE = (process.env.SOURCE || '').trim();                                            // NGUỒN THẬT (masthead góc trên + "Nguồn:" dưới) — KHÔNG mặc định VnExpress
@@ -46,7 +47,7 @@ const PROMPT = `Bạn là biên tập viên video tin ngắn 9:16 (kênh kiểu 
 TIN: "${TITLE}"
 NỘI DUNG GỐC: """${ARTICLE.slice(0, 2400)}"""
 TỪ KHOÁ THƯƠNG HIỆU (bám sát): ${BRANDKW}
-${IMG_BLOCK}
+${PERSONA ? `GIỌNG THƯƠNG HIỆU (viết lời đọc theo giọng này): ${PERSONA}\n` : ''}${IMG_BLOCK}
 JSON dạng:
 {
  "palette": "<một trong: hot|launch|creative|biz|research — chọn theo LOẠI tin: hot=drama/an ninh, launch=ra mắt/model mới, creative=phim-ảnh-nghệ thuật AI, biz=thị trường/kinh doanh, research=nghiên cứu>",
