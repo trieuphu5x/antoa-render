@@ -51,7 +51,7 @@ export async function layTranscript(videoUrl) {
   const key = SUPADATA_KEY();
   if (!key) { console.error('⚠️ Chưa có SUPADATA_KEY → bỏ transcript (dựng từ hook+cấu trúc)'); return ''; }
   try {
-    const url = 'https://api.supadata.ai/v1/transcript?text=true&lang=en&url=' + encodeURIComponent(videoUrl);
+    const url = 'https://api.supadata.ai/v1/transcript?text=true&url=' + encodeURIComponent(videoUrl);   // KHÔNG ép lang → lấy transcript GỐC theo ngôn ngữ video (vi cho video Việt, en cho video Anh); Claude việt-hoá sau — tránh mất transcript / dịch 2 vòng
     const r = await fetch(url, { headers: { 'x-api-key': key } });
     if (!r.ok) { console.error('Supadata HTTP ' + r.status + ': ' + (await r.text()).slice(0, 160)); return ''; }
     const j = await r.json();

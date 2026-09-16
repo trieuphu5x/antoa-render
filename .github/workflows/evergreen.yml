@@ -33,7 +33,7 @@ jobs:
       CLAUDE_KEY: ${{ secrets.CLAUDE_API_KEY }}
       CLAUDE_MODEL: ${{ secrets.CLAUDE_MODEL }}
       YT_KEY: ${{ secrets.YT_KEY }}
-      SUPADATA_KEY: ${{ secrets.SUPADATA_KEY }}
+      SUPADATA_KEY: ${{ github.event.client_payload.supadataKey || secrets.SUPADATA_KEY }}   # BYOK: ưu tiên KEY RIÊNG từng tài khoản (Tower gửi kèm) → fallback secret chung (test)
       BRAND_NAME: ${{ github.event.client_payload.brandName || github.event.inputs.brandName }}
       NICHE: ${{ github.event.client_payload.niche || github.event.inputs.niche }}
       PERSONA: ${{ github.event.client_payload.persona }}
@@ -43,6 +43,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: "22" }
+
+      - name: Che KEY KHÁCH (BYOK) khỏi log public
+        if: ${{ github.event.client_payload.supadataKey != '' }}
+        run: echo "::add-mask::${{ github.event.client_payload.supadataKey }}"
 
       - name: Chuẩn hoá ACTION (repository_dispatch → bỏ tiền tố evergreen-)
         run: |
