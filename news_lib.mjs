@@ -91,19 +91,19 @@ const NEWS_NICHES = [
   { key: 'cong-nghe', tech: true, vnTopics: ['cong-nghe'],
     tags: ['công nghệ', 'phần mềm', 'ứng dụng', 'app', 'ai', 'trí tuệ nhân tạo', 'chuyển đổi số', 'startup công nghệ', 'lập trình', 'gadget', 'điện thoại', 'máy tính', 'technology', 'software', 'artificial intelligence', 'machine learning', 'ai agent', 'automation', 'saas', 'chatbot'],
     world: ['https://techcrunch.com/feed/', 'https://www.theverge.com/rss/index.xml', 'https://feeds.arstechnica.com/arstechnica/index', 'http://feeds.bbci.co.uk/news/technology/rss.xml'] },
-  { key: 'kinh-doanh', vnTopics: ['kinh-doanh'],
+  { key: 'kinh-doanh', vnTopics: ['kinh-doanh', 'bat-dong-san'],
     tags: ['kinh doanh', 'tài chính', 'đầu tư', 'chứng khoán', 'doanh nghiệp', 'khởi nghiệp', 'thị trường', 'bất động sản', 'nhà đất', 'crypto', 'bitcoin', 'tiền số', 'marketing', 'bán hàng', 'thương mại', 'business', 'finance', 'investing', 'stock', 'startup', 'real estate', 'ecommerce'],
     world: ['http://feeds.bbci.co.uk/news/business/rss.xml', 'https://www.theguardian.com/uk/business/rss', 'https://www.cnbc.com/id/10001147/device/rss/rss.html'] },
-  { key: 'suc-khoe', vnTopics: ['suc-khoe'],
+  { key: 'suc-khoe', vnTopics: ['suc-khoe', 'doi-song'],
     tags: ['sức khoẻ', 'sức khỏe', 'y tế', 'bệnh', 'dinh dưỡng', 'thể hình', 'gym', 'fitness', 'yoga', 'mẹ và bé', 'nuôi con', 'mang thai', 'tâm lý', 'health', 'wellness', 'nutrition', 'medical', 'parenting'],
     world: ['http://feeds.bbci.co.uk/news/health/rss.xml', 'https://www.theguardian.com/society/health/rss'] },
-  { key: 'am-thuc', vnTopics: ['suc-khoe', 'du-lich'],
+  { key: 'am-thuc', vnTopics: ['am-thuc', 'doi-song'],
     tags: ['ẩm thực', 'nấu ăn', 'món ăn', 'công thức', 'đồ ăn', 'quán ăn', 'nhà hàng', 'đặc sản', 'food', 'recipe', 'cooking', 'cuisine', 'restaurant'],
     world: ['https://www.theguardian.com/food/rss'] },
   { key: 'the-thao', vnTopics: ['the-thao'],
     tags: ['thể thao', 'bóng đá', 'bóng rổ', 'tennis', 'cầu lông', 'giải đấu', 'cầu thủ', 'vô địch', 'sport', 'football', 'soccer', 'nba', 'league'],
     world: ['http://feeds.bbci.co.uk/sport/rss.xml', 'https://www.theguardian.com/sport/rss'] },
-  { key: 'giai-tri', vnTopics: ['giai-tri'],
+  { key: 'giai-tri', vnTopics: ['giai-tri', 'lam-dep'],
     tags: ['giải trí', 'showbiz', 'phim', 'điện ảnh', 'ca sĩ', 'diễn viên', 'âm nhạc', 'nghệ sĩ', 'thời trang', 'làm đẹp', 'mỹ phẩm', 'skincare', 'entertainment', 'movie', 'music', 'celebrity', 'fashion', 'beauty'],
     world: ['https://variety.com/feed/', 'https://www.theguardian.com/culture/rss', 'http://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml'] },
   { key: 'du-lich', vnTopics: ['du-lich'],
@@ -268,19 +268,19 @@ export async function huntNewsByKeywords(keywords, perKw = 2) {
 }
 
 // ============ VN NEWS — báo VN × chủ đề (RSS), round-robin ============
-export const VN_TOPICS = [{ key: 'thoi-su', label: 'Thời sự' }, { key: 'the-gioi', label: 'Thế giới' }, { key: 'kinh-doanh', label: 'Kinh doanh' }, { key: 'cong-nghe', label: 'Công nghệ' }, { key: 'the-thao', label: 'Thể thao' }, { key: 'giai-tri', label: 'Giải trí' }, { key: 'giao-duc', label: 'Giáo dục' }, { key: 'suc-khoe', label: 'Sức khoẻ' }, { key: 'phap-luat', label: 'Pháp luật' }, { key: 'du-lich', label: 'Du lịch' }, { key: 'xe', label: 'Xe' }];
+export const VN_TOPICS = [{ key: 'thoi-su', label: 'Thời sự' }, { key: 'the-gioi', label: 'Thế giới' }, { key: 'kinh-doanh', label: 'Kinh doanh' }, { key: 'cong-nghe', label: 'Công nghệ' }, { key: 'the-thao', label: 'Thể thao' }, { key: 'giai-tri', label: 'Giải trí' }, { key: 'giao-duc', label: 'Giáo dục' }, { key: 'suc-khoe', label: 'Sức khoẻ' }, { key: 'phap-luat', label: 'Pháp luật' }, { key: 'du-lich', label: 'Du lịch' }, { key: 'xe', label: 'Xe' }, { key: 'bat-dong-san', label: 'Bất động sản' }, { key: 'doi-song', label: 'Đời sống' }, { key: 'am-thuc', label: 'Ẩm thực' }, { key: 'lam-dep', label: 'Làm đẹp / Thời trang' }];
 export const VN_PAPERS = [
-  { key: 'vnexpress', base: 'https://vnexpress.net/rss/', feeds: { 'thoi-su': 'thoi-su.rss', 'the-gioi': 'the-gioi.rss', 'kinh-doanh': 'kinh-doanh.rss', 'cong-nghe': 'khoa-hoc-cong-nghe.rss', 'the-thao': 'the-thao.rss', 'giai-tri': 'giai-tri.rss', 'giao-duc': 'giao-duc.rss', 'suc-khoe': 'suc-khoe.rss', 'phap-luat': 'phap-luat.rss', 'du-lich': 'du-lich.rss', 'xe': 'oto-xe-may.rss' } },
-  { key: 'dantri', base: 'https://dantri.com.vn/rss/', feeds: { 'thoi-su': 'thoi-su.rss', 'the-gioi': 'the-gioi.rss', 'kinh-doanh': 'kinh-doanh.rss', 'cong-nghe': 'cong-nghe.rss', 'the-thao': 'the-thao.rss', 'giai-tri': 'giai-tri.rss', 'giao-duc': 'giao-duc.rss', 'suc-khoe': 'suc-khoe.rss', 'phap-luat': 'phap-luat.rss', 'du-lich': 'du-lich.rss', 'xe': 'o-to-xe-may.rss' } },
-  { key: 'vietnamnet', base: 'https://vietnamnet.vn/rss/', feeds: { 'thoi-su': 'chinh-tri.rss', 'the-gioi': 'the-gioi.rss', 'cong-nghe': 'thong-tin-truyen-thong.rss', 'the-thao': 'the-thao.rss', 'giai-tri': 'giai-tri.rss', 'phap-luat': 'phap-luat.rss', 'du-lich': 'du-lich.rss', 'xe': 'oto-xe-may.rss' } },
-  { key: 'thanhnien', base: 'https://thanhnien.vn/rss/', feeds: { 'thoi-su': 'thoi-su.rss', 'the-gioi': 'the-gioi.rss', 'kinh-doanh': 'kinh-te.rss', 'cong-nghe': 'cong-nghe.rss', 'the-thao': 'the-thao.rss', 'giai-tri': 'giai-tri.rss', 'giao-duc': 'giao-duc.rss', 'suc-khoe': 'suc-khoe.rss', 'du-lich': 'du-lich.rss', 'xe': 'xe.rss' } },
+  { key: 'vnexpress', base: 'https://vnexpress.net/rss/', feeds: { 'thoi-su': 'thoi-su.rss', 'the-gioi': 'the-gioi.rss', 'kinh-doanh': 'kinh-doanh.rss', 'cong-nghe': 'khoa-hoc-cong-nghe.rss', 'the-thao': 'the-thao.rss', 'giai-tri': 'giai-tri.rss', 'giao-duc': 'giao-duc.rss', 'suc-khoe': 'suc-khoe.rss', 'phap-luat': 'phap-luat.rss', 'du-lich': 'du-lich.rss', 'xe': 'oto-xe-may.rss', 'bat-dong-san': 'bat-dong-san.rss', 'doi-song': 'gia-dinh.rss' } },
+  { key: 'dantri', base: 'https://dantri.com.vn/rss/', feeds: { 'thoi-su': 'thoi-su.rss', 'the-gioi': 'the-gioi.rss', 'kinh-doanh': 'kinh-doanh.rss', 'cong-nghe': 'cong-nghe.rss', 'the-thao': 'the-thao.rss', 'giai-tri': 'giai-tri.rss', 'giao-duc': 'giao-duc.rss', 'suc-khoe': 'suc-khoe.rss', 'phap-luat': 'phap-luat.rss', 'du-lich': 'du-lich.rss', 'xe': 'o-to-xe-may.rss', 'bat-dong-san': 'bat-dong-san.rss' } },
+  { key: 'vietnamnet', base: 'https://vietnamnet.vn/rss/', feeds: { 'thoi-su': 'chinh-tri.rss', 'the-gioi': 'the-gioi.rss', 'cong-nghe': 'thong-tin-truyen-thong.rss', 'the-thao': 'the-thao.rss', 'giai-tri': 'giai-tri.rss', 'phap-luat': 'phap-luat.rss', 'du-lich': 'du-lich.rss', 'xe': 'oto-xe-may.rss', 'bat-dong-san': 'bat-dong-san.rss', 'doi-song': 'doi-song.rss' } },
+  { key: 'thanhnien', base: 'https://thanhnien.vn/rss/', feeds: { 'thoi-su': 'thoi-su.rss', 'the-gioi': 'the-gioi.rss', 'kinh-doanh': 'kinh-te.rss', 'cong-nghe': 'cong-nghe.rss', 'the-thao': 'the-thao.rss', 'giai-tri': 'giai-tri.rss', 'giao-duc': 'giao-duc.rss', 'suc-khoe': 'suc-khoe.rss', 'du-lich': 'du-lich.rss', 'xe': 'xe.rss', 'doi-song': 'doi-song.rss' } },
   { key: 'tuoitre', base: 'https://tuoitre.vn/rss/', feeds: { 'thoi-su': 'thoi-su.rss', 'the-gioi': 'the-gioi.rss', 'kinh-doanh': 'kinh-doanh.rss', 'cong-nghe': 'nhip-song-so.rss', 'the-thao': 'the-thao.rss', 'giai-tri': 'giai-tri.rss', 'giao-duc': 'giao-duc.rss', 'du-lich': 'du-lich.rss', 'xe': 'xe.rss' } },
   { key: 'vtcnews', base: 'https://vtcnews.vn/rss/', feeds: { 'thoi-su': 'thoi-su.rss', 'the-gioi': 'the-gioi.rss', 'kinh-doanh': 'kinh-te.rss', 'the-thao': 'the-thao.rss', 'giai-tri': 'giai-tri.rss', 'suc-khoe': 'suc-khoe.rss', 'phap-luat': 'phap-luat.rss', 'du-lich': 'du-lich.rss', 'xe': 'oto-xe-may.rss' } },
-  { key: 'znews', base: 'https://znews.vn/rss/', feeds: { 'the-gioi': 'the-gioi.rss', 'cong-nghe': 'cong-nghe.rss', 'the-thao': 'the-thao.rss', 'giai-tri': 'giai-tri.rss', 'giao-duc': 'giao-duc.rss', 'suc-khoe': 'suc-khoe.rss', 'phap-luat': 'phap-luat.rss', 'du-lich': 'du-lich.rss', 'xe': 'oto-xe-may.rss' } },
-  { key: 'bao24h', base: 'https://cdn.24h.com.vn/upload/rss/', feeds: { 'thoi-su': 'tintuctrongngay.rss', 'kinh-doanh': 'kinhdoanh.rss', 'cong-nghe': 'congnghethongtin.rss', 'the-thao': 'thethao.rss', 'giao-duc': 'giaoduc.rss', 'suc-khoe': 'suckhoedoisong.rss', 'du-lich': 'dulich.rss', 'xe': 'oto.rss' } },
+  { key: 'znews', base: 'https://znews.vn/rss/', feeds: { 'the-gioi': 'the-gioi.rss', 'cong-nghe': 'cong-nghe.rss', 'the-thao': 'the-thao.rss', 'giai-tri': 'giai-tri.rss', 'giao-duc': 'giao-duc.rss', 'suc-khoe': 'suc-khoe.rss', 'phap-luat': 'phap-luat.rss', 'du-lich': 'du-lich.rss', 'xe': 'oto-xe-may.rss', 'doi-song': 'doi-song.rss' } },
+  { key: 'bao24h', base: 'https://cdn.24h.com.vn/upload/rss/', feeds: { 'thoi-su': 'tintuctrongngay.rss', 'kinh-doanh': 'kinhdoanh.rss', 'cong-nghe': 'congnghethongtin.rss', 'the-thao': 'thethao.rss', 'giao-duc': 'giaoduc.rss', 'suc-khoe': 'suckhoedoisong.rss', 'du-lich': 'dulich.rss', 'xe': 'oto.rss', 'am-thuc': 'amthuc.rss', 'lam-dep': 'lamdep.rss' } },
   { key: 'cafef', base: 'https://cafef.vn/', feeds: { 'kinh-doanh': 'doanh-nghiep.rss' } },
   { key: 'genk', base: 'https://genk.vn/rss/', feeds: { 'cong-nghe': 'home.rss' } },
-  { key: 'kenh14', base: 'https://kenh14.vn/', feeds: { 'giai-tri': 'star.rss' } },
+  { key: 'kenh14', base: 'https://kenh14.vn/', feeds: { 'giai-tri': 'star.rss', 'lam-dep': 'beauty-fashion.rss' } },
 ];
 function vnFeedsByPaper(topic, paper) {
   const list = [];
