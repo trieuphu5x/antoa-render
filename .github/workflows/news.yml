@@ -1,0 +1,108 @@
+name: ANTOA News + VN News (săn + cổng AI)
+
+# CF Worker (Tower) chỉ đạo qua repository_dispatch; runner Mỹ làm VIỆC NẶNG (fetch RSS/HN/Reddit + cổng AI Claude).
+# Bỏ trần 50 subreq của Cloudflare → cronTick chỉ dispatch, nâng số workflow/phút. news & vnnews ĐỘC LẬP.
+#  - news-hunt / vnnews-hunt: săn → candidates (cho nút "Săn tin ngay"). news kèm cổng AI gắn nhãn topic_ok.
+#  - news-auto / vnnews-auto: săn → chống trùng → cổng AI → chọn 1 → bóc bài → callback tạo content.
+on:
+  repository_dispatch:
+    types: [news-hunt, news-auto, vnnews-hunt, vnnews-auto]
+  workflow_dispatch:
+    inputs:
+      action:
+        type: choice
+        options: [news-hunt, news-auto, vnnews-hunt, vnnews-auto]
+        default: news-hunt
+      keywords:
+        default: "AI Agent, tự động hoá kinh doanh"
+      niche:
+        default: "ứng dụng AI vào kinh doanh sản phẩm số"
+      region:
+        default: "vn"
+      vnTopic:
+        default: "cong-nghe"
+      vnPaper:
+        default: "all"
+
+jobs:
+  news:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLAUDE_KEY: ${{ secrets.CLAUDE_API_KEY }}
+      CLAUDE_MODEL: ${{ secrets.CLAUDE_MODEL }}
+      NICHE: ${{ github.event.client_payload.meta.niche || github.event.inputs.niche }}
+      REGION: ${{ github.event.client_payload.meta.region || github.event.inputs.region }}
+      VN_TOPIC: ${{ github.event.client_payload.vnTopic || github.event.inputs.vnTopic }}
+      VN_PAPER: ${{ github.event.client_payload.vnPaper || github.event.inputs.vnPaper }}
+      LIMIT: ${{ github.event.client_payload.limit || '10' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+
+      - name: Chuẩn hoá STRATEGY (news/vnnews) + MODE (hunt/auto)
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then A="${{ github.event.action }}"; else A="${{ github.event.inputs.action }}"; fi
+          echo "$A" | grep -q vnnews && echo "STRATEGY=vnnews" >> "$GITHUB_ENV" || echo "STRATEGY=news" >> "$GITHUB_ENV"
+          echo "$A" | grep -q auto && echo "MODE=auto" >> "$GITHUB_ENV" || echo "MODE=hunt" >> "$GITHUB_ENV"
+
+      # ===================== SĂN (hunt) =====================
+      - name: SĂN (hunt)
+        if: ${{ env.MODE == 'hunt' }}
+        env:
+          KW_JSON: ${{ github.event.client_payload.keywords && toJSON(github.event.client_payload.keywords) || '' }}
+          KW_CSV: ${{ github.event.inputs.keywords }}
+          FEEDS_JSON: ${{ github.event.client_payload.feeds && toJSON(github.event.client_payload.feeds) || '[]' }}
+        run: |
+          if [ -n "$KW_JSON" ]; then export KEYWORDS="$KW_JSON"; else export KEYWORDS=$(python3 -c "import json,os;print(json.dumps([s.strip() for s in os.environ.get('KW_CSV','').split(',') if s.strip()]))"); fi
+          export FEEDS="$FEEDS_JSON"
+          node news_hunt.mjs
+
+      - name: Callback SĂN về Tower
+        if: ${{ env.MODE == 'hunt' && github.event_name == 'repository_dispatch' && github.event.client_payload.callback != '' }}
+        run: |
+          jq -n --slurpfile r candidates.json \
+            --arg kind "${STRATEGY}-hunt" \
+            --arg jobId "${{ github.event.client_payload.jobId }}" \
+            --arg brandId "${{ github.event.client_payload.brandId }}" \
+            --arg secret "${{ secrets.RENDER_CALLBACK_SECRET }}" \
+            '{kind:$kind, jobId:$jobId, brandId:$brandId, secret:$secret, result:$r[0]}' \
+          | curl -sS -X POST "${{ github.event.client_payload.callback }}" -H 'content-type: application/json' -d @-
+
+      # ===================== SẢN XUẤT AUTO =====================
+      - name: SĂN + CỔNG AI + CHỌN (auto)
+        if: ${{ env.MODE == 'auto' }}
+        env:
+          KW_JSON: ${{ github.event.client_payload.keywords && toJSON(github.event.client_payload.keywords) || '' }}
+          KW_CSV: ${{ github.event.inputs.keywords }}
+          FEEDS_JSON: ${{ github.event.client_payload.feeds && toJSON(github.event.client_payload.feeds) || '[]' }}
+          PRODUCED_TITLES: ${{ github.event.client_payload.producedTitles && toJSON(github.event.client_payload.producedTitles) || '[]' }}
+          SEEN_URLS: ${{ github.event.client_payload.seenUrls && toJSON(github.event.client_payload.seenUrls) || '[]' }}
+        run: |
+          if [ -n "$KW_JSON" ]; then export KEYWORDS="$KW_JSON"; else export KEYWORDS=$(python3 -c "import json,os;print(json.dumps([s.strip() for s in os.environ.get('KW_CSV','').split(',') if s.strip()]))"); fi
+          export FEEDS="$FEEDS_JSON"
+          node news_auto.mjs
+
+      - name: Callback AUTO về Tower
+        if: ${{ env.MODE == 'auto' && github.event_name == 'repository_dispatch' && github.event.client_payload.callback != '' }}
+        run: |
+          jq -n --slurpfile r news.json \
+            --arg kind "${STRATEGY}-auto" \
+            --arg jobId "${{ github.event.client_payload.jobId }}" \
+            --arg brandId "${{ github.event.client_payload.brandId }}" \
+            --arg workflowId "${{ github.event.client_payload.workflowId }}" \
+            --arg secret "${{ secrets.RENDER_CALLBACK_SECRET }}" \
+            '{kind:$kind, jobId:$jobId, brandId:$brandId, workflowId:$workflowId, secret:$secret, result:$r[0]}' \
+          | curl -sS -X POST "${{ github.event.client_payload.callback }}" -H 'content-type: application/json' -d @-
+
+      - name: Xuất kết quả (test tay)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: news-out
+          path: |
+            candidates.json
+            news.json
+          if-no-files-found: ignore
+          retention-days: 7
