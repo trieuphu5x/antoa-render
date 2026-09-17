@@ -80,7 +80,8 @@ export function TREND_POST_PROMPT(p) {
   const brand = p.brandName || 'thương hiệu';
   const niche = p.niche || 'ứng dụng AI vào công việc';
   const slogan = p.slogan ? (' ("' + p.slogan + '")') : '';
-  return 'Bạn là biên kịch video cho thương hiệu ' + brand + ' — về ' + niche + '.\n' +
+  const persona = p.persona ? ('\nGIỌNG THƯƠNG HIỆU (viết lời đọc đúng chất giọng này): ' + p.persona + '.') : '';
+  return 'Bạn là biên kịch video cho thương hiệu ' + brand + ' — về ' + niche + '.' + persona + '\n' +
     'Từ 1 video đang TREND, viết 1 KỊCH BẢN VIDEO tiếng Việt (TikTok/Reels/Shorts).\n\n' +
     '📐 ĐỊNH DẠNG (pipeline dựng video đọc theo đây):\n' +
     '- MỘT DÃY CÂU, mỗi câu 1 dòng = 1 CẢNH.\n' +

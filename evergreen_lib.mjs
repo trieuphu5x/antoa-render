@@ -87,7 +87,8 @@ export function POST_PROMPT(p) {
   const brand = p.brandName || 'thương hiệu';
   const niche = p.niche || 'ứng dụng AI vào công việc';
   const slogan = p.slogan ? (' ("' + p.slogan + '")') : '';
-  return 'Bạn là biên kịch video cho thương hiệu ' + brand + ' — về ' + niche + '.\n' +
+  const persona = p.persona ? ('\nGIỌNG THƯƠNG HIỆU (viết lời đọc đúng chất giọng này): ' + p.persona + '.') : '';
+  return 'Bạn là biên kịch video cho thương hiệu ' + brand + ' — về ' + niche + '.' + persona + '\n' +
     'Nhiệm vụ: từ 1 nội dung đang viral, viết 1 KỊCH BẢN VIDEO (TikTok/Reels/YouTube) DÀI 2-3 PHÚT, giọng đọc tiếng Việt.\n\n' +
     '📐 ĐỊNH DẠNG ĐẦU RA (BẮT BUỘC — pipeline dựng video đọc theo đây):\n' +
     '- Kịch bản là MỘT DÃY CÂU, MỖI CÂU 1 DÒNG, và MỖI CÂU = MỘT CẢNH.\n' +

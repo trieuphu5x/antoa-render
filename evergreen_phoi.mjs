@@ -8,6 +8,7 @@ const p = {
   swipe: JSON.parse(process.env.SWIPE || '{}'),
   brandName: process.env.BRAND_NAME || 'thương hiệu',
   niche: process.env.NICHE || 'ứng dụng AI vào công việc',
+  persona: process.env.PERSONA || '',   // giọng thương hiệu → POST_PROMPT viết lời đọc đúng chất
   slogan: process.env.SLOGAN || '',
   region: process.env.REGION || 'vn',
 };
