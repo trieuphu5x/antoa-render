@@ -17,13 +17,39 @@ export function parseJsonLoose(raw) {
   return null;
 }
 
+// ===== LỌC KỊCH BẢN VERBATIM (Boss chốt 2026-09-17): kịch bản LIVE đã sạch, nhưng brief cũ/mock/dán tay
+// đôi khi lọt NHÃN cấu trúc ("HOOK:", "CTA:", "# TIÊU ĐỀ SEO", "**HOOK:**"). Verbatim đọc nguyên văn → sẽ đọc
+// thành tiếng chữ "HOOK". Guard: bỏ dòng markdown/đường kẻ, cắt tiền tố NHÃN theo WHITELIST (KHÔNG đụng "Ví dụ:").
+// Kịch bản sạch (câu thoại thường) đi qua KHÔNG đổi.
+const VB_LABEL = /^\s*(hook|cta|c[aả]nh\s*\d+|scene\s*\d+|m[ởo]\s*b[àa]i|th[âa]n\s*b[àa]i|k[ếe]t\s*b[àa]i|k[ếe]t|ch[ốo]t|ti[êe]u\s*đ[ềe](\s*seo)?|k[ịi]ch\s*b[ảa]n(\s*video)?(\s*brief)?|brief|g[óo]c\s*nh[ìi]n[^:：]{0,20}?tr[ấa]n\s*an|lời\s*đọc|voiceover)\s*[:：]\s*/i;
+// Làm sạch 1 dòng THÔ (đã trim, đã loại heading/hr) → câu thoại: bỏ bold, heading sót, bullet đầu, tiền tố nhãn.
+function stripVbLabels(s) {
+  let x = String(s || '').trim();
+  x = x.replace(/\*\*/g, '');            // bỏ **bold** TRƯỚC (khỏi lẫn với bullet '*')
+  x = x.replace(/^#{1,6}\s*/, '');       // bỏ heading '#' còn sót
+  x = x.replace(/^[-•*–—]\s+/, '');      // bỏ bullet đầu (cần khoảng trắng sau → không ăn nhầm '**')
+  x = x.replace(VB_LABEL, '');           // cắt tiền tố NHÃN cấu trúc (whitelist)
+  return x.trim();
+}
+export function cleanScriptLines(scriptText, max = 16) {
+  let lines = String(scriptText || '').split(/\r?\n+/)
+    .map((x) => x.trim())
+    .filter((x) => x && !/^#{1,6}\s/.test(x) && !/^[-*_=–—]{3,}$/.test(x))   // bỏ dòng heading markdown + đường kẻ ngang (xét trên dòng THÔ)
+    .map(stripVbLabels)
+    .filter((x) => x.length > 1);                                            // dòng chỉ có nhãn → rỗng → bỏ
+  if (lines.length < 3) {   // ít dòng (1 đoạn văn) → tách theo CÂU; vẫn bỏ heading/hr TRƯỚC khi gộp để không lọt markdown
+    const flat = String(scriptText || '').split(/\r?\n+/).map((x) => x.trim())
+      .filter((x) => x && !/^#{1,6}\s/.test(x) && !/^[-*_=–—]{3,}$/.test(x)).join(' ');
+    lines = flat.replace(/\s+/g, ' ').split(/(?<=[.!?…])\s+/).map((x) => stripVbLabels(x)).filter((x) => x.length > 1);
+  }
+  return lines.slice(0, max);
+}
+
 // ===== VERBATIM DÙNG CHUNG: kịch bản DÁN THỦ CÔNG → GIỮ NGUYÊN 100% lời đọc, KHÔNG sửa/biên tập.
 // Tách kịch bản thành từng câu = 1 cảnh (vo giữ nguyên). Claude CHỈ cô đọng HÌNH (head ngắn + lede) — KHÔNG đổi lời đọc.
 // Trả [{vo, head, lede}]. Mỗi soan map sang định dạng cảnh của mẫu mình. (Boss: dán thủ công là kịch bản đã chuẩn.)
 export async function verbatimScenes(scriptText, { key, model, title = '', max = 16 } = {}) {
-  let lines = String(scriptText || '').split(/\r?\n+/).map((x) => x.replace(/^\s*[-•*–]\s*/, '').trim()).filter((x) => x.length > 1);
-  if (lines.length < 3) lines = String(scriptText || '').replace(/\s+/g, ' ').split(/(?<=[.!?…])\s+/).map((x) => x.trim()).filter((x) => x.length > 1);
-  lines = lines.slice(0, max);                                  // trần an toàn số cảnh (render.mjs còn cắt theo thời lượng)
+  let lines = cleanScriptLines(scriptText, max);
   if (!lines.length) lines = [String(title || 'Nội dung').trim()];
   let vis = [];
   if (key) {

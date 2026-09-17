@@ -1,6 +1,7 @@
 // Soạn SPEC (cảnh + inner HTML kiểu AI Có Gì Mới) bằng Claude → spec.json cho dung.py.
 // Dùng để validate bê nguyên mẫu. Sau sẽ chuyển logic này vào Tower (ai.js generateScenes).
 import { writeFileSync, readFileSync, existsSync } from 'node:fs';
+import { cleanScriptLines } from './soan_util.mjs';   // lọc nhãn cấu trúc (HOOK:/CTA:/# TIÊU ĐỀ) trước khi đọc verbatim
 
 const KEY = process.env.CLAUDE_API_KEY;
 const MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001';
@@ -84,9 +85,7 @@ Chỉ in JSON.`;
 // đẹp — KHÔNG nhét cả câu vào head (tránh bức tường chữ hoa). Claude lỗi → fallback tách câu (head = cụm đầu, lede = phần còn lại).
 async function buildVerbatimSpec(scriptText) {
   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  let lines = String(scriptText || '').split(/\r?\n+/).map((x) => x.replace(/^\s*[-•*–]\s*/, '').trim()).filter((x) => x.length > 1);
-  if (lines.length < 3) lines = String(scriptText || '').replace(/\s+/g, ' ').split(/(?<=[.!?…])\s+/).map((x) => x.trim()).filter((x) => x.length > 1);
-  lines = lines.slice(0, 14);   // trần an toàn số cảnh
+  let lines = cleanScriptLines(scriptText, 14);   // bỏ nhãn cấu trúc + markdown, giữ câu thoại sạch verbatim
   if (!lines.length) lines = [String(TITLE || 'Tin mới')];
   const KICK = ['Điểm chính', 'Chi tiết', 'Đáng chú ý', 'Bối cảnh', 'Con số', 'Diễn biến', 'Kết luận'];
   const P = /kinh doanh|thị trường|lợi nhuận|tỉ đồng|doanh nghiệp|tài chính|cổ phiếu|tăng trưởng/i.test(scriptText) ? 'biz'
