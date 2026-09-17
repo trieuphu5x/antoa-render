@@ -1,0 +1,103 @@
+name: ANTOA Tải-lên Drive→R2 (cho "Tải lên nội dung")
+
+# Tower (CF Worker) KHÔNG có R2 binding → việc tải file nặng chạy ở runner Mỹ.
+# Khi tới GIỜ đăng bài "Tải lên nội dung" mà media vẫn là link Google Drive (Make/Buffer đọc HTML /view không ra video),
+# Tower dispatch event 'sheet-r2': runner TẢI file Drive → CHẶN >25MB / file lỗi → up R2 → callback link R2 để Tower đăng.
+# Cả bán-tự-động (Telegram) lẫn tự-động (Make/Buffer) đều dùng CÙNG link R2 cho thống nhất.
+on:
+  repository_dispatch:
+    types: [sheet-r2]
+  workflow_dispatch:
+    inputs:
+      driveId:
+        description: Google Drive file id
+        required: true
+      contentId:
+        default: "test"
+
+jobs:
+  sheet-r2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      DRIVE_ID: ${{ github.event.client_payload.driveId || github.event.inputs.driveId }}
+      CONTENT_ID: ${{ github.event.client_payload.contentId || github.event.inputs.contentId }}
+      JOB_ID: ${{ github.event.client_payload.jobId }}
+      MEDIA_KIND: ${{ github.event.client_payload.mediaKind || 'video' }}
+      CALLBACK: ${{ github.event.client_payload.callback }}
+      SECRET: ${{ secrets.RENDER_CALLBACK_SECRET }}
+      R2_BUCKET: ${{ secrets.R2_BUCKET }}
+      R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+      R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+      AWS_EC2_METADATA_DISABLED: "true"
+      AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+      AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+    steps:
+      - name: Tải file từ Google Drive (bỏ trang xác nhận virus-scan nếu có)
+        run: |
+          set -e
+          UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+          BASE="https://drive.usercontent.google.com/download"
+          curl -sSL -A "$UA" -c cook.txt "${BASE}?id=${DRIVE_ID}&export=download&confirm=t" -o media.bin || true
+          # Nếu Drive trả trang HTML xác nhận (không quét được virus) → bóc token confirm+uuid tải lại.
+          if head -c 400 media.bin | grep -qi '<!doctype html\|<html'; then
+            CONFIRM=$(tr '\n' ' ' < media.bin | grep -o 'name="confirm" value="[^"]*"' | head -1 | sed -E 's/.*value="([^"]*)".*/\1/')
+            UUID=$(tr '\n' ' ' < media.bin | grep -o 'name="uuid" value="[^"]*"' | head -1 | sed -E 's/.*value="([^"]*)".*/\1/')
+            [ -z "$CONFIRM" ] && CONFIRM=t
+            curl -sSL -A "$UA" -b cook.txt "${BASE}?id=${DRIVE_ID}&export=download&confirm=${CONFIRM}&uuid=${UUID}" -o media.bin
+          fi
+
+      - name: Kiểm file — chặn HTML lỗi & video > 25MB (không đăng file hỏng/quá khổ)
+        run: |
+          set -e
+          if [ ! -s media.bin ]; then echo "FAIL_REASON=Không tải được file từ Drive (link không công khai?)" >> "$GITHUB_ENV"; exit 1; fi
+          if head -c 400 media.bin | grep -qi '<!doctype html\|<html'; then echo "FAIL_REASON=Drive chặn tải (chưa bật 'Bất kỳ ai có link' hoặc file đã xoá)" >> "$GITHUB_ENV"; exit 1; fi
+          SIZE=$(stat -c%s media.bin)
+          MIME=$(file --mime-type -b media.bin)
+          echo "File: $SIZE bytes, mime=$MIME"
+          if [ "$MEDIA_KIND" != "image" ] && [ "$SIZE" -gt 26214400 ]; then
+            MB=$(awk "BEGIN{printf \"%.1f\", $SIZE/1048576}")
+            echo "FAIL_REASON=Video ${MB}MB — VƯỢT 25MB, không đăng được. Nén video hoặc dùng link khác." >> "$GITHUB_ENV"; exit 1
+          fi
+          case "$MIME" in
+            video/mp4) EXT=mp4;; video/quicktime) EXT=mov;; video/webm) EXT=webm;;
+            image/jpeg) EXT=jpg;; image/png) EXT=png;; image/webp) EXT=webp;; image/gif) EXT=gif;;
+            *) EXT=bin;;
+          esac
+          echo "MIME=$MIME" >> "$GITHUB_ENV"
+          echo "EXT=$EXT" >> "$GITHUB_ENV"
+
+      - name: Up R2
+        run: |
+          set -e
+          KEY="uploads/${CONTENT_ID}.${EXT}"
+          aws s3 cp media.bin "s3://$R2_BUCKET/$KEY" \
+            --endpoint-url "$R2_ENDPOINT" --region auto --content-type "$MIME"
+          echo "R2_KEY=$KEY" >> "$GITHUB_ENV"
+
+      - name: Callback THÀNH CÔNG → Tower đăng bằng link R2
+        if: ${{ success() && github.event.client_payload.callback != '' }}
+        run: |
+          URL="${R2_PUBLIC_URL%/}/$R2_KEY"
+          jq -n --arg kind "sheet-r2" \
+                --arg jobId "$JOB_ID" \
+                --arg contentId "$CONTENT_ID" \
+                --arg r2Url "$URL" \
+                --arg secret "$SECRET" \
+                '{kind:$kind, jobId:$jobId, contentId:$contentId, r2Url:$r2Url, secret:$secret}' \
+          | curl -sS -X POST "$CALLBACK" -H 'content-type: application/json' -d @-
+
+      - name: Callback LỖI → Tower đánh dấu failed + báo Boss
+        if: ${{ failure() && github.event.client_payload.callback != '' }}
+        run: |
+          REASON="${FAIL_REASON:-Tải Drive→R2 thất bại}"
+          jq -n --arg kind "sheet-r2" \
+                --arg jobId "$JOB_ID" \
+                --arg contentId "$CONTENT_ID" \
+                --arg error "$REASON" \
+                --arg secret "$SECRET" \
+                '{kind:$kind, jobId:$jobId, contentId:$contentId, error:$error, secret:$secret}' \
+          | curl -sS -X POST "$CALLBACK" -H 'content-type: application/json' -d @-
