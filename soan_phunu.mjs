@@ -111,7 +111,7 @@ async function fetchStock(query, n) {
   }
   return [];
 }
-const NEED = 14;   // đủ cho video 16-20 cảnh (lưới 4 / băng phim 4…), build.py xoay vòng
+const NEED = 15;   // đủ cho video 16-20 cảnh (lưới 4 / băng phim 4…), build.py xoay vòng — Boss chốt tối đa 15 ảnh user
 let images = [];
 try { images = JSON.parse(process.env.OWN_IMAGES || '[]'); } catch (e) { images = []; }
 images = (images || []).map((u) => String(u).trim()).filter(Boolean).slice(0, NEED);
