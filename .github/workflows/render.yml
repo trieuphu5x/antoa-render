@@ -121,6 +121,7 @@ jobs:
           VOICE: ${{ github.event.client_payload.voice || github.event.inputs.voice }}
           BRAND_LABEL: ${{ github.event.client_payload.meta.brandLabel }}
           SLOGAN: ${{ github.event.client_payload.meta.slogan }}
+          VIDEO_CLIPS: ${{ toJSON(github.event.client_payload.meta.videoClips) }}   # VIDEO→VIDEO (Broll): clip user [{url,start,end}] → build.py cắt+ghép nền (defensive, rỗng/lỗi→stock)
           VBEE_APP_ID: ${{ secrets.VBEE_APP_ID }}
           VBEE_TOKEN: ${{ secrets.VBEE_TOKEN }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}

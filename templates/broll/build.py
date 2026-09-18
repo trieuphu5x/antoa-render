@@ -24,6 +24,11 @@ def _rgba(hexc, a):
     return f"rgba({int(h[0:2],16)},{int(h[2:4],16)},{int(h[4:6],16)},{a})"
 sys.path.insert(0, HERE)
 import stock
+sys.path.insert(0, os.path.join(HERE, "..", ".."))   # repo root → uservid (VIDEO→VIDEO)
+try:
+    import uservid
+except Exception:
+    uservid = None
 
 
 def dur(p):
@@ -234,6 +239,15 @@ def build(workdir, spec, do_render):
     chrome = find_chrome()
     print(f"[broll] màu chữ: {color} ({accent}) · {'Chrome ' + os.path.basename(chrome) if chrome else 'KHÔNG có Chrome → fallback drawtext'}")
     srcs = []; parts = []
+    # VIDEO→VIDEO: nếu user gửi clip (env VIDEO_CLIPS) → tải+cắt+ghép thành nền; cắt tuần tự cho từng cảnh. Lỗi/rỗng → stock (đường cũ).
+    user_bg = None; ucur = 0.0; ubgdur = 0.0
+    try:
+        if uservid:
+            user_bg = uservid.build_user_bg(workdir)
+            if user_bg:
+                ubgdur = uservid.bg_dur(user_bg)
+    except Exception as e:
+        print("[broll] build_user_bg lỗi → dùng stock:", e); user_bg = None
 
     for i, sc in enumerate(scenes, 1):
         vo = sc.get("vo", "")
@@ -241,7 +255,15 @@ def build(workdir, spec, do_render):
         d = tts_scene(vo, mp3, engine, voice) if vo else 0.0
         sdur = round(max(MIN_D, (d + LEAD + TAIL) if d else MIN_D), 3)
         bg = os.path.join(mediad, f"s{i}.mp4")
-        src = stock.fetch(sc.get("query", ""), bg, sdur); srcs.append(src or "none")
+        used_user = False
+        if user_bg and ubgdur > 0.5:
+            if uservid.user_seg(user_bg, ucur, sdur, bg):
+                used_user = True; srcs.append("user")
+                ucur += sdur
+                if ucur >= ubgdur:
+                    ucur = 0.0   # hết nền → quay lại đầu (lặp)
+        if not used_user:
+            src = stock.fetch(sc.get("query", ""), bg, sdur); srcs.append(src or "none")
         if not do_render:
             continue
         out = os.path.join(workdir, f"scene{i}.mp4")
