@@ -4,6 +4,7 @@
 import fs from 'node:fs';
 
 const TOPIC        = (process.env.TOPIC || '').trim();
+const DRAFT        = (process.env.DRAFT || '').trim();   // có DRAFT = chế độ BIÊN TẬP (cải thiện bản người dùng dán/đã sinh)
 const IMAGE_URL    = (process.env.IMAGE_URL || '').trim();
 const DRIVE_ID     = (process.env.DRIVE_ID || '').trim();
 const BRAND_NAME   = (process.env.BRAND_NAME || '').trim();
@@ -43,12 +44,7 @@ const img = await fetchImageB64();
 const brandBlock = BRAND_NAME
   ? `\nThương hiệu: ${BRAND_NAME}.${BRAND_KW ? ` Từ khoá chính (bám sát): ${BRAND_KW}.` : ''}${BRAND_PERSONA ? ` Giọng thương hiệu: ${BRAND_PERSONA}.` : ''}`
   : '';
-const promptText = `Bạn là COPYWRITER social bậc thầy tiếng Việt. Viết 1 caption ${TYPE} cho kênh "${CHANNEL}" (${PLATFORM}).${brandBlock}
-${img ? 'ẢNH đính kèm = bối cảnh THẬT (chủ thể, hành động, cảm xúc, không gian). Dùng chi tiết trong ảnh làm minh hoạ sống động.' : ''}
-Ý ĐỒ NGƯỜI DÙNG (chủ đề/góc — GỢI Ý ĐỊNH HƯỚNG, bám sát): "${TOPIC || '(tự đề xuất theo ảnh)'}".
-KẾT HỢP: lấy ${img ? 'HÌNH ẢNH THẬT + ' : ''}Ý ĐỒ NGƯỜI DÙNG làm CỐT LÕI thông điệp — nội dung phải đúng điều người dùng muốn truyền tải, tuyệt đối không lạc đề.
-
-CHẤT LƯỢNG (bắt buộc):
+const QUALITY = `CHẤT LƯỢNG (bắt buộc):
 - Áp dụng 1-2 CÔNG THỨC copywriting phù hợp: AIDA (Chú ý→Thích thú→Khao khát→Hành động) · PAS (Vấn đề→Khoáy sâu→Giải pháp) · Hook–Story–CTA · BAB (Trước→Sau→Cầu nối).
 - CHIỀU SÂU: có 1 insight/góc nhìn thật, chạm đúng nỗi đau hoặc khát khao của người đọc; tránh câu sáo rỗng, chung chung, "AI giọng".
 - Dòng 1 = TIÊU ĐỀ/hook đắt, dừng-lướt (KHÔNG hashtag, KHÔNG chữ "Caption"). Thân bài mạch lạc, xuống dòng thoáng, dẫn tới 1 CTA MỀM tự nhiên.
@@ -56,6 +52,24 @@ CHẤT LƯỢNG (bắt buộc):
 
 ĐỘ DÀI: khoảng ${LEN_MIN}–${LEN_MAX} ký tự (không tính hashtag) — viết đủ sâu trong khoảng này, không lan man cũng không cụt lủn.
 THUẦN VĂN BẢN tiếng Việt tự nhiên — TUYỆT ĐỐI KHÔNG markdown (không #, không **, không gạch đầu dòng). ${SAFETY}`;
+
+const promptText = DRAFT
+  ? `Bạn là BIÊN TẬP VIÊN copywriting bậc thầy tiếng Việt. BIÊN TẬP LẠI caption ${TYPE} dưới đây cho HAY HƠN cho kênh "${CHANNEL}" (${PLATFORM}).${brandBlock}
+${img ? 'ẢNH đính kèm = bối cảnh THẬT — bám sát khi biên tập.' : ''}${TOPIC ? `\nĐịnh hướng chủ đề (bám sát): "${TOPIC}".` : ''}
+GIỮ NGUYÊN ý chính, thông điệp & thông tin của người dùng — KHÔNG đổi nội dung cốt lõi, KHÔNG bịa thêm số liệu/thông tin mới. Chỉ NÂNG CHẤT: hook đắt hơn, mạch lạc hơn, chạm cảm xúc/insight thật, bỏ câu sáo rỗng "giọng AI".
+
+NỘI DUNG GỐC CẦN BIÊN TẬP:
+"""
+${DRAFT}
+"""
+
+${QUALITY}`
+  : `Bạn là COPYWRITER social bậc thầy tiếng Việt. Viết 1 caption ${TYPE} cho kênh "${CHANNEL}" (${PLATFORM}).${brandBlock}
+${img ? 'ẢNH đính kèm = bối cảnh THẬT (chủ thể, hành động, cảm xúc, không gian). Dùng chi tiết trong ảnh làm minh hoạ sống động.' : ''}
+Ý ĐỒ NGƯỜI DÙNG (chủ đề/góc — GỢI Ý ĐỊNH HƯỚNG, bám sát): "${TOPIC || '(tự đề xuất theo ảnh)'}".
+KẾT HỢP: lấy ${img ? 'HÌNH ẢNH THẬT + ' : ''}Ý ĐỒ NGƯỜI DÙNG làm CỐT LÕI thông điệp — nội dung phải đúng điều người dùng muốn truyền tải, tuyệt đối không lạc đề.
+
+${QUALITY}`;
 
 const content = [];
 if (img) content.push({ type: 'image', source: { type: 'base64', media_type: img.mt, data: img.b64 } });
@@ -78,4 +92,4 @@ caption = caption
   .replace(/^[ \t]*[-*][ \t]+/gm, '')   // bỏ gạch đầu dòng '- ' / '* '
   .trim();
 fs.writeFileSync('caption_out.txt', caption);
-console.log('✅ Caption (' + (img ? 'có nhìn ảnh' : 'theo chủ đề') + '):', caption.slice(0, 90).replace(/\n/g, ' '));
+console.log('✅ Caption (' + (DRAFT ? 'biên tập' : (img ? 'có nhìn ảnh' : 'theo chủ đề')) + '):', caption.slice(0, 90).replace(/\n/g, ' '));

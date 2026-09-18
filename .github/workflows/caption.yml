@@ -21,6 +21,7 @@ jobs:
           CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
           CLAUDE_MODEL: ${{ secrets.CLAUDE_MODEL }}
           TOPIC: ${{ github.event.client_payload.topic }}
+          DRAFT: ${{ github.event.client_payload.draft }}
           IMAGE_URL: ${{ github.event.client_payload.imageUrl }}
           DRIVE_ID: ${{ github.event.client_payload.driveId }}
           BRAND_NAME: ${{ github.event.client_payload.meta.brandName }}
