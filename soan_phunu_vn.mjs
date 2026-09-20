@@ -157,6 +157,17 @@ if (images.length < 2) {
   console.log(`  bù stock: ${bu.length} (tổng ${images.length})`);
 }
 if (images.length) spec.images = images;
+
+// 🖼 THUMBNAIL HẤP DẪN (Boss chốt 09-21): CẢNH 1 → HERO COVER (ảnh full-bleed + tiêu đề overlay + kick chuyên mục)
+//    thay slide CHỮ → Reel lấy frame ĐẦU làm thumb → hình người hấp dẫn hơn text. CHỈ đổi khi CÓ ảnh (bài/stock);
+//    rỗng → giữ intro chữ (khỏi vỡ render vì hero cần ≥1 ảnh). Giữ nguyên tiêu đề/lede/vo/kick của cảnh gốc.
+if (spec.images && spec.images.length && spec.scenes[0] && spec.scenes[0].type !== 'outro') {
+  const s0 = spec.scenes[0];
+  const disp = Array.isArray(s0.disp) ? s0.disp.slice(0, 2) : (s0.disp ? [s0.disp] : (s0.head ? [s0.head] : []));
+  spec.scenes[0] = { type: 'image', style: 'hero', kick: s0.kick || spec.milestone || '', disp, lede: s0.lede, vo: s0.vo, img: 'auto' };
+  console.log('  CẢNH 1 → hero cover (ảnh full + tiêu đề) làm thumbnail');
+}
+
 // MÀU: user chọn tay (env PALETTE) → dùng đúng; auto → TỰ KHỚP theo chủ đề/cảm xúc nội dung.
 spec.palette = (process.env.PALETTE || '').trim() || pickPalette(`${TITLE}. ${String(ARTICLE).slice(0, 140)}`);   // khớp theo TIÊU ĐỀ + hook (không cả thân bài → tránh dính từ sâu)
 console.log(`  palette: ${spec.palette} ${process.env.PALETTE ? '(user chọn)' : '(auto-khớp chủ đề)'}`);
