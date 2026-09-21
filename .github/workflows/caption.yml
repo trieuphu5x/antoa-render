@@ -32,6 +32,9 @@ jobs:
           TYPE: ${{ github.event.client_payload.meta.type }}
           LEN_MIN: ${{ github.event.client_payload.meta.lenMin }}
           LEN_MAX: ${{ github.event.client_payload.meta.lenMax }}
+          KIND: ${{ github.event.client_payload.meta.kind }}           # 'script' = sinh KỊCH BẢN LỜI ĐỌC (video), không phải caption
+          WORDS: ${{ github.event.client_payload.meta.words }}         # số từ đích cho kịch bản
+          TARGET_SEC: ${{ github.event.client_payload.meta.targetSec }} # thời lượng đích (giây)
         run: node soan_caption.mjs
 
       - name: Callback caption → Tower

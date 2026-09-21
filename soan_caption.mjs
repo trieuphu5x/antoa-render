@@ -13,6 +13,9 @@ const BRAND_PERSONA= (process.env.BRAND_PERSONA || '').trim();
 const CHANNEL      = (process.env.CHANNEL || 'SAB').trim();
 const PLATFORM     = (process.env.PLATFORM || 'social').trim();
 const TYPE         = process.env.TYPE === 'video' ? 'video' : 'ảnh';
+const KIND         = (process.env.KIND || 'caption').trim() === 'script' ? 'script' : 'caption';   // 'script' = sinh KỊCH BẢN LỜI ĐỌC video (dài đúng thời lượng, KHÔNG hashtag)
+const WORDS        = Math.max(0, Number(process.env.WORDS) || 0);        // số từ đích cho kịch bản
+const TARGET_SEC   = Math.max(0, Number(process.env.TARGET_SEC) || 0);   // thời lượng đích (giây)
 const LEN_MIN      = Math.max(40, Number(process.env.LEN_MIN) || 200);
 const LEN_MAX      = Math.max(LEN_MIN + 40, Number(process.env.LEN_MAX) || 350);
 const KEY          = (process.env.CLAUDE_API_KEY || '').trim();
@@ -90,15 +93,38 @@ KẾT HỢP: lấy ${img && !isImg ? 'HÌNH ẢNH THẬT + ' : ''}Ý ĐỒ NGƯ�
 
 ${QUALITY}`;
 
+// ===== KỊCH BẢN LỜI ĐỌC (video): dài ĐÚNG thời lượng, KHÔNG hashtag/nhãn/hook-tiêu-đề — chỉ lời để đọc =====
+const WTARGET = WORDS || (TARGET_SEC ? Math.round(TARGET_SEC / 60 * 150) : 200);
+const SEC_EST = TARGET_SEC || Math.round(WTARGET / 150 * 60);
+const scriptPrompt = DRAFT
+  ? `Bạn là biên kịch video ngắn tiếng Việt. BIÊN TẬP LẠI KỊCH BẢN LỜI ĐỌC (voiceover) dưới đây cho cuốn hơn, GIỮ ý chính.${brandBlock}${TOPIC ? `\nĐịnh hướng chủ đề: "${TOPIC}".` : ''}
+ĐỘ DÀI: khoảng ${WTARGET} từ (đọc ~${SEC_EST} giây) — BÁM SÁT, KHÔNG cắt ngắn.
+CHỈ LỜI ĐỌC thuần (văn nói tự nhiên). TUYỆT ĐỐI KHÔNG hashtag, KHÔNG nhãn/tiêu đề ("Hook:", "Kịch bản:"…), KHÔNG markdown, KHÔNG ghi chú sản xuất/[nhạc]/tên cảnh. Mỗi ý 1 câu, xuống dòng giữa các câu.
+KỊCH BẢN GỐC:
+"""
+${DRAFT}
+"""
+${SAFETY}`
+  : `Bạn là biên kịch video ngắn tiếng Việt. Viết KỊCH BẢN LỜI ĐỌC (voiceover) cho video về chủ đề: "${TOPIC}".${brandBlock}
+ĐỘ DÀI: khoảng ${WTARGET} từ (đọc ~${SEC_EST} giây) — BÁM SÁT số từ này, viết ĐỦ DÀY (đừng cụt, đừng lố).
+YÊU CẦU:
+- CHỈ là LỜI ĐỌC thuần (văn nói tự nhiên, cuốn, có cảm xúc) để người dẫn đọc trực tiếp.
+- Câu 1 = HOOK giữ chân; thân triển khai mạch lạc bám chủ đề; kết bằng 1 CTA mềm.
+- Mỗi ý 1 CÂU NGẮN, xuống dòng giữa các câu (để tách cảnh video).
+- TUYỆT ĐỐI KHÔNG hashtag (#...), KHÔNG tiêu đề/nhãn, KHÔNG markdown, KHÔNG ghi chú sản xuất/tên cảnh/[âm nhạc].
+Chỉ in nội dung LỜI ĐỌC. ${SAFETY}`;
+const usePrompt = KIND === 'script' ? scriptPrompt : promptText;
+const useImg = KIND === 'script' ? null : img;   // kịch bản video không cần vision
+
 const content = [];
-if (img) content.push({ type: 'image', source: { type: 'base64', media_type: img.mt, data: img.b64 } });
-content.push({ type: 'text', text: promptText });
+if (useImg) content.push({ type: 'image', source: { type: 'base64', media_type: useImg.mt, data: useImg.b64 } });
+content.push({ type: 'text', text: usePrompt });
 
 if (!KEY) { console.error('❌ Thiếu CLAUDE_API_KEY secret trên render-backend'); process.exit(1); }
 const r = await fetch('https://api.anthropic.com/v1/messages', {
   method: 'POST',
   headers: { 'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-  body: JSON.stringify({ model: MODEL, max_tokens: isImg ? Math.min(1300, Math.round(LEN_MAX * 2.2) + 340) : 1200, messages: [{ role: 'user', content }] }),
+  body: JSON.stringify({ model: MODEL, max_tokens: KIND === 'script' ? Math.min(2400, WTARGET * 4 + 300) : (isImg ? Math.min(1300, Math.round(LEN_MAX * 2.2) + 340) : 1200), messages: [{ role: 'user', content }] }),
 });
 const j = await r.json();
 if (!r.ok) { console.error('❌ Claude lỗi', r.status, JSON.stringify(j?.error || j).slice(0, 220)); process.exit(1); }
@@ -110,5 +136,11 @@ caption = caption
   .replace(/\*\*/g, '')             // bỏ ** đậm
   .replace(/^[ \t]*[-*][ \t]+/gm, '')   // bỏ gạch đầu dòng '- ' / '* '
   .trim();
+// KỊCH BẢN LỜI ĐỌC: dọn triệt để hashtag + nhãn/tiêu đề nếu AI lỡ thêm (kịch bản chỉ là lời đọc).
+if (KIND === 'script') caption = caption
+  .replace(/#[\p{L}0-9_]+/gu, '')                                                  // bỏ mọi hashtag
+  .replace(/^\s*(hook|caption|hashtag|kịch bản|tiêu đề|lời đọc|voiceover)\s*[:：].*$/gim, '')   // bỏ dòng nhãn
+  .replace(/\n{3,}/g, '\n\n').replace(/[ \t]{2,}/g, ' ').trim();
+if (!caption) { console.error('❌ Nội dung rỗng sau khi dọn'); process.exit(1); }
 fs.writeFileSync('caption_out.txt', caption);
-console.log('✅ Caption (' + (DRAFT ? 'biên tập' : (img ? 'có nhìn ảnh' : 'theo chủ đề')) + '):', caption.slice(0, 90).replace(/\n/g, ' '));
+console.log('✅ ' + (KIND === 'script' ? `Kịch bản ~${caption.split(/\s+/).length} từ` : 'Caption') + ' (' + (DRAFT ? 'biên tập' : (img && KIND !== 'script' ? 'có nhìn ảnh' : 'theo chủ đề')) + '):', caption.slice(0, 90).replace(/\n/g, ' '));
