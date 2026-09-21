@@ -116,9 +116,12 @@ let images = [];
 try { images = JSON.parse(process.env.OWN_IMAGES || '[]'); } catch (e) { images = []; }
 images = (images || []).map((u) => String(u).trim()).filter(Boolean).slice(0, NEED);
 if (images.length === 0) {   // KHÔNG có ảnh riêng/đã lưu → lấy STOCK theo từ khoá. Có rồi → dùng ĐÚNG bộ đó (build.py xoay vòng), không trộn.
-  const q = stockQuery(`${TITLE} ${BRANDKW}`);
+  // BÁM CHỦ ĐỀ + LINH ĐỘNG NGÁCH: ưu tiên `spec.topic` do AI sinh (tiếng Anh, KHỚP đúng nội dung + ngách dự án này)
+  //   → KHÔNG bó cứng ngách phụ nữ/kinh doanh. Thiếu topic → fallback từ khoá/tiêu đề.
+  const topic = String(spec.topic || '').trim();
+  const q = (topic && /[a-z]/i.test(topic) && topic.length >= 3) ? topic : stockQuery(`${TITLE} ${BRANDKW}`);
   images = await fetchStock(q, NEED);
-  console.log(`  ảnh stock: ${images.length} (q="${q}")`);
+  console.log(`  ảnh stock: ${images.length} (q="${q}", topic AI="${topic}")`);
 } else {
   console.log(`  ảnh có sẵn (Drive/đã lưu): ${images.length}`);
 }

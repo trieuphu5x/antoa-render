@@ -149,9 +149,11 @@ let images = articleImages();
 console.log(`  ảnh bài báo (shots): ${images.length}`);
 if (images.length < 2) {
   const kwAll = `${TITLE} ${BRANDKW}`;
-  const q = /du lịch|du lich|điểm đến|diem den|travel|biển|beach|resort|ẩm thực|am thuc|food|cảnh|check.?in/i.test(kwAll)
-    ? 'vietnam travel destination scenery landscape'
-    : (/giải trí|showbiz|sao|phim|nhạc|star|celeb/i.test(kwAll) ? 'vietnamese celebrity entertainment stage' : 'entertainment concert crowd stage');
+  const topic = String(spec.topic || '').trim();   // BÁM CHỦ ĐỀ: ưu tiên topic AI (tiếng Anh, khớp nội dung) → linh động theo ngách, không bó cứng
+  const q = (topic && /[a-z]/i.test(topic) && topic.length >= 3) ? topic
+    : (/du lịch|du lich|điểm đến|diem den|travel|biển|beach|resort|ẩm thực|am thuc|food|cảnh|check.?in/i.test(kwAll)
+      ? 'vietnam travel destination scenery landscape'
+      : (/giải trí|showbiz|sao|phim|nhạc|star|celeb/i.test(kwAll) ? 'vietnamese celebrity entertainment stage' : 'entertainment concert crowd stage'));
   const bu = await fetchStock(q, 8 - images.length);
   images = [...images, ...bu];
   console.log(`  bù stock: ${bu.length} (tổng ${images.length})`);
