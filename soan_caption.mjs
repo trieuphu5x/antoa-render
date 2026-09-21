@@ -41,21 +41,40 @@ async function fetchImageB64() {
 }
 
 const img = await fetchImageB64();
+const isImg = TYPE !== 'video';   // Content Ảnh → xuất 3 khối Hook/Caption/Hashtag; video → giữ freeform (dòng đầu = tiêu đề)
 const brandBlock = BRAND_NAME
   ? `\nThương hiệu: ${BRAND_NAME}.${BRAND_KW ? ` Từ khoá chính (bám sát): ${BRAND_KW}.` : ''}${BRAND_PERSONA ? ` Giọng thương hiệu: ${BRAND_PERSONA}.` : ''}`
   : '';
+// ĐỘ DÀI = giới hạn CỨNG (LLM hay vượt nếu để mờ) — nói dứt khoát + đặt nổi bật.
+const lenLine = `ĐỘ DÀI phần Caption (GIỚI HẠN CỨNG): ${LEN_MIN}–${LEN_MAX} ký tự, KHÔNG tính hashtag. TUYỆT ĐỐI KHÔNG vượt ${LEN_MAX} ký tự — thà ngắn gọn, súc tích, chạm; KHÔNG lan man kéo dài.`;
+// BÁM ẢNH MỀM (Boss chốt): ảnh cảm xúc/minh hoạ → KHÔNG ép mô tả ảnh, tránh ẩn dụ gượng (vd biến người đọc thành cái cây/lá).
+const imgLineGen = img ? (isImg
+  ? 'ẢNH đính kèm chỉ để tham khảo KHÔNG KHÍ. CHỈ nhắc/mô tả ảnh nếu nó THỰC SỰ khớp chủ đề; nếu ảnh chỉ là minh hoạ/nền cảm xúc thì ĐỪNG mô tả ảnh, ĐỪNG dựng ẩn dụ gượng ép từ ảnh.'
+  : 'ẢNH đính kèm = bối cảnh THẬT (chủ thể, hành động, cảm xúc). Dùng chi tiết trong ảnh làm minh hoạ sống động.') : '';
+const imgLineEdit = img ? (isImg
+  ? 'ẢNH đính kèm chỉ tham khảo không khí — KHÔNG ép mô tả ảnh nếu không khớp chủ đề.'
+  : 'ẢNH đính kèm = bối cảnh THẬT — bám sát khi biên tập.') : '';
+const formatImg = `ĐỊNH DẠNG ĐẦU RA (BẮT BUỘC) — trả về ĐÚNG 3 khối, MỖI NHÃN nằm đầu một dòng riêng (giữ nguyên chữ nhãn), KHÔNG thêm gì khác:
+Hook: <1 câu tiêu đề/hook đắt, dừng-lướt — KHÔNG hashtag; KHÔNG chép lại nguyên "chủ đề/gợi ý" của người dùng, hãy viết thành 1 câu hay>
+
+Caption: <thân bài mạch lạc, xuống dòng cho thoáng, dẫn tới 1 CTA MỀM ở cuối — ${LEN_MIN}–${LEN_MAX} ký tự>
+
+Hashtag: <4-6 hashtag bám từ khoá chính, cách nhau bằng dấu cách>`;
+const formatVid = `CẤU TRÚC: Dòng 1 = TIÊU ĐỀ/hook đắt, dừng-lướt (KHÔNG hashtag, KHÔNG chữ "Caption"). Thân bài mạch lạc, xuống dòng thoáng, dẫn tới 1 CTA MỀM. Cuối: 4-6 hashtag (ưu tiên từ khoá chính).`;
 const QUALITY = `CHẤT LƯỢNG (bắt buộc):
 - Áp dụng 1-2 CÔNG THỨC copywriting phù hợp: AIDA (Chú ý→Thích thú→Khao khát→Hành động) · PAS (Vấn đề→Khoáy sâu→Giải pháp) · Hook–Story–CTA · BAB (Trước→Sau→Cầu nối).
 - CHIỀU SÂU: có 1 insight/góc nhìn thật, chạm đúng nỗi đau hoặc khát khao của người đọc; tránh câu sáo rỗng, chung chung, "AI giọng".
-- Dòng 1 = TIÊU ĐỀ/hook đắt, dừng-lướt (KHÔNG hashtag, KHÔNG chữ "Caption"). Thân bài mạch lạc, xuống dòng thoáng, dẫn tới 1 CTA MỀM tự nhiên.
-- Cuối: 4-6 hashtag (ưu tiên từ khoá chính).
+- Chính tả CHUẨN tiếng Việt (vd "lạc lõng" không phải "lạc lõi"; ưu tiên "điều gì" thay "cái gì").
 
-ĐỘ DÀI: khoảng ${LEN_MIN}–${LEN_MAX} ký tự (không tính hashtag) — viết đủ sâu trong khoảng này, không lan man cũng không cụt lủn.
-THUẦN VĂN BẢN tiếng Việt tự nhiên — TUYỆT ĐỐI KHÔNG markdown (không #, không **, không gạch đầu dòng). ${SAFETY}`;
+${lenLine}
+
+${isImg ? formatImg : formatVid}
+
+THUẦN VĂN BẢN tiếng Việt tự nhiên — TUYỆT ĐỐI KHÔNG markdown (không **, không gạch đầu dòng)${isImg ? '; giữ nguyên 3 nhãn Hook:/Caption:/Hashtag:' : ' (không # ở tiêu đề)'}. ${SAFETY}`;
 
 const promptText = DRAFT
   ? `Bạn là BIÊN TẬP VIÊN copywriting bậc thầy tiếng Việt. BIÊN TẬP LẠI caption ${TYPE} dưới đây cho HAY HƠN cho kênh "${CHANNEL}" (${PLATFORM}).${brandBlock}
-${img ? 'ẢNH đính kèm = bối cảnh THẬT — bám sát khi biên tập.' : ''}${TOPIC ? `\nĐịnh hướng chủ đề (bám sát): "${TOPIC}".` : ''}
+${imgLineEdit}${TOPIC ? `\nĐịnh hướng chủ đề (bám sát): "${TOPIC}".` : ''}
 GIỮ NGUYÊN ý chính, thông điệp & thông tin của người dùng — KHÔNG đổi nội dung cốt lõi, KHÔNG bịa thêm số liệu/thông tin mới. Chỉ NÂNG CHẤT: hook đắt hơn, mạch lạc hơn, chạm cảm xúc/insight thật, bỏ câu sáo rỗng "giọng AI".
 
 NỘI DUNG GỐC CẦN BIÊN TẬP:
@@ -65,9 +84,9 @@ ${DRAFT}
 
 ${QUALITY}`
   : `Bạn là COPYWRITER social bậc thầy tiếng Việt. Viết 1 caption ${TYPE} cho kênh "${CHANNEL}" (${PLATFORM}).${brandBlock}
-${img ? 'ẢNH đính kèm = bối cảnh THẬT (chủ thể, hành động, cảm xúc, không gian). Dùng chi tiết trong ảnh làm minh hoạ sống động.' : ''}
-Ý ĐỒ NGƯỜI DÙNG (chủ đề/góc — GỢI Ý ĐỊNH HƯỚNG, bám sát): "${TOPIC || '(tự đề xuất theo ảnh)'}".
-KẾT HỢP: lấy ${img ? 'HÌNH ẢNH THẬT + ' : ''}Ý ĐỒ NGƯỜI DÙNG làm CỐT LÕI thông điệp — nội dung phải đúng điều người dùng muốn truyền tải, tuyệt đối không lạc đề.
+${imgLineGen}
+Ý ĐỒ NGƯỜI DÙNG (chủ đề/góc — GỢI Ý ĐỊNH HƯỚNG, KHÔNG dùng làm tiêu đề): "${TOPIC || '(tự đề xuất theo ảnh)'}".
+KẾT HỢP: lấy ${img && !isImg ? 'HÌNH ẢNH THẬT + ' : ''}Ý ĐỒ NGƯỜI DÙNG làm CỐT LÕI thông điệp — nội dung phải đúng điều người dùng muốn truyền tải, tuyệt đối không lạc đề.
 
 ${QUALITY}`;
 
@@ -79,7 +98,7 @@ if (!KEY) { console.error('❌ Thiếu CLAUDE_API_KEY secret trên render-backen
 const r = await fetch('https://api.anthropic.com/v1/messages', {
   method: 'POST',
   headers: { 'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-  body: JSON.stringify({ model: MODEL, max_tokens: 1200, messages: [{ role: 'user', content }] }),
+  body: JSON.stringify({ model: MODEL, max_tokens: isImg ? Math.min(1300, Math.round(LEN_MAX * 2.2) + 340) : 1200, messages: [{ role: 'user', content }] }),
 });
 const j = await r.json();
 if (!r.ok) { console.error('❌ Claude lỗi', r.status, JSON.stringify(j?.error || j).slice(0, 220)); process.exit(1); }
