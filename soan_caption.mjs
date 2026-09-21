@@ -59,8 +59,8 @@ Hook: <1 câu tiêu đề/hook đắt, dừng-lướt — KHÔNG hashtag; KHÔNG
 
 Caption: <thân bài mạch lạc, xuống dòng cho thoáng, dẫn tới 1 CTA MỀM ở cuối — ${LEN_MIN}–${LEN_MAX} ký tự>
 
-Hashtag: <4-6 hashtag bám từ khoá chính, cách nhau bằng dấu cách>`;
-const formatVid = `CẤU TRÚC: Dòng 1 = TIÊU ĐỀ/hook đắt, dừng-lướt (KHÔNG hashtag, KHÔNG chữ "Caption"). Thân bài mạch lạc, xuống dòng thoáng, dẫn tới 1 CTA MỀM. Cuối: 4-6 hashtag (ưu tiên từ khoá chính).`;
+Hashtag: <4-6 hashtag ĐA DẠNG rút từ CHÍNH Ý & CẢM XÚC của bài (mỗi hashtag một khía cạnh khác nhau: chủ đề, insight, cảm xúc, hành động) — KHÔNG lặp đi lặp lại 1 từ khoá, KHÔNG nhồi tên/từ khoá kênh; TỐI ĐA 1 hashtag thương hiệu>`;
+const formatVid = `CẤU TRÚC: Dòng 1 = TIÊU ĐỀ/hook đắt, dừng-lướt (KHÔNG hashtag, KHÔNG chữ "Caption"). Thân bài mạch lạc, xuống dòng thoáng, dẫn tới 1 CTA MỀM. Cuối: 4-6 hashtag ĐA DẠNG theo Ý & CẢM XÚC của bài (mỗi cái một khía cạnh, KHÔNG lặp 1 từ khoá, tối đa 1 hashtag thương hiệu).`;
 const QUALITY = `CHẤT LƯỢNG (bắt buộc):
 - Áp dụng 1-2 CÔNG THỨC copywriting phù hợp: AIDA (Chú ý→Thích thú→Khao khát→Hành động) · PAS (Vấn đề→Khoáy sâu→Giải pháp) · Hook–Story–CTA · BAB (Trước→Sau→Cầu nối).
 - CHIỀU SÂU: có 1 insight/góc nhìn thật, chạm đúng nỗi đau hoặc khát khao của người đọc; tránh câu sáo rỗng, chung chung, "AI giọng".
