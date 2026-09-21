@@ -91,6 +91,7 @@ jobs:
           SOURCE: ${{ github.event.client_payload.meta.source }}
           SPEC_VOICE: ${{ github.event.client_payload.voice || github.event.inputs.voice }}
           IMG_MODE: ${{ github.event.client_payload.meta.imgMode }}     # 'article' = Tin tức VN → video dài ~85s (10-12 cảnh)
+          TARGET_SEC: ${{ github.event.client_payload.meta.targetSec }} # ⏱ thời lượng đích (giây) — soan_canh tính số cảnh (~8s/cảnh); rỗng/0 = mặc định 7-8 cảnh
           VERBATIM: ${{ github.event.client_payload.meta.verbatim }}    # '1' = dùng ĐÚNG NGUYÊN VĂN kịch bản Boss sửa (không viết lại lời)
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}                 # Mẫu Slide Tạp Chí: ảnh free theo từ khoá (link động, không lưu)
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}

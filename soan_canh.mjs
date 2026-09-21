@@ -14,7 +14,12 @@ const SLOGAN = (process.env.SLOGAN || '').trim() || 'Theo dõi để cập nhậ
 const SOURCE = (process.env.SOURCE || '').trim();                                            // NGUỒN THẬT (masthead góc trên + "Nguồn:" dưới) — KHÔNG mặc định VnExpress
 const IMG_MODE = (process.env.IMG_MODE || '').trim();                                        // 'article' = TIN TỨC VN → video DÀI hơn (~85s) vì bài VN dày số liệu
 const VERBATIM = process.env.VERBATIM === '1';                                               // 1 = dùng ĐÚNG NGUYÊN VĂN kịch bản Boss đã sửa (ARTICLE = kịch bản), KHÔNG để Claude viết lại lời
-const NSCENES = IMG_MODE === 'article' ? '10-12' : '7-8';                                    // VN: 10-12 cảnh (~85s); News: 7-8 (~60s) — GIỮ NGUYÊN
+// ⏱ ĐỘ DÀI VIDEO (Sản Xuất tay): TARGET_SEC (giây) → số cảnh (~8s/cảnh). Rỗng/0 = mặc định (VN 10-12 · News 7-8). CHỈ áp khi AI TỰ viết (verbatim bỏ qua path này).
+const TARGET_SEC = Math.min(210, Math.max(0, Number(process.env.TARGET_SEC) || 0));
+const SCENE_MAP = { 60: '7-8', 90: '11-12', 120: '15-16', 150: '19-20', 180: '22-24' };       // khớp 5 mức UI (1′/1′30/2′/2′30/3′)
+const NSCENES = TARGET_SEC
+  ? (SCENE_MAP[TARGET_SEC] || `${Math.floor(TARGET_SEC / 8)}-${Math.floor(TARGET_SEC / 8) + 2}`)
+  : (IMG_MODE === 'article' ? '10-12' : '7-8');
 const MAXTOK = IMG_MODE === 'article' ? 3800 : 2600;                                         // VN nhiều cảnh → nới token
 
 // #1 ẢNH BÀI GỐC: đọc manifest do chup.mjs ghi (nếu chụp thành công). Ảnh ĐẦU (hl.png) vào cảnh HOOK → thumbnail.
@@ -43,7 +48,7 @@ ${SHOTS.map((s, i) => `- Ảnh ${i + 1} (${s.kind === 'stock' ? 'MINH HOẠ' : s
 LUẬT DÙNG ẢNH: ĐẶT ảnh đầu "${SHOTS[0].file}" VÀO CẢNH HOOK s1 (làm thumbnail) — s1 = <div class="mid">[head hook] + [thẻ .card ảnh đầu]</div>. Ảnh còn lại rải 1-2 cảnh giữa. Giữ NGUYÊN src+style, đặt TRONG <div class="mid">.
 ` : '';
 
-const PROMPT = `Bạn là biên tập viên video tin ngắn 9:16 (kênh kiểu "AI Có Gì Mới"). Việt hoá tin dưới đây thành KỊCH BẢN VIDEO gồm ${NSCENES} CẢNH${IMG_MODE === 'article' ? ' (tin Việt Nam nhiều số liệu — khai thác SÂU, mỗi cảnh 1 ý/1 con số rõ, KHÔNG lặp; đủ dày cho video ~85 giây)' : ''}, trả về DUY NHẤT một JSON hợp lệ (không markdown, không giải thích).
+const PROMPT = `Bạn là biên tập viên video tin ngắn 9:16 (kênh kiểu "AI Có Gì Mới"). Việt hoá tin dưới đây thành KỊCH BẢN VIDEO gồm ${NSCENES} CẢNH${TARGET_SEC ? ` (mỗi cảnh 1 câu lời đọc ~8 giây → tổng ĐỦ DÀY cho video ~${TARGET_SEC} giây; khai thác sâu, mỗi cảnh 1 ý rõ, KHÔNG lặp, KHÔNG kéo lê)` : (IMG_MODE === 'article' ? ' (tin Việt Nam nhiều số liệu — khai thác SÂU, mỗi cảnh 1 ý/1 con số rõ, KHÔNG lặp; đủ dày cho video ~85 giây)' : '')}, trả về DUY NHẤT một JSON hợp lệ (không markdown, không giải thích).
 
 TIN: "${TITLE}"
 NỘI DUNG GỐC: """${ARTICLE.slice(0, 2400)}"""
