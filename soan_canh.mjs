@@ -126,8 +126,24 @@ ${lines.map((l, i) => `${i + 1}. ${l}`).join('\n')}`;
     const inner = `<div class="mid"><div class="kick anim">${KICK[i % KICK.length]}</div><div class="head h-md anim">${hiHead(head)}</div>${lede ? `<div class="lede anim">${esc(lede)}</div>` : ''}</div>`;
     return { id: `s${i + 1}`, inner, vo };   // vo NGUYÊN VĂN 100%
   });
-  const desc = lines.slice(0, 2).join(' ').slice(0, 180);
-  return { palette: P, caption: { title: TITLE || '', desc }, scenes };
+  // #2 CAPTION ĐĂNG CHUẨN (học bên ảnh — CHỈ luồng thủ công/verbatim): Claude đọc kịch bản → Hook + caption + 3-5 hashtag ĐA DẠNG.
+  //    Thay title=chủ-đề-thô + hashtag nghèo. Lỗi → fallback (TITLE + 2 dòng đầu) như cũ.
+  let capTitle = '', capDesc = lines.slice(0, 2).join(' ').slice(0, 180), capTags = [];
+  if (KEY) {
+    try {
+      const cp = `Từ KỊCH BẢN video tiếng Việt dưới đây, viết CAPTION ĐĂNG mạng xã hội. Trả DUY NHẤT JSON hợp lệ:
+{"title":"<Hook/tiêu đề đắt, dừng-lướt, 6-12 từ, KHÔNG hashtag, KHÔNG chép nguyên chủ đề>","desc":"<1-2 câu tóm ý chính + 1 CTA mềm, tự nhiên>","hashtags":["#Tag1","#Tag2","#Tag3","#Tag4"]}
+hashtags: 4-6 cái ĐA DẠNG rút từ Ý & CẢM XÚC của bài (mỗi cái một khía cạnh khác nhau), KHÔNG lặp đi lặp lại 1 từ khoá, KHÔNG nhồi tên kênh, tối đa 1 hashtag thương hiệu.
+An toàn nền tảng: KHÔNG hứa thu nhập, KHÔNG giật gân/clickbait, KHÔNG comment-bait.
+KỊCH BẢN:
+"""${String(scriptText || '').slice(0, 2200)}"""
+Chỉ in JSON.`;
+      const rc = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' }, body: JSON.stringify({ model: MODEL, max_tokens: 500, messages: [{ role: 'user', content: cp }] }) });
+      if (rc.ok) { const jc = await rc.json(); const raw = (jc?.content || []).map((b) => b.text || '').join(''); const m = raw.match(/\{[\s\S]*\}/); if (m) { const o = JSON.parse(m[0]); if (o.title) capTitle = String(o.title).replace(/#[\p{L}0-9_]+/gu, '').replace(/\s+/g, ' ').trim().slice(0, 90); if (o.desc) capDesc = String(o.desc).trim().slice(0, 220); if (Array.isArray(o.hashtags)) capTags = o.hashtags.filter((t) => typeof t === 'string' && /^#[\p{L}0-9_]+$/u.test(t.trim())).map((t) => t.trim()).slice(0, 6); } console.log(`✓ Caption verbatim: hook="${capTitle}" · ${capTags.length} hashtag`); }
+    } catch (e) { console.log('verbatim: caption Claude lỗi → fallback', e.message); }
+  }
+  const descFull = [capDesc, capTags.join(' ')].map((s) => s.trim()).filter(Boolean).join(' ').slice(0, 400);   // render.mjs sẽ tách hashtag ra cụm riêng
+  return { palette: P, caption: { title: capTitle || String(TITLE || '').slice(0, 90), desc: descFull }, scenes };
 }
 let spec;
 if (VERBATIM) {
