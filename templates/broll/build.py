@@ -96,8 +96,6 @@ OVERLAY_HTML = """<!doctype html><html lang="vi"><head><meta charset="utf-8">
   .body{{margin-top:30px;color:rgba(255,255,255,.94);font-weight:500;font-size:40px;line-height:1.36;
      text-shadow:0 2px 16px rgba(0,0,0,.55)}}
   .body b{{font-weight:700;color:#fff}}
-  .foot{{margin-top:34px;font-family:"JetBrains Mono",monospace;font-size:22px;letter-spacing:.14em;
-     text-transform:uppercase;color:rgba(255,255,255,.62)}}
 </style></head><body>
   <div class="scrim"></div>
   {pill}
@@ -105,7 +103,6 @@ OVERLAY_HTML = """<!doctype html><html lang="vi"><head><meta charset="utf-8">
     <div class="kicker">{kicker}</div>
     <div class="head">{head}</div>
     <div class="body">{body}</div>
-    <div class="foot">{footer}</div>
   </div>
 </body></html>"""
 
@@ -154,9 +151,9 @@ def _body_html(sub):
 
 def render_overlay(work, i, sc, chrome, accent, pillbg):
     pill = f'<div class="pill"><span class="star">✱</span>{html.escape(BRAND)}</div>' if BRAND else ""
-    footer = html.escape(SLOGAN) if SLOGAN else "VIDEO EDITORIAL · 9:16"
+    # (Boss chốt) BỎ HẲN footer "VIDEO EDITORIAL · 9:16"/slogan — cả auto lẫn thủ công. Thương hiệu đã hiện ở pill trên.
     doc = OVERLAY_HTML.format(pill=pill, kicker=html.escape(str(sc.get("kick", "")).strip()),
-                              head=_head_html(sc.get("head")), body=_body_html(sc.get("sub")), footer=footer,
+                              head=_head_html(sc.get("head")), body=_body_html(sc.get("sub")),
                               accent=accent, pillbg=pillbg)
     hp = os.path.join(work, f"ov{i}.html"); open(hp, "w", encoding="utf-8").write(doc)
     png = os.path.join(work, f"ov{i}.png")
