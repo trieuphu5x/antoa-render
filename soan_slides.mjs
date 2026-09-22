@@ -74,7 +74,7 @@ KHÔNG kí tự < > trong args. Chỉ in JSON.`;
 let spec;
 if (VERBATIM) {
   // KỊCH BẢN DÁN THỦ CÔNG → mỗi câu = 1 slide, lời đọc GIỮ NGUYÊN 100%. slides rỗng → build.py tự làm TEXT slide (luôn đọc được).
-  const vs = await verbatimScenes(ARTICLE, { key: KEY, model: MODEL, title: TITLE, max: 60 });
+  const vs = await verbatimScenes(ARTICLE, { key: KEY, model: MODEL, title: TITLE, max: 90 });
   spec = { num: '01', caption: { title: TITLE, desc: '' }, script: vs.map((s) => s.vo), slides: [] };
   console.error(`✓ VERBATIM slides: ${vs.length} câu giữ NGUYÊN lời đọc`);
 } else {

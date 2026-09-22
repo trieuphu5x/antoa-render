@@ -47,7 +47,7 @@ Chỉ in JSON.`;
 
 let spec;
 if (VERBATIM) {
-  const vs = await verbatimScenes(ARTICLE, { key: KEY, model: MODEL, title: TITLE, max: 60 });
+  const vs = await verbatimScenes(ARTICLE, { key: KEY, model: MODEL, title: TITLE, max: 90 });
   spec = { num: '01', scenes: vs.map((s) => ({ query: s.head || TITLE, kick: '', head: [s.head], sub: s.lede, vo: s.vo })) };
   console.error(`✓ VERBATIM broll: ${vs.length} câu giữ NGUYÊN lời đọc`);
 } else {

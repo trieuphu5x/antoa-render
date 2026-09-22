@@ -26,7 +26,7 @@ Chỉ in JSON.`;
 
 let spec;
 if (VERBATIM) {
-  const vs = await verbatimScenes(ARTICLE, { key: KEY, model: MODEL, title: TITLE, max: 60 });
+  const vs = await verbatimScenes(ARTICLE, { key: KEY, model: MODEL, title: TITLE, max: 90 });
   spec = { scenes: vs.map((s) => ({ query: (s.head || TITLE).replace(/\*/g, ''), cap: (s.head || '').replace(/\*/g, ''), vo: s.vo })) };   // cap không dùng *…* → bỏ dấu nhấn
   console.error(`✓ VERBATIM broll2: ${vs.length} câu giữ NGUYÊN lời đọc`);
 } else {

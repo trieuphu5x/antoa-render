@@ -90,7 +90,7 @@ Chỉ in JSON.`;
 // đẹp — KHÔNG nhét cả câu vào head (tránh bức tường chữ hoa). Claude lỗi → fallback tách câu (head = cụm đầu, lede = phần còn lại).
 async function buildVerbatimSpec(scriptText) {
   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  let lines = cleanScriptLines(scriptText, 60);   // giữ câu thoại sạch verbatim — cap 60 (đồng nhất MỌI mẫu để 1 kịch bản = cùng lời đọc/độ dài; script hợp lệ ≤3,5′ ≈ ≤41 câu nên KHÔNG bao giờ cắt)
+  let lines = cleanScriptLines(scriptText, 90);   // giữ câu thoại sạch verbatim — cap 90 (MỞ luồng thủ công: đồng nhất MỌI mẫu, không cắt kịch bản ≤3,5′; render tự cap 210s)
   if (!lines.length) lines = [String(TITLE || 'Tin mới')];
   const KICK = ['Điểm chính', 'Chi tiết', 'Đáng chú ý', 'Bối cảnh', 'Con số', 'Diễn biến', 'Kết luận'];
   const P = /kinh doanh|thị trường|lợi nhuận|tỉ đồng|doanh nghiệp|tài chính|cổ phiếu|tăng trưởng/i.test(scriptText) ? 'biz'
