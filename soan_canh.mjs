@@ -10,7 +10,7 @@ const ARTICLE = process.env.ARTICLE || '';
 const BRANDKW = process.env.BRANDKW || 'AI Agent, tự động hoá';
 const PERSONA = (process.env.BRAND_PERSONA || '').trim();   // giọng thương hiệu của dự án (News/vnnews) — nhất quán với Evergreen/Trend
 const BRAND_LABEL = (process.env.BRAND_LABEL || '').trim() || 'ANTOA';                       // tên hiện cuối video (theo workflow)
-const SLOGAN = (process.env.SLOGAN || '').trim() || 'Theo dõi để cập nhật mỗi ngày.';        // slogan cuối video (theo workflow)
+const SLOGAN = (process.env.SLOGAN || '').trim() || (process.env.VERBATIM === '1' ? '' : 'Theo dõi để cập nhật mỗi ngày.');   // slogan cuối video. THỦ CÔNG (verbatim): KHÔNG slogan mặc định (Boss chốt) · AUTO: giữ mặc định
 const SOURCE = (process.env.SOURCE || '').trim();                                            // NGUỒN THẬT (masthead góc trên + "Nguồn:" dưới) — KHÔNG mặc định VnExpress
 const IMG_MODE = (process.env.IMG_MODE || '').trim();                                        // 'article' = TIN TỨC VN → video DÀI hơn (~85s) vì bài VN dày số liệu
 const VERBATIM = process.env.VERBATIM === '1';                                               // 1 = dùng ĐÚNG NGUYÊN VĂN kịch bản Boss đã sửa (ARTICLE = kịch bản), KHÔNG để Claude viết lại lời
