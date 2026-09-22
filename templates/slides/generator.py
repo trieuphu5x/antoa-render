@@ -16,7 +16,7 @@ ASSETS = os.path.join(HERE, "assets")
 CHANNEL = ASSETS            # gói tự chứa: _template/_slides-catalog/image nằm trong assets/
 FFPROBE = os.environ.get("FFPROBE", "ffprobe")
 # THƯƠNG HIỆU đa-tenant: masthead/outro lấy từ workflow (BRAND_LABEL/SLOGAN), KHÔNG hardcode "Agent Thực Chiến"/SAB.
-BRAND_LABEL = (os.environ.get("BRAND_LABEL") or "").strip() or "ANTOA"
+BRAND_LABEL = (os.environ.get("BRAND_LABEL") or "").strip() or ("" if os.environ.get("VERBATIM") == "1" else "ANTOA")   # THỦ CÔNG để trống = rỗng (outro không hiện gì)
 SLOGAN = (os.environ.get("SLOGAN") or "").strip()
 sys.path.insert(0, HERE)   # slidelib + vbee_tts cạnh generator
 
@@ -73,6 +73,8 @@ def build_scene(i, s, d, ti, sent, spec, variant):
 
 def build_outro(i, s, d, ti, sab_img=False):
     # Cảnh cuối = THƯƠNG HIỆU của workflow (BRAND_LABEL + SLOGAN). KHÔNG ảnh SAB, KHÔNG hardcode Agent Thực Chiến.
+    if not BRAND_LABEL and not SLOGAN:
+        return _wrap(i, s, d, ti, ''), []   # để TRỐNG (thủ công không nhập tên) → outro KHÔNG hiện gì (Boss chốt)
     bl = html.escape(BRAND_LABEL)
     sub = f'<div class="sub anim" style="margin-top:28px;text-align:center">{html.escape(SLOGAN)}</div>' if SLOGAN else ''
     # Outro = HOÀN TOÀN theo workflow: chỉ Tên cuối (BRAND_LABEL) + Slogan. BỎ dòng hardcode "Theo dõi để không bỏ lỡ →".

@@ -1,7 +1,7 @@
 // Soạn SPEC cho mẫu "slides" (Agent Thực Chiến) → spec.json cho templates/slides/build.py.
 // TRIẾT LÝ (Boss chốt): mỗi CÂU → CHỌN kiểu slide HỢP nội dung câu đó (KHÔNG random/ép câu vào kiểu). Nội dung đa dạng → video tự nhiên nhiều kiểu. Nonce chỉ để 2 video CÙNG chủ đề đỡ giống nhau.
 import { writeFileSync } from 'node:fs';
-import { verbatimScenes } from './soan_util.mjs';
+import { verbatimScenes, captionFor } from './soan_util.mjs';
 
 const KEY = process.env.CLAUDE_API_KEY;
 const MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001';
@@ -75,8 +75,12 @@ let spec;
 if (VERBATIM) {
   // KỊCH BẢN DÁN THỦ CÔNG → mỗi câu = 1 slide, lời đọc GIỮ NGUYÊN 100%. slides rỗng → build.py tự làm TEXT slide (luôn đọc được).
   const vs = await verbatimScenes(ARTICLE, { key: KEY, model: MODEL, title: TITLE, max: 90 });
-  spec = { num: '01', caption: { title: TITLE, desc: '' }, script: vs.map((s) => s.vo), slides: [] };
-  console.error(`✓ VERBATIM slides: ${vs.length} câu giữ NGUYÊN lời đọc`);
+  const cap = await captionFor(ARTICLE, { key: KEY, model: MODEL, title: TITLE, brandkw: BRANDKW });   // #B: sinh tiêu đề SEO + caption + hashtag (như broll/news) thay vì title=câu đầu, desc rỗng
+  // #C (Boss chốt): CHỮ LÊN SLIDE = ý chính CÔ ĐỌNG (head TO + lede nhỏ, ~4-6 dòng), KHÔNG nhồi cả câu. Lời ĐỌC (script) vẫn full vo.
+  const cclean = (s) => String(s || '').replace(/[<>|*]/g, ' ').replace(/\s+/g, ' ').trim();
+  const dispSlides = vs.map((s, i) => { const h = cclean(s.head), l = cclean(s.lede); return h.length >= 3 ? `${i + 1} | BIGTEXT |  | ${h}${l ? ` :: ${l}` : ''}` : ''; }).filter(Boolean);
+  spec = { num: '01', caption: { title: cap.title || TITLE, desc: cap.desc || '' }, script: vs.map((s) => s.vo), slides: dispSlides };
+  console.error(`✓ VERBATIM slides: ${vs.length} câu · caption "${(cap.title || '').slice(0, 40)}" · ${dispSlides.length} slide cô đọng`);
 } else {
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
