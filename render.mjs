@@ -52,7 +52,7 @@ if (!spec) { console.error(`[render] Thiếu SPEC cho mẫu "${TEMPLATE}" — To
 // ===== TRẦN CỨNG THỜI LƯỢNG (van an toàn MỌI mẫu) — ước lượng từ lời đọc, cắt cảnh vượt trần, GIỮ outro =====
 // Kịch bản THỦ CÔNG vượt trần đã bị CHẶN từ Tower (không tới đây). Đây là chốt chặn cuối cho AI-sinh lỡ dài.
 const MAX_DUR = Math.max(60, Number(process.env.MAX_DUR_SEC) || 210);   // mặc định 3.5 phút
-const CPS = 14;   // ký tự/giây tiếng Việt (ước lượng thời lượng lời đọc)
+const CPS = 16;   // ký tự/giây tiếng Việt — calib từ số THẬT của Boss (~16,4 ký/giây, cả dấu cách). CPS=14 cũ ước lượng CAO ~17% → cắt oan câu cuối. Kịch bản ≤3150 ký tự ≈ ≤197s < trần 210s → KHÔNG cắt.
 if (Array.isArray(spec.scenes) && spec.scenes.length) {
   const last = spec.scenes[spec.scenes.length - 1];
   const outro = (last && (last.type === 'outro' || /outro|sO$/.test(String(last.id || '')))) ? last : null;
@@ -66,9 +66,15 @@ if (Array.isArray(spec.scenes) && spec.scenes.length) {
   if (kept.length < body.length) console.log(`[render] ⚠ TRẦN ${MAX_DUR}s: giữ ${kept.length}/${body.length} cảnh (~${Math.round(acc)}s), cắt phần dư`);
   spec.scenes = outro ? [...kept, outro] : kept;
 }
-if (Array.isArray(spec.script)) {                                        // slides: mảng câu (~8s/câu)
-  const CAP_LINES = Math.floor(MAX_DUR / 8);
-  if (spec.script.length > CAP_LINES) { console.log(`[render] ⚠ TRẦN: slides ${spec.script.length}→${CAP_LINES} câu`); spec.script = spec.script.slice(0, CAP_LINES); }
+if (Array.isArray(spec.script)) {                                        // slides/phunu-arr: mảng câu → cắt theo DURATION (đồng nhất với scenes, KHÔNG theo số câu cứng → 1 kịch bản ra cùng độ dài mọi mẫu)
+  let acc = 0; const kept = [];
+  for (const s of spec.script) {
+    const d = Math.max(2, String(s || '').length / CPS + 0.3);
+    if (acc + d > MAX_DUR) break;
+    acc += d; kept.push(s);
+  }
+  if (kept.length < spec.script.length) console.log(`[render] ⚠ TRẦN ${MAX_DUR}s: slides giữ ${kept.length}/${spec.script.length} câu (~${Math.round(acc)}s)`);
+  spec.script = kept;
 }
 
 // ---- 3) giọng đọc → nạp vào spec + env cho builder ----
