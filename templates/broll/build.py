@@ -212,8 +212,9 @@ def scene_filter(sc):
         y += fs + 10
     if sc.get("sub"):
         parts.append(dt(sc["sub"], 40, "white", 90, y + 12))
-    if BRAND:                                             # tên kênh đáy video — để TRỐNG = không hiện gì (Boss chốt)
-        parts.append(dt(BRAND, 40, "white", 90, 1748))
+    brand_txt = BRAND or ("" if os.environ.get("VERBATIM") == "1" else "ANTOA")   # THỦ CÔNG để trống = không hiện · AUTO giữ mặc định ANTOA
+    if brand_txt:
+        parts.append(dt(brand_txt, 40, "white", 90, 1748))
     return ",".join(p for p in parts if p)
 
 
