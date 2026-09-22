@@ -95,11 +95,13 @@ ${QUALITY}`;
 
 // ===== KỊCH BẢN LỜI ĐỌC (video): dài ĐÚNG thời lượng, KHÔNG hashtag/nhãn/hook-tiêu-đề — chỉ lời để đọc =====
 // Calib từ số THẬT (Boss test): 984 ký-tự-cả-cách ≈ 807 ký-tự-KHÔNG-cách → 60s ⇒ ~13.3 ký tự/giây (không tính dấu cách).
-const CHARS = TARGET_SEC ? Math.round(TARGET_SEC / 60 * 800) : (WORDS ? WORDS * 5 : 800);   // số ký tự (KHÔNG tính dấu cách) đích
+const CHARS = TARGET_SEC ? Math.round(TARGET_SEC / 60 * 800) : (WORDS ? WORDS * 5 : 800);   // số ký tự (KHÔNG tính dấu cách) ĐÍCH (hiển thị cho Boss)
+// AI đạt ~85% target & hay hụt → PAD target lên ~1.22× làm mốc "viết tới", CHARS làm SÀN tối thiểu. Cap 2450 để với-dấu-cách <3150 (trần 3,5′).
+const ASK = Math.min(2450, Math.round(CHARS * 1.22));
 const SEC_EST = TARGET_SEC || Math.round(CHARS / 800 * 60);
 const scriptPrompt = DRAFT
   ? `Bạn là biên kịch video ngắn tiếng Việt. BIÊN TẬP LẠI KỊCH BẢN LỜI ĐỌC (voiceover) dưới đây cho cuốn hơn, GIỮ ý chính.${brandBlock}${TOPIC ? `\nĐịnh hướng chủ đề: "${TOPIC}".` : ''}
-ĐỘ DÀI (QUAN TRỌNG): khoảng ${CHARS} ký tự (KHÔNG tính dấu cách), tương đương video ~${SEC_EST} giây — viết ĐẦY ĐỦ tới độ dài này, KHÔNG cắt ngắn, KHÔNG dừng sớm (thiếu là video bị ngắn).
+ĐỘ DÀI (BẮT BUỘC): viết khoảng ${ASK} ký tự (KHÔNG tính dấu cách), TỐI THIỂU ${CHARS} — tương đương video ~${SEC_EST} giây. PHẢI đủ dài: nếu chưa đủ ${CHARS} ký tự thì TRIỂN KHAI THÊM (thêm ý, ví dụ, dẫn chứng, góc nhìn), TUYỆT ĐỐI KHÔNG dừng sớm/cắt cụt (thiếu là video bị ngắn). Đừng vượt quá ${ASK}.
 CHỈ LỜI ĐỌC thuần (văn nói tự nhiên). TUYỆT ĐỐI KHÔNG hashtag, KHÔNG nhãn/tiêu đề ("Hook:", "Kịch bản:"…), KHÔNG markdown, KHÔNG ghi chú sản xuất/[nhạc]/tên cảnh. Mỗi ý 1 câu, xuống dòng giữa các câu.
 KỊCH BẢN GỐC:
 """
@@ -107,7 +109,7 @@ ${DRAFT}
 """
 ${SAFETY}`
   : `Bạn là biên kịch video ngắn tiếng Việt. Viết KỊCH BẢN LỜI ĐỌC (voiceover) cho video về chủ đề: "${TOPIC}".${brandBlock}
-ĐỘ DÀI (QUAN TRỌNG): khoảng ${CHARS} ký tự (KHÔNG tính dấu cách), tương đương video ~${SEC_EST} giây — BÁM SÁT, viết ĐẦY ĐỦ tới độ dài này, KHÔNG dừng sớm/cụt (thiếu là video bị ngắn), cũng đừng lố quá.
+ĐỘ DÀI (BẮT BUỘC): viết khoảng ${ASK} ký tự (KHÔNG tính dấu cách), TỐI THIỂU ${CHARS} — tương đương video ~${SEC_EST} giây. PHẢI đủ dài: nếu chưa đủ ${CHARS} ký tự thì TRIỂN KHAI THÊM (thêm ý, ví dụ, dẫn chứng, góc nhìn), TUYỆT ĐỐI KHÔNG dừng sớm/cắt cụt (thiếu là video bị ngắn). Đừng vượt quá ${ASK}.
 YÊU CẦU:
 - CHỈ là LỜI ĐỌC thuần (văn nói tự nhiên, cuốn, có cảm xúc) để người dẫn đọc trực tiếp.
 - Câu 1 = HOOK giữ chân; thân triển khai mạch lạc bám chủ đề; kết bằng 1 CTA mềm.
@@ -125,7 +127,7 @@ if (!KEY) { console.error('❌ Thiếu CLAUDE_API_KEY secret trên render-backen
 const r = await fetch('https://api.anthropic.com/v1/messages', {
   method: 'POST',
   headers: { 'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-  body: JSON.stringify({ model: MODEL, max_tokens: KIND === 'script' ? Math.min(7000, Math.round(CHARS * 4) + 1000) : (isImg ? Math.min(1300, Math.round(LEN_MAX * 2.2) + 340) : 1200), messages: [{ role: 'user', content }] }),
+  body: JSON.stringify({ model: MODEL, max_tokens: KIND === 'script' ? Math.min(7000, Math.round(ASK * 4) + 1000) : (isImg ? Math.min(1300, Math.round(LEN_MAX * 2.2) + 340) : 1200), messages: [{ role: 'user', content }] }),
 });
 const j = await r.json();
 if (!r.ok) { console.error('❌ Claude lỗi', r.status, JSON.stringify(j?.error || j).slice(0, 220)); process.exit(1); }
