@@ -18,8 +18,15 @@ try:
 except Exception:
     st = None
 GAP = [0.5] + [0.7]*(len(lines)-1); TAIL = 1.4
+SILENT_DUR = 2.2   # dòng outro "__SILENT__" (tên kênh cuối video) = khoảng lặng, KHÔNG đọc
 params=None; frames=b""; sr=None; timings=[]; t=0.0
 for i, txt in enumerate(lines):
+    is_silent = (not txt) or (txt.strip() == "__SILENT__")
+    if is_silent and sr is not None:   # chèn window im lặng (cần đã biết sr từ câu trước)
+        frames += b"\x00"*(int(GAP[i]*sr)*params.sampwidth*params.nchannels); t += GAP[i]
+        frames += b"\x00"*(int(SILENT_DUR*sr)*params.sampwidth*params.nchannels)
+        timings.append({"i":i,"start":round(t,2),"end":round(t+SILENT_DUR,2),"text":""}); t += SILENT_DUR
+        continue
     try: audio = tts.infer(txt, voice=VOICE, style=st)
     except TypeError: audio = tts.infer(txt, voice=VOICE)
     p=f"{d}/_l{i}.wav"; tts.save(audio, p)

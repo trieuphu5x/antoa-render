@@ -9,7 +9,7 @@ const MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001';
 const TITLE = process.env.TITLE || '';
 const ARTICLE = process.env.ARTICLE || '';
 const BRANDKW = process.env.BRANDKW || 'kể chuyện, truyền cảm hứng';
-const BRAND_LABEL = (process.env.BRAND_LABEL || 'ANTOA').trim();
+const BRAND_LABEL = (process.env.BRAND_LABEL || '').trim() || (VERBATIM ? '' : 'ANTOA');   // thủ công: để TRỐNG = KHÔNG outro; auto giữ ANTOA
 const SLOGAN = (process.env.SLOGAN || '').trim();
 const IMG_STYLE = (process.env.IMG_STYLE || 'Modern flat vector editorial illustration, warm palette, clean minimal shapes, soft shadows, no text').trim();
 const IMG_MODEL = process.env.IMG_MODEL || 'gpt-image-1';
@@ -40,28 +40,41 @@ if (!KEY) { console.error('❌ Thiếu CLAUDE_API_KEY'); process.exit(1); }
 async function characterBible() {
   try {
     const r = await claudeJson({ key: KEY, model: MODEL, maxTokens: 160, tries: 2, label: 'char',
-      prompt: `Chủ đề: "${TITLE}". Bối cảnh: """${ARTICLE.slice(0, 500)}""". Tả 1 NHÂN VẬT CHÍNH xuyên suốt câu chuyện bằng TIẾNG ANH, 1 câu ngắn gọn: giới tính, độ tuổi, kiểu/màu tóc, trang phục (màu), 1 nét đặc trưng. CHỈ tả ngoại hình cố định, KHÔNG bối cảnh/hành động. Trả JSON: {"character":"..."}` });
+      prompt: `Chủ đề: "${TITLE}". Bối cảnh: """${ARTICLE.slice(0, 500)}""". Tả 1 NHÂN VẬT CHÍNH xuyên suốt câu chuyện bằng TIẾNG ANH, 1 câu ngắn gọn: giới tính, độ tuổi, kiểu/màu tóc, trang phục (màu), 1 nét đặc trưng. BẮT BUỘC nhân vật là NGƯỜI VIỆT NAM / CHÂU Á (Vietnamese / East-Southeast Asian appearance). CHỈ tả ngoại hình cố định, KHÔNG bối cảnh/hành động. Trả JSON: {"character":"..."}` });
     return String((r && r.character) || '').replace(/[<>]/g, '').trim();
   } catch (e) { return ''; }
 }
 const CHAR = await characterBible();
-const CHAR_TAG = CHAR ? ` Main character, SAME person in every scene: ${CHAR}` : ' One consistent recurring main character, same person in every scene.';
+// NGƯỜI CHÂU Á: ép mọi cảnh vẽ nhân vật + người phụ đều là người Việt/Á Đông (khán giả Việt) — gắn vào MỌI image_prompt.
+const ASIAN_TAG = ' All people depicted are Vietnamese (East/Southeast Asian) with authentic Asian facial features, skin tone and hair.';
+const CHAR_TAG = (CHAR ? ` Main character, SAME person in every scene: ${CHAR}` : ' One consistent recurring Vietnamese (Asian) main character, same person in every scene.') + ASIAN_TAG;
 console.error(`✓ nhân vật nhất quán: ${CHAR || '(fallback chung)'}`);
 
-let scenes, ctaSay, capTitle, capDesc;
+const cclean = (s) => String(s || '').replace(/[*<>|]/g, ' ').replace(/\s+/g, ' ').trim();   // dọn nhấn/markup cho caption hiển thị
+const MAX_IMG = 12;   // TRẦN ảnh AI/video (chi phí gpt-image-1) — đọc FULL kịch bản nhưng gộp câu để không đội ảnh
+let scenes, ctaObj, capTitle, capDesc;
 if (VERBATIM) {
-  // KỊCH BẢN DÁN THỦ CÔNG → say GIỮ NGUYÊN 100%; ảnh minh hoạ AI vẽ theo ý chính (head).
-  const vs = await verbatimScenes(ARTICLE, { key: KEY, model: MODEL, title: TITLE, max: 8 });
-  scenes = vs.map((s) => ({ say: s.vo, image_prompt: `Editorial illustration. Scene: ${(s.head || s.vo).replace(/\*/g, '')}. Soft emotional mood, no text.${CHAR_TAG}` }));
+  // KỊCH BẢN DÁN THỦ CÔNG → say GIỮ NGUYÊN 100% & ĐỌC HẾT (độ dài khớp kịch bản). Gộp câu thành ≤ MAX_IMG cảnh ảnh.
+  const vs = await verbatimScenes(ARTICLE, { key: KEY, model: MODEL, title: TITLE, max: 90 });   // lấy HẾT câu (was 8 → cắt cụt kịch bản)
+  const gsz = Math.max(1, Math.ceil(vs.length / MAX_IMG));   // số câu / 1 ảnh
+  const groups = [];
+  for (let i = 0; i < vs.length; i += gsz) groups.push(vs.slice(i, i + gsz));
+  scenes = groups.map((g) => ({
+    say: g.map((s) => s.vo).join(' '),                                   // ĐỌC nguyên văn tất cả câu trong nhóm
+    caption: cclean(g[0].head || g[0].vo).slice(0, 70),                  // chữ hiện lên ngắn gọn (không nhồi cả đoạn)
+    image_prompt: `Editorial illustration. Scene: ${cclean(g[0].head || g[0].vo)}. Soft emotional mood, no text.${CHAR_TAG}`,
+  }));
   const cap = await captionFor(ARTICLE || TITLE, { key: KEY, model: MODEL, title: TITLE, brandkw: BRANDKW });
-  ctaSay = 'Theo dõi để không bỏ lỡ.'; capTitle = cap.title || TITLE; capDesc = cap.desc || '';
-  console.error(`✓ VERBATIM illustrated: ${scenes.length} câu giữ NGUYÊN lời đọc`);
+  capTitle = cap.title || TITLE; capDesc = cap.desc || '';
+  ctaObj = BRAND_LABEL ? { say: '__SILENT__', brand: BRAND_LABEL, tag: '' } : null;   // outro tên kênh im lặng ~2.2s; trống = KHÔNG outro
+  console.error(`✓ VERBATIM illustrated: ${vs.length} câu (đọc HẾT) → ${scenes.length} cảnh ảnh${BRAND_LABEL ? ' + outro "' + BRAND_LABEL + '"' : ''}`);
 } else {
   const out = await claudeJson({ key: KEY, model: MODEL, maxTokens: 3000, prompt: PROMPT, tries: 3, label: 'illustrated' });
   if (!out) { console.error('❌ Claude không trả JSON hợp lệ'); process.exit(1); }
   scenes = (out.scenes || []).filter((s) => s && s.say).slice(0, 6)
     .map((s) => ({ ...s, image_prompt: `${String(s.image_prompt || s.say).replace(/[<>]/g, '').trim()}${CHAR_TAG}` }));   // gắn nhân vật cố định vào mọi cảnh
-  ctaSay = (out.cta && out.cta.say) || 'Theo dõi để không bỏ lỡ.';
+  const ctaSay = (out.cta && out.cta.say) || 'Theo dõi để không bỏ lỡ.';
+  ctaObj = { say: ctaSay, brand: BRAND_LABEL, tag: SLOGAN };   // auto giữ nguyên
   capTitle = (out.caption && out.caption.title) || TITLE; capDesc = (out.caption && out.caption.desc) || '';
 }
 if (!scenes.length) { console.error('Thiếu scenes'); process.exit(1); }
@@ -72,9 +85,9 @@ const spec = {
   image_model: IMG_MODEL,
   fps: 30,
   scenes,
-  cta: { say: ctaSay, brand: BRAND_LABEL, tag: SLOGAN },
+  cta: ctaObj,   // null = KHÔNG outro (thủ công để trống tên kênh)
   caption: { title: capTitle, desc: capDesc },
-  script: [...scenes.map((s) => s.say), ctaSay].filter(Boolean),   // cho "Sửa kịch bản"
+  script: scenes.map((s) => s.say).filter(Boolean),   // cho "Sửa kịch bản" — verbatim: KHÔNG chèn CTA lạ; auto: lời đọc cảnh
   style: { musicVolume: 0.16 },   // nhạc nền auto-duck; build.py random 1 bài trong pool assets/music mỗi video
 };
 writeFileSync('spec.json', JSON.stringify(spec, null, 2));
