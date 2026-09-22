@@ -45,7 +45,7 @@ Chỉ in JSON.`;
 let spec;
 if (VERBATIM) {
   // KỊCH BẢN DÁN THỦ CÔNG → giữ NGUYÊN lời đọc; chỉ cô đọng chữ slide (head ngắn + lede). Xen kẽ ảnh/chữ.
-  const vs = await verbatimScenes(ARTICLE, { key: KEY, model: MODEL, title: TITLE, max: 16 });
+  const vs = await verbatimScenes(ARTICLE, { key: KEY, model: MODEL, title: TITLE, max: 60 });
   const scenes = vs.map((s, i) => (i === 0)
     ? { type: 'intro', disp: [s.head], lede: s.lede, vo: s.vo }
     : ((i % 2 === 1) ? { type: 'media', disp: [s.head], lede: s.lede, vo: s.vo }
