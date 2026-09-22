@@ -9,7 +9,7 @@ const TITLE = process.env.TITLE || '';
 const ARTICLE = process.env.ARTICLE || '';
 const BRANDKW = process.env.BRANDKW || 'AI Agent, tự động hoá';
 const PERSONA = (process.env.BRAND_PERSONA || '').trim();   // giọng thương hiệu của dự án (News/vnnews) — nhất quán với Evergreen/Trend
-const BRAND_LABEL = (process.env.BRAND_LABEL || '').trim() || 'ANTOA';                       // tên hiện cuối video (theo workflow)
+const BRAND_LABEL = (process.env.BRAND_LABEL || '').trim() || (process.env.VERBATIM === '1' ? '' : 'ANTOA');   // tên hiện cuối video. THỦ CÔNG: để trống = rỗng (KHÔNG hiện outro) · AUTO: mặc định ANTOA
 const SLOGAN = (process.env.SLOGAN || '').trim() || (process.env.VERBATIM === '1' ? '' : 'Theo dõi để cập nhật mỗi ngày.');   // slogan cuối video. THỦ CÔNG (verbatim): KHÔNG slogan mặc định (Boss chốt) · AUTO: giữ mặc định
 const SOURCE = (process.env.SOURCE || '').trim();                                            // NGUỒN THẬT (masthead góc trên + "Nguồn:" dưới) — KHÔNG mặc định VnExpress
 const IMG_MODE = (process.env.IMG_MODE || '').trim();                                        // 'article' = TIN TỨC VN → video DÀI hơn (~85s) vì bài VN dày số liệu
@@ -171,11 +171,17 @@ if (!Array.isArray(spec.scenes) || spec.scenes.length < MIN_SCENES) {
 }
 // ÉP cảnh cuối (thương hiệu) dùng đúng BRAND_LABEL + SLOGAN theo workflow — AI có thể không theo sát mẫu.
 const escHtml = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-const closing = `<div class="mid"><div class="brand anim">${escHtml(BRAND_LABEL)}</div><div class="lede anim">${escHtml(SLOGAN)}</div></div>`;
-const sO = spec.scenes.find((s) => s.id === 'sO');
-if (sO) { sO.inner = closing; if (!sO.vo) sO.vo = SLOGAN; }
-else spec.scenes.push({ id: 'sO', inner: closing, vo: SLOGAN });
-console.log(`✓ Cảnh cuối: thương hiệu="${BRAND_LABEL}" · slogan="${SLOGAN}"`);
+// Để TRỐNG cả tên + slogan (thủ công không nhập) → KHÔNG cảnh outro thương hiệu (Boss chốt: bỏ trống = không hiện gì).
+if (BRAND_LABEL || SLOGAN) {
+  const closing = `<div class="mid"><div class="brand anim">${escHtml(BRAND_LABEL)}</div>${SLOGAN ? `<div class="lede anim">${escHtml(SLOGAN)}</div>` : ''}</div>`;
+  const sO = spec.scenes.find((s) => s.id === 'sO');
+  if (sO) { sO.inner = closing; if (!sO.vo) sO.vo = SLOGAN; }
+  else spec.scenes.push({ id: 'sO', inner: closing, vo: SLOGAN });
+  console.log(`✓ Cảnh cuối: thương hiệu="${BRAND_LABEL}" · slogan="${SLOGAN}"`);
+} else {
+  const sO = spec.scenes.find((s) => s.id === 'sO'); if (sO) spec.scenes = spec.scenes.filter((s) => s.id !== 'sO');   // gỡ sO rỗng nếu AI lỡ thêm
+  console.log('✓ Không có tên hiển thị cuối → BỎ cảnh outro (không hiện gì)');
+}
 
 // #1 ẢNH: đảm bảo ảnh ĐẦU (hl.png) nằm ở cảnh HOOK s1 → thành thumbnail; nếu AI quên thì tự chèn.
 if (SHOTS.length) {

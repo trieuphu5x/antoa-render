@@ -294,7 +294,9 @@ def r_cta(sc, sel):   # KIỂU 12 · Chốt / Kêu gọi hành động (có nút
 
 
 def r_outro(sc, sel):
-    raw = str(sc.get("brand") or ("✳ " + _CHANNEL if _CHANNEL else "✳ KHỞI SỰ"))
+    raw = str(sc.get("brand") or (("✳ " + _CHANNEL) if _CHANNEL else ""))   # bỏ default "✳ KHỞI SỰ"
+    if not re.sub(r"<[^>]+>|[*_✳]|\s", "", raw):   # không có tên kênh → outro TRỐNG (Boss: để trống = không hiện gì)
+        return '<div class="grp" style="left:80px;right:80px;top:730px"></div>', []
     n = len(re.sub(r"<[^>]+>|[*_]", "", raw).strip())
     # AUTO-CO tên kênh cuối video → nhỏ hơn bản cũ (~40%) + nowrap để tên 4 từ KHÔNG xuống dòng.
     bsize = 56 if n <= 16 else 50 if n <= 21 else 44 if n <= 27 else 38 if n <= 34 else 32
@@ -369,7 +371,7 @@ def build(workdir, spec):
     scenes = spec.get("scenes", [])
     # NHÃN ĐỘNG: tên kênh (footer) · chủ đề (góc phải) · cột mốc (góc trái). Ưu tiên env brand thật, rồi spec (AI), rồi mặc định.
     global _CHANNEL
-    channel = (spec.get("channel") or os.environ.get("BRAND_LABEL") or "Kênh của bạn").strip()
+    channel = (spec.get("channel") or os.environ.get("BRAND_LABEL") or ("" if os.environ.get("VERBATIM") == "1" else "Kênh của bạn")).strip()   # THỦ CÔNG để trống = rỗng (không hiện outro)
     topic = (spec.get("topic") or os.environ.get("SLOGAN") or "").strip()
     milestone = (spec.get("milestone") or (scenes[0].get("kick") if scenes else "") or "").strip()
     _CHANNEL = channel

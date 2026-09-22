@@ -212,7 +212,8 @@ def scene_filter(sc):
         y += fs + 10
     if sc.get("sub"):
         parts.append(dt(sc["sub"], 40, "white", 90, y + 12))
-    parts.append(dt(BRAND or "ANTOA", 40, "white", 90, 1748))
+    if BRAND:                                             # tên kênh đáy video — để TRỐNG = không hiện gì (Boss chốt)
+        parts.append(dt(BRAND, 40, "white", 90, 1748))
     return ",".join(p for p in parts if p)
 
 

@@ -9,7 +9,7 @@ const TITLE = process.env.TITLE || '';
 const ARTICLE = process.env.ARTICLE || '';
 const VERBATIM = process.env.VERBATIM === '1';   // 1 = kịch bản DÁN THỦ CÔNG → giữ NGUYÊN 100% (mỗi câu = 1 slide)
 const BRANDKW = process.env.BRANDKW || 'AI Agent, tự động hoá kinh doanh';
-const BRAND_LABEL = (process.env.BRAND_LABEL || '').trim() || 'ANTOA';
+const BRAND_LABEL = (process.env.BRAND_LABEL || '').trim() || (process.env.VERBATIM === '1' ? '' : 'ANTOA');   // THỦ CÔNG: để trống = rỗng · AUTO: mặc định ANTOA
 const NONCE = process.env.GITHUB_RUN_ID || String(Math.floor(Math.random() * 1e9));
 
 export const SLIDES_CATALOG = `DANH MỤC KIỂU SLIDE (chọn kiểu HỢP nội dung; item cách bằng " | ", field cách bằng " :: ", đặc biệt ">>"):
