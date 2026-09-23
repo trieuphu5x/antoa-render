@@ -50,7 +50,7 @@ jobs:
             curl -sSL -A "$UA" -b cook.txt "${BASE}?id=${DRIVE_ID}&export=download&confirm=${CONFIRM}&uuid=${UUID}" -o media.bin
           fi
 
-      - name: Kiểm file — chặn HTML lỗi & video > 25MB (không đăng file hỏng/quá khổ)
+      - name: Kiểm file — chặn HTML lỗi & video > 200MB (không đăng file hỏng/quá khổ)
         run: |
           set -e
           if [ ! -s media.bin ]; then echo "FAIL_REASON=Không tải được file từ Drive (link không công khai?)" >> "$GITHUB_ENV"; exit 1; fi
@@ -58,9 +58,9 @@ jobs:
           SIZE=$(stat -c%s media.bin)
           MIME=$(file --mime-type -b media.bin)
           echo "File: $SIZE bytes, mime=$MIME"
-          if [ "$MEDIA_KIND" != "image" ] && [ "$SIZE" -gt 26214400 ]; then
+          if [ "$MEDIA_KIND" != "image" ] && [ "$SIZE" -gt 209715200 ]; then
             MB=$(awk "BEGIN{printf \"%.1f\", $SIZE/1048576}")
-            echo "FAIL_REASON=Video ${MB}MB — VƯỢT 25MB, không đăng được. Nén video hoặc dùng link khác." >> "$GITHUB_ENV"; exit 1
+            echo "FAIL_REASON=Video ${MB}MB — VƯỢT 200MB, không đăng được. Nén video hoặc dùng link khác." >> "$GITHUB_ENV"; exit 1
           fi
           case "$MIME" in
             video/mp4) EXT=mp4;; video/quicktime) EXT=mov;; video/webm) EXT=webm;;
