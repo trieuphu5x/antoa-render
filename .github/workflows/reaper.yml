@@ -1,13 +1,18 @@
 name: ANTOA Reaper (dọn R2 + DB)
 
-# Dọn rác tự động: xoá FILE R2 3 ngày sau đăng + xoá SẠCH (file+record) sau 15 ngày.
+# Dọn rác tự động: xoá FILE R2 3 ngày sau đăng + xoá SẠCH (file+record) sau 15 ngày + dọn thư mục uploads/ (nguyên liệu 1 ngày · thành phẩm theo bài).
 # Chạy 2 LẦN/NGÀY (00h & 12h giờ VN = 17h & 05h UTC). Mỗi lần vài giây rồi tắt — KHÔNG chạy cả ngày.
 # GitHub free có thể trễ vài phút; dọn rác không gấp nên chấp nhận được.
 on:
   schedule:
     - cron: '0 17 * * *'   # 00:00 giờ VN (UTC+7)
     - cron: '0 5 * * *'    # 12:00 giờ VN
-  workflow_dispatch: {}     # chạy tay để test
+  workflow_dispatch:        # chạy tay để test
+    inputs:
+      uploads_dry_run:
+        description: "uploads/: CHỈ liệt kê file sẽ xoá (không xoá). Bỏ tick = xoá thật."
+        type: boolean
+        default: true
 
 jobs:
   reap:
@@ -32,4 +37,5 @@ jobs:
           AWS_EC2_METADATA_DISABLED: 'true'
           AWS_REQUEST_CHECKSUM_CALCULATION: when_required   # aws-cli v2 + R2: tránh SignatureDoesNotMatch
           AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+          UPLOADS_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.uploads_dry_run && '1' || '' }}   # lịch tự chạy = xoá thật
         run: node reaper.mjs
