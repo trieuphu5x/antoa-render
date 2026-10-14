@@ -16,6 +16,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Bật đo chi phí AI thật (Ví ANTOA)
+        run: echo "NODE_OPTIONS=--require $GITHUB_WORKSPACE/meter.cjs" >> "$GITHUB_ENV"
 
       # Soạn kịch bản (soan_canh.mjs mẫu newsroom). IMG_MODE=article → kịch bản DÀI ~85s cho tin VN.
       - name: Soạn kịch bản bằng Claude
@@ -61,3 +63,17 @@ jobs:
           curl -sS -X POST "${{ github.event.client_payload.callback }}" \
             -H 'content-type: application/json' \
             -d "{\"kind\":\"compose\",\"sourceId\":\"${{ github.event.client_payload.sourceId }}\",\"error\":\"soan kich ban loi\",\"secret\":\"${{ secrets.RENDER_CALLBACK_SECRET }}\"}" || true
+
+      # VÍ ANTOA: gửi chi phí AI THẬT của lần chạy (usage.jsonl do meter.cjs ghi) về Tower — kể cả khi job lỗi (vẫn tốn tiền).
+      - name: Báo chi phí AI thật về Tower (Ví)
+        if: ${{ always() && github.event.client_payload.callback != '' }}
+        continue-on-error: true
+        env:
+          CALLBACK: ${{ github.event.client_payload.callback }}
+          SECRET: ${{ secrets.RENDER_CALLBACK_SECRET }}
+          EVENT: ${{ github.event.action }}
+          JOB_ID: ${{ github.event.client_payload.jobId }}
+          CONTENT_ID: ${{ github.event.client_payload.contentId }}
+          SOURCE_ID: ${{ github.event.client_payload.sourceId }}
+          BRAND_ID: ${{ github.event.client_payload.brandId }}
+        run: node report_usage.mjs

@@ -35,6 +35,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Bật đo chi phí AI thật (Ví ANTOA)
+        run: echo "NODE_OPTIONS=--require $GITHUB_WORKSPACE/meter.cjs" >> "$GITHUB_ENV"
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -186,3 +188,17 @@ jobs:
           curl -sS -X POST "${{ github.event.client_payload.callback }}" \
             -H 'content-type: application/json' \
             -d "{\"jobId\":\"${{ github.event.client_payload.jobId }}\",\"contentId\":\"${{ github.event.client_payload.contentId }}\",\"status\":\"failed\",\"error\":\"render workflow lỗi\",\"secret\":\"${{ secrets.RENDER_CALLBACK_SECRET }}\"}" || true
+
+      # VÍ ANTOA: gửi chi phí AI THẬT của lần chạy (usage.jsonl do meter.cjs ghi) về Tower — kể cả khi job lỗi (vẫn tốn tiền).
+      - name: Báo chi phí AI thật về Tower (Ví)
+        if: ${{ always() && github.event.client_payload.callback != '' }}
+        continue-on-error: true
+        env:
+          CALLBACK: ${{ github.event.client_payload.callback }}
+          SECRET: ${{ secrets.RENDER_CALLBACK_SECRET }}
+          EVENT: ${{ github.event.action }}
+          JOB_ID: ${{ github.event.client_payload.jobId }}
+          CONTENT_ID: ${{ github.event.client_payload.contentId }}
+          SOURCE_ID: ${{ github.event.client_payload.sourceId }}
+          BRAND_ID: ${{ github.event.client_payload.brandId }}
+        run: node report_usage.mjs
