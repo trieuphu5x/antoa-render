@@ -43,8 +43,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: "22" }
+      # GitHub CẤM đặt NODE_OPTIONS qua $GITHUB_ENV → thay bằng 1 lệnh "node" bọc đặt lên ĐẦU PATH (GITHUB_PATH được phép):
+      # mọi "node ..." ở các bước sau (kể cả python gọi node, npx) tự nạp meter.cjs. Action GitHub dùng node riêng → không ảnh hưởng.
       - name: Bật đo chi phí AI thật (Ví ANTOA)
-        run: echo "NODE_OPTIONS=--require $GITHUB_WORKSPACE/meter.cjs" >> "$GITHUB_ENV"
+        run: |
+          REAL_NODE="$(command -v node)"; BIN="$RUNNER_TEMP/antoa-meter-bin"; mkdir -p "$BIN"
+          printf '#!/bin/sh\nexec "%s" --require "%s/meter.cjs" "$@"\n' "$REAL_NODE" "$GITHUB_WORKSPACE" > "$BIN/node"; chmod +x "$BIN/node"
+          echo "$BIN" >> "$GITHUB_PATH"
+          "$BIN/node" -e 'if (!globalThis.__antoaMeter) { console.log("::warning::meter.cjs chưa nạp — lượt này KHÔNG đo được chi phí AI"); process.exit(0) } console.log("✓ đo chi phí AI: bật")'
 
       - name: Che KEY KHÁCH (BYOK) khỏi log public
         if: ${{ github.event.client_payload.supadataKey != '' || github.event.client_payload.apifyKey != '' }}

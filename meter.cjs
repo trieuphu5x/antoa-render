@@ -1,5 +1,6 @@
-// ĐO CHI PHÍ AI THẬT (Ví ANTOA) — nạp sẵn vào MỌI tiến trình node của job qua NODE_OPTIONS="--require <workspace>/meter.cjs".
-// Dùng --require (CommonJS) vì mọi bản Node đều nhận — kể cả Node của chính các action GitHub (cache/upload-artifact).
+// ĐO CHI PHÍ AI THẬT (Ví ANTOA) — nạp sẵn vào MỌI tiến trình node của job: bước "Bật đo" đặt 1 lệnh `node` bọc (= node --require meter.cjs) lên đầu PATH.
+// ⚠️ KHÔNG dùng NODE_OPTIONS qua $GITHUB_ENV — GitHub CẤM ("Can't store NODE_OPTIONS") nên bản đầu 14/10 không đo được gì.
+// Dùng --require (CommonJS) — bản Node nào cũng nhận.
 // Bọc fetch toàn cục: gặp lời gọi AI TRẢ PHÍ (Claude / OpenAI ảnh / Gemini) trả về OK → ghi 1 dòng usage vào usage.jsonl.
 // Không sửa script nào; lỗi đo KHÔNG BAO GIỜ làm hỏng lời gọi thật (bọc try, trả nguyên response).
 const { appendFileSync } = require('node:fs');
